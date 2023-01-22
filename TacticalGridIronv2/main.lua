@@ -10,7 +10,7 @@ cf = require 'lib.commonfunctions'
 
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
-SCREEN_STACK = {}		
+SCREEN_STACK = {}
 
 function love.keyreleased( key, scancode )
 	if key == "escape" then
@@ -20,38 +20,42 @@ end
 
 function love.load()
 
-	res.setGame(SCREEN_WIDTH, SCREEN_HEIGHT)
+	res.init({width = 640, height = 480, mode = 3})
+	res.setMode(800, 600, {resizable = true})
 
-    if love.filesystem.isFused( ) then
-        void = love.window.setMode(SCREEN_WIDTH, SCREEN_HEIGHT,{fullscreen=false,display=1,resizable=true, borderless=false})	-- display = monitor number (1 or 2)
-        gbolDebug = false
-    else
-        void = love.window.setMode(SCREEN_WIDTH, SCREEN_HEIGHT,{fullscreen=false,display=1,resizable=true, borderless=false})	-- display = monitor number (1 or 2)
-    end
-	
+    -- if love.filesystem.isFused( ) then
+    --     void = love.window.setMode(SCREEN_WIDTH, SCREEN_HEIGHT,{fullscreen=false,display=1,resizable=true, borderless=false})	-- display = monitor number (1 or 2)
+    --     gbolDebug = false
+    -- else
+    --     void = love.window.setMode(SCREEN_WIDTH, SCREEN_HEIGHT,{fullscreen=false,display=1,resizable=true, borderless=false})	-- display = monitor number (1 or 2)
+    -- end
+
 	love.window.setTitle("Lockdown " .. GAME_VERSION)
 
-	
+
 	cf.AddScreen("MainMenu", SCREEN_STACK)
-	
+
+end
+
+function love.resize(w, h)
+	res.resize(w, h)
 end
 
 
 function love.draw()
 
     res.start()
-	
-	
-	
-	
-    
+
+
+
+
+
     res.stop()
 end
 
 
 function love.update(dt)
 
-	res.update()
 
 
 end
