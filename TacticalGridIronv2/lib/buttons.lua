@@ -45,4 +45,38 @@ function buttons.changeButtonLabel(enumvalue, newlabel)
 	end
 end
 
+function buttons.drawButtons()
+
+    -- draw buttons
+    local currentscene = cf.CurrentScreenName(SCREEN_STACK)
+
+	for k, button in pairs(GUI_BUTTONS) do
+		if button.scene == currentscene and button.visible then
+			-- draw the button
+
+            -- draw the bg
+            love.graphics.setColor(button.bgcolour)
+            love.graphics.rectangle("fill", button.x, button.y, button.width, button.height)			-- drawx/y is the top left corner of the square
+
+            -- draw the outline
+            if button.drawOutline then
+                love.graphics.setColor(button.outlineColour)
+                love.graphics.rectangle("line", button.x, button.y, button.width, button.height)			-- drawx/y is the top left corner of the square
+            end
+
+			if button.image ~= nil then
+                love.graphics.setColor(1,1,1,1)
+				love.graphics.draw(button.image, button.x, button.y, 0, button.imagescalex, button.imagescaley, button.imageoffsetx, button.imageoffsety)
+			end
+
+			-- draw the label
+			local labelxoffset = button.labelxoffset or 0
+            love.graphics.setColor(button.labelcolour)
+			-- love.graphics.setFont(FONT[enum.fontDefault])        --! the font should be a setting and not hardcoded here
+			love.graphics.print(tostring(button.label), button.x + labelxoffset, button.y + 5)
+		end
+	end
+
+end
+
 return buttons
