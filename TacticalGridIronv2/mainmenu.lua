@@ -1,11 +1,16 @@
 mainmenu = {}
 
+
+function mainmenu.mousereleased(rx, ry)
+    local clickedButtonID = buttons.getButtonID(rx, ry)
+    if clickedButtonID == enum.buttonMainMenuExit then
+        cf.RemoveScreen(SCREEN_STACK)
+    end
+end
+
 function mainmenu.draw()
 
     buttons.drawButtons()
-
-
-
 end
 
 function mainmenu.loadButtons()
@@ -18,7 +23,7 @@ function mainmenu.loadButtons()
     mybutton.bgcolour = {169/255,169/255,169/255,1}
     mybutton.drawOutline = false
     mybutton.outlineColour = {1,1,1,1}
-    mybutton.label = "New game"
+    mybutton.label = "Exit game"
     mybutton.image = nil
     mybutton.imageoffsetx = 20
     mybutton.imageoffsety = 0

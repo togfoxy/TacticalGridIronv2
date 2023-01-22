@@ -21,6 +21,23 @@ function love.keyreleased( key, scancode )
 	end
 end
 
+function love.mousereleased(x, y, button, isTouch)
+	local rx, ry = res.toGame(x,y)		-- does this need to be applied consistently across all mouse clicks?
+	local currentscene = cf.CurrentScreenName(SCREEN_STACK)
+
+	if currentscene == enum.sceneMainMenu then
+		mainmenu.mousereleased(rx, ry)
+	end
+
+
+	
+
+	-- do button stuff
+
+
+
+end
+
 function love.load()
 
 	res.init({width = 640, height = 480, mode = 3})

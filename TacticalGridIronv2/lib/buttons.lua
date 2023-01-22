@@ -36,6 +36,16 @@ function buttons.buttonClicked(mx, my, button)
 	end
 end
 
+function buttons.getButtonID(rx, ry)
+    local currentscene = cf.CurrentScreenName(SCREEN_STACK)
+    for k, button in pairs(GUI_BUTTONS) do
+		if button.scene == currentscene and button.visible then
+			local mybuttonID = buttons.buttonClicked(rx, ry, button)		-- bounding box stuff
+            return mybuttonID
+		end
+	end
+end
+
 function buttons.changeButtonLabel(enumvalue, newlabel)
 	for k, button in pairs(GUI_BUTTONS) do
 		if button.identifier == enumvalue then
