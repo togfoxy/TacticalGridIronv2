@@ -1,5 +1,3 @@
-GAME_VERSION = "0.01"
-
 inspect = require 'lib.inspect'
 -- https://github.com/kikito/inspect.lua
 
@@ -8,20 +6,41 @@ res = require 'lib.resolution_solution'
 
 cf = require 'lib.commonfunctions'
 
+require 'lib.buttons'
+
+require 'constants'
+require 'mainmenu'
+require 'credits'
+fun = require 'functions'
+
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
 SCREEN_STACK = {}
 
 function love.keyreleased( key, scancode )
-	if key == "escape" then
-		cf.RemoveScreen(SCREEN_STACK)
+	local currentscene = cf.CurrentScreenName(SCREEN_STACK)
+	if currentscene == enum.sceneMainMenu then
+		mainmenu.keyreleased(key)
+	elseif currentscene == enum.sceneCredits then
+		credits.keyreleased(key)
+	end
+end
+
+function love.mousereleased(x, y, button, isTouch)
+	local rx, ry = res.toGame(x,y)		-- does this need to be applied consistently across all mouse clicks?
+	local currentscene = cf.CurrentScreenName(SCREEN_STACK)
+
+	if currentscene == enum.sceneMainMenu then
+		mainmenu.mousereleased(rx, ry)
+	elseif currentscene == enum.sceneCredits then
+		credits.mousereleased(rx, ry)
 	end
 end
 
 function love.load()
 
-	res.init({width = 640, height = 480, mode = 3})
-	res.setMode(800, 600, {resizable = true})
+	res.init({width = 1920, height = 1080, mode = 3})
+	res.setMode(1920, 1080, {resizable = true})
 
     -- if love.filesystem.isFused( ) then
     --     void = love.window.setMode(SCREEN_WIDTH, SCREEN_HEIGHT,{fullscreen=false,display=1,resizable=true, borderless=false})	-- display = monitor number (1 or 2)
@@ -30,10 +49,13 @@ function love.load()
     --     void = love.window.setMode(SCREEN_WIDTH, SCREEN_HEIGHT,{fullscreen=false,display=1,resizable=true, borderless=false})	-- display = monitor number (1 or 2)
     -- end
 
-	love.window.setTitle("Lockdown " .. GAME_VERSION)
+	constants.load()
+	mainmenu.loadButtons()
+	credits.loadButtons()
 
+	love.window.setTitle("Tactical Gridiron v2 " .. GAME_VERSION)
 
-	cf.AddScreen("MainMenu", SCREEN_STACK)
+	cf.AddScreen(enum.sceneMainMenu, SCREEN_STACK)
 
 end
 
@@ -41,14 +63,17 @@ function love.resize(w, h)
 	res.resize(w, h)
 end
 
-
 function love.draw()
+
+	local currentscene = cf.CurrentScreenName(SCREEN_STACK)
 
     res.start()
 
-
-
-
+	if currentscene == enum.sceneMainMenu then
+		mainmenu.draw()
+	elseif currentscene == enum.sceneCredits then
+		credits.draw()
+	end
 
     res.stop()
 end
