@@ -11,9 +11,12 @@ function mainmenu.mousereleased(rx, ry)
 
     if clickedButtonID == enum.buttonMainMenuExit then
         cf.RemoveScreen(SCREEN_STACK)
-    end
-    if clickedButtonID == enum.buttonMainMenuCredits then
+    elseif clickedButtonID == enum.buttonMainMenuCredits then
         cf.AddScreen(enum.sceneCredits, SCREEN_STACK)
+    elseif clickedButtonID == enum.buttonMainMenuNewGame then
+        fun.createNewGame()
+        cf.AddScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
+
     end
 end
 
@@ -23,10 +26,14 @@ function mainmenu.draw()
 end
 
 function mainmenu.loadButtons()
+
+    local numofbuttons = 4      -- how many buttons on this form, assuming a single column
+    local numofsectors = numofbuttons + 1
+
     -- button for exit
     local mybutton = {}
     mybutton.x = SCREEN_WIDTH / 2
-    mybutton.y = SCREEN_HEIGHT / 3 * 2
+    mybutton.y = SCREEN_HEIGHT / numofsectors * 4
     mybutton.width = 125
     mybutton.height = 25
     mybutton.bgcolour = {169/255,169/255,169/255,1}
@@ -54,7 +61,7 @@ function mainmenu.loadButtons()
     -- button for credits
     local mybutton = {}
     mybutton.x = SCREEN_WIDTH / 2
-    mybutton.y = SCREEN_HEIGHT / 3 * 1
+    mybutton.y = SCREEN_HEIGHT / numofsectors * 3
     mybutton.width = 125
     mybutton.height = 25
     mybutton.bgcolour = {169/255,169/255,169/255,1}
@@ -77,6 +84,34 @@ function mainmenu.loadButtons()
     mybutton.visible = true
     mybutton.scene = enum.sceneMainMenu
     mybutton.identifier = enum.buttonMainMenuCredits
+    table.insert(GUI_BUTTONS, mybutton)
+
+    -- button for New game
+    local mybutton = {}
+    mybutton.x = SCREEN_WIDTH / 2
+    mybutton.y = SCREEN_HEIGHT / numofsectors * 1
+    mybutton.width = 125
+    mybutton.height = 25
+    mybutton.bgcolour = {169/255,169/255,169/255,1}
+    mybutton.drawOutline = false
+    mybutton.outlineColour = {1,1,1,1}
+    mybutton.label = "New game"
+    mybutton.image = nil
+    mybutton.imageoffsetx = 20
+    mybutton.imageoffsety = 0
+    mybutton.imagescalex = 0.9
+    mybutton.imagescaley = 0.3
+
+    -- -- mybutton.labelcolour = {1,1,1,1}
+    mybutton.labeloffcolour = {1,1,1,1}
+    mybutton.labeloncolour = {1,1,1,1}
+    mybutton.labelcolour = {0,0,0,1}
+    mybutton.labelxoffset = 15
+
+    mybutton.state = "on"
+    mybutton.visible = true
+    mybutton.scene = enum.sceneMainMenu
+    mybutton.identifier = enum.buttonMainMenuNewGame
     table.insert(GUI_BUTTONS, mybutton)
 
 end

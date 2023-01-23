@@ -11,6 +11,7 @@ require 'lib.buttons'
 require 'constants'
 require 'mainmenu'
 require 'credits'
+fun = require 'functions'
 
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
