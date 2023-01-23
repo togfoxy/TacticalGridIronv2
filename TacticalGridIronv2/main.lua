@@ -6,18 +6,22 @@ res = require 'lib.resolution_solution'
 
 cf = require 'lib.commonfunctions'
 
+require 'lib.buttons'
 
 require 'constants'
 require 'mainmenu'
-require 'lib.buttons'
+require 'credits'
 
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
 SCREEN_STACK = {}
 
 function love.keyreleased( key, scancode )
-	if key == "escape" then
-		cf.RemoveScreen(SCREEN_STACK)
+	local currentscene = cf.CurrentScreenName(SCREEN_STACK)
+	if currentscene == enum.sceneMainMenu then
+		mainmenu.keyreleased(key)
+	elseif currentscene == enum.sceneCredits then
+		credits.keyreleased(key)
 	end
 end
 
@@ -27,21 +31,15 @@ function love.mousereleased(x, y, button, isTouch)
 
 	if currentscene == enum.sceneMainMenu then
 		mainmenu.mousereleased(rx, ry)
+	elseif currentscene == enum.sceneCredits then
+		credits.mousereleased(rx, ry)
 	end
-
-
-	
-
-	-- do button stuff
-
-
-
 end
 
 function love.load()
 
-	res.init({width = 640, height = 480, mode = 3})
-	res.setMode(800, 600, {resizable = true})
+	res.init({width = 1920, height = 1080, mode = 3})
+	res.setMode(1920, 1080, {resizable = true})
 
     -- if love.filesystem.isFused( ) then
     --     void = love.window.setMode(SCREEN_WIDTH, SCREEN_HEIGHT,{fullscreen=false,display=1,resizable=true, borderless=false})	-- display = monitor number (1 or 2)
@@ -52,6 +50,7 @@ function love.load()
 
 	constants.load()
 	mainmenu.loadButtons()
+	credits.loadButtons()
 
 	love.window.setTitle("Tactical Gridiron v2 " .. GAME_VERSION)
 
@@ -71,6 +70,8 @@ function love.draw()
 
 	if currentscene == enum.sceneMainMenu then
 		mainmenu.draw()
+	elseif currentscene == enum.sceneCredits then
+		credits.draw()
 	end
 
     res.stop()

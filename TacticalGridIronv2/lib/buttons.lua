@@ -22,28 +22,32 @@ function buttons.setButtonInvisible(enumvalue)
 	end
 end
 
-function buttons.buttonClicked(mx, my, button)
+-- function buttons.buttonClicked(mx, my, button)
+--
+-- 	if mx >= button.x and mx <= button.x + button.width and
+-- 		my >= button.y and my <= button.y + button.height then
+-- 			return button.identifier
+-- 	else
+-- 		return nil
+-- 	end
+-- end
+
+function buttons.getButtonID(rx, ry)
 	-- the button table is a global table
 	-- check if mouse click is inside any button
 	-- mx, my = mouse click X/Y
-	-- button is from the global table
 	-- returns the identifier of the button (enum) or nil
-	if mx >= button.x and mx <= button.x + button.width and
-		my >= button.y and my <= button.y + button.height then
-			return button.identifier
-	else
-		return nil
-	end
-end
-
-function buttons.getButtonID(rx, ry)
     local currentscene = cf.CurrentScreenName(SCREEN_STACK)
     for k, button in pairs(GUI_BUTTONS) do
 		if button.scene == currentscene and button.visible then
-			local mybuttonID = buttons.buttonClicked(rx, ry, button)		-- bounding box stuff
-            return mybuttonID
+			if rx >= button.x and rx <= button.x + button.width and
+				ry >= button.y and ry <= button.y + button.height then
+					return button.identifier
+			end
 		end
 	end
+	-- loop finished. No result. Return nil
+	return nil
 end
 
 function buttons.changeButtonLabel(enumvalue, newlabel)

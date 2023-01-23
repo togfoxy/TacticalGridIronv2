@@ -6,6 +6,8 @@ function constants.load()
 
     SCREEN_STACK = {}
 
+    SCREEN_WIDTH, SCREEN_HEIGHT = love.window.getDesktopDimensions(1)
+
 
 
 
@@ -13,8 +15,11 @@ function constants.load()
 
     enum = {}
     enum.sceneMainMenu = 1
+    enum.sceneCredits = 2
 
     enum.buttonMainMenuExit = 1
+    enum.buttonMainMenuCredits = 2
+    enum.buttonCreditsExit = 3
 
 
 end
