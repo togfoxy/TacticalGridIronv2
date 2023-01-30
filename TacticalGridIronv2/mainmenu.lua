@@ -14,7 +14,8 @@ function mainmenu.mousereleased(rx, ry)
     elseif clickedButtonID == enum.buttonMainMenuCredits then
         cf.AddScreen(enum.sceneCredits, SCREEN_STACK)
     elseif clickedButtonID == enum.buttonMainMenuNewGame then
-        fun.createNewGame()
+        fun.createNewGame()   -- populates the database but doesn't load the game
+   fun.loadGame()  -- reads the database and loads arrays
         cf.AddScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
 
     end
