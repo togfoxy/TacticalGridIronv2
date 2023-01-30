@@ -6,11 +6,14 @@ res = require 'lib.resolution_solution'
 
 cf = require 'lib.commonfunctions'
 
+require 'lib.sqlite3.sqlite3'
+
 require 'lib.buttons'
 
 require 'constants'
 require 'mainmenu'
 require 'credits'
+require 'enums'
 fun = require 'functions'
 
 SCREEN_WIDTH = 1920

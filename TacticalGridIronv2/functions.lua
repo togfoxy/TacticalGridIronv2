@@ -2,7 +2,7 @@ functions = {}
 
 local function deleteAllTables()
 
-    local fbdb = sqlite3.open(DB_PATH)
+    local fbdb = sqlite3.open(DB_FILE)
     if fbdb then
         local strQuery
         strQuery = "delete * from TEAMS"
@@ -26,7 +26,7 @@ local function populateSeasonTable()
 
     if REFRESH_DB then	-- load up array and then render from array
 
-        local fbdb = sqlite3.open(DB_PATH)
+        local fbdb = sqlite3.open(DB_FILE)
         local strQuery
         local intError
 
@@ -64,7 +64,7 @@ local function poputlateTeamsTable()
     end
 
     -- write the temporary array to the database
-    local fbdb = sqlite3.open(DB_PATH)
+    local fbdb = sqlite3.open(DB_FILE)
     for i = 1, #tempteamnames do
         --! write to table
     end
