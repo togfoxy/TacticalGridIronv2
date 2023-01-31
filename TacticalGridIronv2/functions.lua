@@ -5,8 +5,10 @@ local function deleteAllTables()
     local fbdb = sqlite3.open(DB_FILE)
     if fbdb then
         local strQuery
-        strQuery = "delete * from TEAMS"
+        strQuery = "delete from TEAMS"
         intError = fbdb:exec(strQuery)
+
+print("Delete result: " .. intError)
 
         strQuery = "delete * from SEASON"
         intError = fbdb:exec(strQuery)
@@ -53,22 +55,42 @@ local function populateSeasonTable()
     end
 end
 
-local function poputlateTeamsTable()
-    -- assumes the teams table is empty
-    local tempteamnames = {}
+function resetGlobalTeamNames()
+    -- this is called during each "new game"
+    TEAM_NAMES = {}
+    TEAM_NAMES[1] = "Badgers"
+    TEAM_NAMES[2] = "Buccaneers"
+    TEAM_NAMES[3] = "Geckos"
+    TEAM_NAMES[4] = "Commandos"
+    TEAM_NAMES[5] = "Sonics"
+    TEAM_NAMES[6] = "Tanks"
+    TEAM_NAMES[7] = "Ninjas"
+    TEAM_NAMES[8] = "Wasps"
+end
 
-    -- add all the team names to a tempory array
-    for i = 1, NUM_OF_TEAMS do
-        local rndteamnum = love.math.random(1, #TEAM_NAMES)
-        table.insert(tempteamnames, TEAM_NAMES[rndteamnum])
-    end
+local function populateTeamsTable()
 
-    -- write the temporary array to the database
+
     local fbdb = sqlite3.open(DB_FILE)
-    for i = 1, #tempteamnames do
-        --! write to table
-    end
-    fbdb.close()
+
+    local index = 0
+    resetGlobalTeamNames()
+    repeat
+        rndteamnum = love.math.random(1, #TEAM_NAMES)
+        -- write to table
+        local strQuery = "INSERT INTO TEAMS ('TEAMNAME') VALUES ('" .. TEAM_NAMES[rndteamnum] .. "');"
+
+print(strQuery)
+
+        local dberror = fbdb:exec(strQuery)
+
+print(dberror)
+
+        -- remove from array so it is not re-used
+        table.remove(TEAM_NAMES, rndteamnum)
+        index = index + 1
+    until index == 8
+    fbdb:close()
 end
 
 function functions.createNewGame()
@@ -83,11 +105,12 @@ function functions.createNewGame()
     -- populate global table
 
     -- populate teams table
+    populateTeamsTable()
 
     -- populate player table
 
     -- populate season table
-    populateSeasonTable()
+    -- populateSeasonTable()
 
 end
 
