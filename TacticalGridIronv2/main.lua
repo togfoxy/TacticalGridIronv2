@@ -7,6 +7,10 @@ res = require 'lib.resolution_solution'
 cf = require 'lib.commonfunctions'
 
 require 'lib.sqlite3.sqlite3'
+-- http://lua.sqlite.org/index.cgi/doc/tip/doc/lsqlite3.wiki
+-- https://www.sqlite.org/index.html
+-- https://www.sqlitetutorial.net/
+
 
 require 'lib.buttons'
 

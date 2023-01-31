@@ -17,6 +17,14 @@ end
 
 function seasonstatus.draw()
     -- call this from love.draw()
+
+    -- get the games for this season
+
+
+
+
+
+
     buttons.drawButtons()
 end
 

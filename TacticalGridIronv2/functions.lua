@@ -3,56 +3,37 @@ functions = {}
 local function deleteAllTables()
 
     local fbdb = sqlite3.open(DB_FILE)
+
     if fbdb then
-        local strQuery
+        local strQuery, intError
         strQuery = "delete from TEAMS"
         intError = fbdb:exec(strQuery)
 
-print("Delete result: " .. intError)
-
-        strQuery = "delete * from SEASON"
+        strQuery = "delete from SEASON"
         intError = fbdb:exec(strQuery)
 
-        strQuery = "delete * from GAMES"
+        strQuery = "delete from GAMES"
         intError = fbdb:exec(strQuery)
 
-        strQuery = "delete * from PLAYERS"
+        strQuery = "delete from PLAYERS"
         intError = fbdb:exec(strQuery)
 
-        strQuery = "delete * from LEAGUE"
+        strQuery = "delete from LEAGUE"
         intError = fbdb:exec(strQuery)
     end
+    fbdb:close()
 end
 
 local function populateSeasonTable()
 
-    if REFRESH_DB then	-- load up array and then render from array
-
-        local fbdb = sqlite3.open(DB_FILE)
-        local strQuery
-        local intError
-
-        if fbdb then
-            -- load the teams table into a temporary array so can step through it
-            strQuery = "select * from TEAMS"
-            i = 1
-            for row in fbdb:nrows(strQuery) do
-                tempteams[i] = row.teamname
-                i = i + 1
-            end
-
-            -- take two teams and put them into the season table
-            local seasonindex = 1
-            for i = 1, NUM_OF_TEAMS, 2 do
-                local t1, t2 = tempteams[i], tempteams[i+1]
-                SEASON[seasonindex].TEAM1 = t1
-                SEASON[seasonindex].TEAM2 = t2
-                seasonindex = seasonindex + 1
-            end
-        end
-        REFRESH_DB = false
-        fbdb.close()
+    local fbdb = sqlite3.open(DB_FILE)
+    local strQuery = "select * from TEAMS"
+    for row in fbdb:nrows(strQuery) do
+        strQuery = "Insert into SEASON ('TEAMID') values ('" .. row.TEAMID .. "')"
+        local dberror = fbdb:exec(strQuery)
+        print(dberror, strQuery)
     end
+    fbdb:close()
 end
 
 function resetGlobalTeamNames()
@@ -69,23 +50,16 @@ function resetGlobalTeamNames()
 end
 
 local function populateTeamsTable()
-
+    -- resets the global constants and then draws from that to populate the TEAMS table
 
     local fbdb = sqlite3.open(DB_FILE)
-
     local index = 0
     resetGlobalTeamNames()
     repeat
         rndteamnum = love.math.random(1, #TEAM_NAMES)
         -- write to table
         local strQuery = "INSERT INTO TEAMS ('TEAMNAME') VALUES ('" .. TEAM_NAMES[rndteamnum] .. "');"
-
-print(strQuery)
-
         local dberror = fbdb:exec(strQuery)
-
-print(dberror)
-
         -- remove from array so it is not re-used
         table.remove(TEAM_NAMES, rndteamnum)
         index = index + 1
@@ -110,7 +84,8 @@ function functions.createNewGame()
     -- populate player table
 
     -- populate season table
-    -- populateSeasonTable()
+    populateSeasonTable()
+
 
 end
 
