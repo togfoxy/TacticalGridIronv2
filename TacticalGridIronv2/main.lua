@@ -7,12 +7,19 @@ res = require 'lib.resolution_solution'
 cf = require 'lib.commonfunctions'
 
 require 'lib.sqlite3.sqlite3'
+-- http://lua.sqlite.org/index.cgi/doc/tip/doc/lsqlite3.wiki
+-- https://www.sqlite.org/index.html
+-- https://www.sqlitetutorial.net/
+
 
 require 'lib.buttons'
 
 require 'constants'
 require 'mainmenu'
 require 'credits'
+require 'seasonstatus'
+
+
 require 'enums'
 fun = require 'functions'
 
@@ -26,6 +33,8 @@ function love.keyreleased( key, scancode )
 		mainmenu.keyreleased(key)
 	elseif currentscene == enum.sceneCredits then
 		credits.keyreleased(key)
+	elseif currentscene == enum.sceneDisplaySeasonStatus then
+		seasonstatus.keyreleased(key)
 	end
 end
 
@@ -37,6 +46,8 @@ function love.mousereleased(x, y, button, isTouch)
 		mainmenu.mousereleased(rx, ry)
 	elseif currentscene == enum.sceneCredits then
 		credits.mousereleased(rx, ry)
+	elseif currentscene == enum.sceneDisplaySeasonStatus then
+		seasonstatus.mousereleased(rx, ry)
 	end
 end
 
@@ -55,6 +66,7 @@ function love.load()
 	constants.load()
 	mainmenu.loadButtons()
 	credits.loadButtons()
+	seasonstatus.loadButtons()
 
 	love.window.setTitle("Tactical Gridiron v2 " .. GAME_VERSION)
 
@@ -76,6 +88,8 @@ function love.draw()
 		mainmenu.draw()
 	elseif currentscene == enum.sceneCredits then
 		credits.draw()
+	elseif currentscene == enum.sceneDisplaySeasonStatus then
+		seasonstatus.draw()
 	end
 
     res.stop()
