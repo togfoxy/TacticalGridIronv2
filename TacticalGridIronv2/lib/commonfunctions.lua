@@ -36,25 +36,6 @@ function deepcopy(orig, copies)
     return copy
 end
 
--- rotate 2D tables
-function rotate_CCW_90(m)
-   local rotated = {}
-   for c, m_1_c in ipairs(m[1]) do
-      local col = {m_1_c}
-      for r = 2, #m do
-         col[r] = m[r][c]
-      end
-      table.insert(rotated, 1, col)
-   end
-   return rotated
-end
-function rotate_CW_90(m)
-   return rotate_CCW_90(rotate_CCW_90(rotate_CCW_90(m)))
-end
-function rotate_180(m)
-   return rotate_CCW_90(rotate_CCW_90(m))
-end
-
 function GetDistance(x1, y1, x2, y2)
 	-- this is real distance in pixels
 	-- receives two coordinate pairs (not vectors)
@@ -73,6 +54,7 @@ function GetDistance(x1, y1, x2, y2)
     local distance = math.sqrt(c)
     return distance
 end
+
 function SubtractVectors(x1,y1,x2,y2)
 	-- subtracts vector2 from vector1 i.e. v1 - v2
 	-- returns a vector (an x/y pair)
@@ -316,4 +298,23 @@ function adjustHeading(heading, amount)
     if newheading > 359 then newheading = newheading - 360 end
     if newheading < 0 then newheading = 360 + newheading end     -- heading is a negative value so '+' it and 360
     return newheading
+end
+
+-- rotate 2D tables
+function rotate_CCW_90(m)
+   local rotated = {}
+   for c, m_1_c in ipairs(m[1]) do
+      local col = {m_1_c}
+      for r = 2, #m do
+         col[r] = m[r][c]
+      end
+      table.insert(rotated, 1, col)
+   end
+   return rotated
+end
+function rotate_CW_90(m)
+   return rotate_CCW_90(rotate_CCW_90(rotate_CCW_90(m)))
+end
+function rotate_180(m)
+   return rotate_CCW_90(rotate_CCW_90(m))
 end
