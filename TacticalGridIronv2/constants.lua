@@ -11,6 +11,7 @@ function constants.load()
     -- declaring these nil for readability
     DB_PATH = nil
     DB_FILE = nil
+    REFRESH_DB = false
 
     DB_PATH = love.filesystem.getSourceBaseDirectory()
     if love.filesystem.isFused() then

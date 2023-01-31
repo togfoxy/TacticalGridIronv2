@@ -31,7 +31,6 @@ local function populateSeasonTable()
     for row in fbdb:nrows(strQuery) do
         strQuery = "Insert into SEASON ('TEAMID') values ('" .. row.TEAMID .. "')"
         local dberror = fbdb:exec(strQuery)
-        print(dberror, strQuery)
     end
     fbdb:close()
 end

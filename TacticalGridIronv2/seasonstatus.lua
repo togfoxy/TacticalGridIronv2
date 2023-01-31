@@ -19,11 +19,18 @@ function seasonstatus.draw()
     -- call this from love.draw()
 
     -- get the games for this season
+    if REFRESH_DB then
+        local fbdb = sqlite3.open(DB_FILE)
+        local strQuery = "select teams.TEAMNAME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
+        for row in fbdb:nrows(strQuery) do
+            print(row.TEAMNAME)
+
+            error("Finish this function by writing it to the screen")
 
 
-
-
-
+        end
+        REFRESH_DB = false
+    end
 
     buttons.drawButtons()
 end
