@@ -5,6 +5,7 @@ function enums.load()
     enum.sceneMainMenu = 1
     enum.sceneCredits = 2
     enum.sceneDisplaySeasonStatus = 3
+    enum.sceneStadium = 4
 
 
     enum.buttonMainMenuExit = 1
@@ -13,6 +14,7 @@ function enums.load()
     enum.buttonMainMenuNewGame = 4
     enum.buttonSeasonStatusExit = 5
     enum.buttonSeasonStatusNextGame = 6
+    enum.buttonStadiumQuit = 7
 
 
 end

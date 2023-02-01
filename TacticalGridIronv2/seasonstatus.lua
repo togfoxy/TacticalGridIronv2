@@ -14,6 +14,9 @@ function seasonstatus.mousereleased(rx, ry)
     local clickedButtonID = buttons.getButtonID(rx, ry)
     if clickedButtonID == enum.buttonSeasonStatusExit then
         love.event.quit()
+    elseif clickedButtonID == enum.buttonSeasonStatusNextGame then
+        REFRESH_DB = true
+        cf.AddScreen(enum.sceneStadium, SCREEN_STACK)
     end
 end
 
@@ -30,12 +33,11 @@ function seasonstatus.draw()
             table.insert(arr_seasonstatus, row.TEAMNAME)
         end
         REFRESH_DB = false
-        print("Hi")
     end
 
     local index = 1
     local x, y
-    for i = 1, #arr_seasonstatus do
+    for i = 1, #arr_seasonstatus do     -- this is a module level table that is scoped to this scene/screen
         if index <= 8 then
             x = 100
             y = 0 + (100 * index)

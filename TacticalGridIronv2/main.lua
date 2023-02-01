@@ -18,7 +18,7 @@ require 'constants'
 require 'mainmenu'
 require 'credits'
 require 'seasonstatus'
-
+require 'stadium'
 
 require 'enums'
 fun = require 'functions'
@@ -35,6 +35,8 @@ function love.keyreleased( key, scancode )
 		credits.keyreleased(key)
 	elseif currentscene == enum.sceneDisplaySeasonStatus then
 		seasonstatus.keyreleased(key)
+	elseif currentscene == enum.sceneStadium then
+		-- stadium.keyreleased(rx, ry)
 	end
 end
 
@@ -48,6 +50,8 @@ function love.mousereleased(x, y, button, isTouch)
 		credits.mousereleased(rx, ry)
 	elseif currentscene == enum.sceneDisplaySeasonStatus then
 		seasonstatus.mousereleased(rx, ry)
+	elseif currentscene == enum.sceneStadium then
+		stadium.mousereleased(rx, ry)
 	end
 end
 
@@ -67,6 +71,7 @@ function love.load()
 	mainmenu.loadButtons()
 	credits.loadButtons()
 	seasonstatus.loadButtons()
+	stadium.loadButtons()
 
 	love.window.setTitle("Tactical Gridiron v2 " .. GAME_VERSION)
 
@@ -90,6 +95,8 @@ function love.draw()
 		credits.draw()
 	elseif currentscene == enum.sceneDisplaySeasonStatus then
 		seasonstatus.draw()
+	elseif currentscene == enum.sceneStadium then
+		stadium.draw()
 	end
 
     res.stop()
