@@ -24,35 +24,35 @@ local function drawStadium()
 
     -- top goal
     love.graphics.setColor(153/255, 153/255, 255/255)
-    love.graphics.rectangle("fill", LeftLineX, TopPostY, FieldWidth, GoalHeight)        --! the 10 should be a module level
+    love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)        --! the 10 should be a module level
 
     -- bottom goal
     love.graphics.setColor(255/255, 153/255, 51/255)
-    love.graphics.rectangle("fill", LeftLineX, 125, FieldWidth, GoalHeight)     --! work out what the 125 should be
+    love.graphics.rectangle("fill", LeftLineX * SCALE, 125 * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)     --! work out what the 125 should be
 
     -- field
     love.graphics.setColor(69/255, 172/255, 79/255)
-    love.graphics.rectangle("fill", LeftLineX, 25, FieldWidth, 100)     --! work out what 25 and 100 need to be
+    love.graphics.rectangle("fill", LeftLineX * SCALE, 25 * SCALE, FieldWidth * SCALE, 100 * SCALE)     --! work out what 25 and 100 need to be
 
     -- yard lines
     love.graphics.setColor(1,1,1,1)
     for i = 0,20
 	do
-		love.graphics.line(LeftLineX, TopGoalY + (i * 5), RightLineX, TopGoalY + (i * 5))
+		love.graphics.line(LeftLineX * SCALE, (TopGoalY + (i * 5))  * SCALE, RightLineX * SCALE, (TopGoalY + (i * 5))  * SCALE)
 	end
 
     -- left and right ticks
     love.graphics.setColor(1,1,1,1)
     for i = 1, 99 do
         -- draw left tick mark
-        love.graphics.line(LeftLineX + 1, TopGoalY + i, LeftLineX + 2, TopGoalY + i)
+        love.graphics.line((LeftLineX + 1)  * SCALE, (TopGoalY + i)  * SCALE, (LeftLineX + 2) * SCALE, (TopGoalY + i) * SCALE)
 
         -- draw left and right hash marks (inbound lines)
-        love.graphics.line(LeftLineX + 22, TopGoalY + i, LeftLineX + 23, TopGoalY + i)
-        love.graphics.line(RightLineX - 23, TopGoalY + i, RightLineX - 22, TopGoalY + i)
+        love.graphics.line((LeftLineX + 22) * SCALE, (TopGoalY + i) * SCALE, (LeftLineX + 23) * SCALE, (TopGoalY + i) * SCALE)
+        love.graphics.line((RightLineX - 23) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 22) * SCALE, (TopGoalY + i) * SCALE)
 
         -- draw right tick lines
-        love.graphics.line(RightLineX -2, TopGoalY + i, RightLineX - 1, TopGoalY + i)
+        love.graphics.line((RightLineX -2) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 1) * SCALE, (TopGoalY + i) * SCALE)
     end
 
     --draw sidelines
