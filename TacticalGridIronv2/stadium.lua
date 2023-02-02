@@ -24,11 +24,9 @@ end
 local function drawStadium()
 
     LeftLineX = (SCREEN_WIDTH / 2) - ((FieldWidth * SCALE) / 2)	-- how many metres to leave at the leftside of the field?
-    LeftLineX = LeftLineX / SCALE
+    LeftLineX = LeftLineX / SCALE   -- need to divide by scale and then further down multiply by scale
     RightLineX = LeftLineX + FieldWidth
     CentreLineX = LeftLineX + (FieldWidth / 2)	-- left line + half of the field
-
-print(LeftLineX)
 
     -- top goal
     love.graphics.setColor(153/255, 153/255, 255/255)
@@ -64,12 +62,9 @@ print(LeftLineX)
     end
 
     --draw sidelines
-    -- local intRed = 255
-    -- local intGreen = 255
-    -- local intBlue = 255
-    -- love.graphics.setColor(intRed/255, intGreen/255, intBlue/255)
-    -- love.graphics.line(SclFactor(15),SclFactor(15),SclFactor(15),SclFactor(135))
-    -- love.graphics.line(SclFactor(intRightLineX),SclFactor(15),SclFactor(intRightLineX),SclFactor(135))
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.rectangle("line", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, (GoalHeight + FieldHeight + GoalHeight) * SCALE)
+
 
 
     -- draw stadium
