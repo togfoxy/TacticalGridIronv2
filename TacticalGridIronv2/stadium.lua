@@ -1,11 +1,12 @@
 stadium = {}
 
-local LeftLineX = 15	-- how many metres to leave at the leftside of the field?
-local TopPostY = 15	-- how many metres to leave at the top of the screen?
+local TopPostY = 5	-- how many metres to leave at the top of the screen?
 local FieldWidth = 53	-- how wide (yards/metres) is the field?
-local RightLineX = LeftLineX + FieldWidth
+local FieldHeight = 100     -- from touchdown to touchdown
+local LeftLineX
+local RightLineX
 local BottomPostY = TopPostY + 120
-local CentreLineX = LeftLineX + (FieldWidth/2)	-- left line + half of the field
+local CentreLineX
 local GoalHeight = 10
 local TopGoalY = TopPostY + 10
 local BottomGoalY = TopPostY + 110
@@ -22,17 +23,24 @@ end
 
 local function drawStadium()
 
+    LeftLineX = (SCREEN_WIDTH / 2) - ((FieldWidth * SCALE) / 2)	-- how many metres to leave at the leftside of the field?
+    LeftLineX = LeftLineX / SCALE
+    RightLineX = LeftLineX + FieldWidth
+    CentreLineX = LeftLineX + (FieldWidth / 2)	-- left line + half of the field
+
+print(LeftLineX)
+
     -- top goal
     love.graphics.setColor(153/255, 153/255, 255/255)
     love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)        --! the 10 should be a module level
 
     -- bottom goal
     love.graphics.setColor(255/255, 153/255, 51/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, 125 * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)     --! work out what the 125 should be
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight + FieldHeight) * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)     --! work out what the 125 should be
 
     -- field
     love.graphics.setColor(69/255, 172/255, 79/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, 25 * SCALE, FieldWidth * SCALE, 100 * SCALE)     --! work out what 25 and 100 need to be
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)     --! work out what 25 and 100 need to be
 
     -- yard lines
     love.graphics.setColor(1,1,1,1)
@@ -89,7 +97,7 @@ function stadium.loadButtons()
     -- button for exit
     local mybutton = {}
     local buttonsequence = 1            -- sequence on the screen
-    mybutton.x = SCREEN_WIDTH / 2
+    mybutton.x = SCREEN_WIDTH * 2/3
     mybutton.y = SCREEN_HEIGHT / numofsectors * buttonsequence
     mybutton.width = 125
     mybutton.height = 25

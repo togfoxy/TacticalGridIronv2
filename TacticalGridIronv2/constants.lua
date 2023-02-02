@@ -23,7 +23,7 @@ function constants.load()
 
     NUM_OF_TEAMS = 8
 
-    SCALE = 6   -- for graphics/drawing
+    SCALE = 8   -- for graphics/drawing
 
 
 
