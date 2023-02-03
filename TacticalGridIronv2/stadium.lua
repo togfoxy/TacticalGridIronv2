@@ -13,6 +13,7 @@ local BottomGoalY = TopPostY + 110
 local ScrimmageY = TopPostY + 90
 local FirstDownMarkerY = ScrimmageY - 10		-- yards
 
+
 function stadium.mousereleased(rx, ry)
     -- call from love.mousereleased()
     local clickedButtonID = buttons.getButtonID(rx, ry)
@@ -79,14 +80,41 @@ local function drawStadium()
 	love.graphics.setLineWidth(5)
 	love.graphics.line(LeftLineX * SCALE, FirstDownMarkerY * SCALE, RightLineX * SCALE, FirstDownMarkerY * SCALE)
 	love.graphics.setLineWidth(1)	-- return width back to default
+
+    -- print the two teams
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.print(OFFENSIVE_TEAMID, 50, 50)       --! this needs to be the team name and not the ID
+    love.graphics.print(DEFENSIVE_TEAMID, SCREEN_WIDTH - 250, 50)
+
+
 end
 
-local function endthegame()
+local function endtheround()
+    -- dummy function to test the scene progression
+    local score = love.math.random(0, 30)
 
-    error()
+    local fbdb = sqlite3.open(DB_FILE)
+    local strQuery
+    if ROUND == 1 then
+        strQuery = "Update SEASON set OFFENCESCORE = " .. score .. " where TEAMID = " .. OFFENSIVE_TEAMID
+        OFFENSIVE_SCORE = score
+    else
+        strQuery = "Update SEASON set OFFENCESCORE = " .. score .. " where TEAMID = " .. DEFENSIVE_TEAMID
+        DEFENSIVE_SCORE = score
+    end
+    local dberror = fbdb:exec(strQuery)
+    fbdb:close()
+    ROUND = ROUND + 1
 
+    if ROUND == 2 then
+        --! reset the field
+print("Hi")
+    elseif ROUND == 3 then
+        --! move to the next scene
+        cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
+print("Ho")
+    end
 end
-
 
 function stadium.draw()
     -- call this from love.draw()
@@ -100,13 +128,10 @@ function stadium.update()
     -- called from love.update()
 
     --! fake the ending of the scene
-    if love.math.random(1,1000) == 1 then
+    if love.math.random(1,175) == 1 then
         --! end game
-        endthegame()
+        endtheround()
     end
-
-
-
 end
 
 function stadium.loadButtons()

@@ -57,7 +57,7 @@ local function populateTeamsTable()
     repeat
         rndteamnum = love.math.random(1, #TEAM_NAMES)
         -- write to table
-        local strQuery = "INSERT INTO TEAMS ('TEAMNAME') VALUES ('" .. TEAM_NAMES[rndteamnum] .. "');"
+        local strQuery = "INSERT INTO TEAMS ('TEAMNAME', 'PLAYERCONTROLLED') VALUES ('" .. TEAM_NAMES[rndteamnum] .. "', '0');"
         local dberror = fbdb:exec(strQuery)
         -- remove from array so it is not re-used
         table.remove(TEAM_NAMES, rndteamnum)

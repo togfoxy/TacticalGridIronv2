@@ -19,6 +19,7 @@ require 'mainmenu'
 require 'credits'
 require 'seasonstatus'
 require 'stadium'
+require 'endgame'
 
 require 'enums'
 fun = require 'functions'
@@ -97,6 +98,8 @@ function love.draw()
 		seasonstatus.draw()
 	elseif currentscene == enum.sceneStadium then
 		stadium.draw()
+	elseif currentscene == enum.sceneEndGame then
+		endgame.draw()
 	end
 
     res.stop()
