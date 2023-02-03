@@ -11,7 +11,7 @@ local GoalHeight = 10
 local TopGoalY = TopPostY + 10
 local BottomGoalY = TopPostY + 110
 local ScrimmageY = TopPostY + 90
-local FirstDownMarker = ScrimmageY - 10		-- yards
+local FirstDownMarkerY = ScrimmageY - 10		-- yards
 
 function stadium.mousereleased(rx, ry)
     -- call from love.mousereleased()
@@ -65,14 +65,28 @@ local function drawStadium()
     love.graphics.setColor(1,1,1,1)
     love.graphics.rectangle("line", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, (GoalHeight + FieldHeight + GoalHeight) * SCALE)
 
-
-
     -- draw stadium
-    -- draw scrimmage
-    -- draw first down marker
 
+    -- draw scrimmage
+
+	love.graphics.setColor(93/255, 138/255, 169/255,1)
+	love.graphics.setLineWidth(5)
+	love.graphics.line(LeftLineX * SCALE, ScrimmageY * SCALE, RightLineX * SCALE, ScrimmageY * SCALE)
+	love.graphics.setLineWidth(1)	-- return width back to default
+
+    -- draw first down marker
+	love.graphics.setColor(255/255, 255/255, 51/255,1)
+	love.graphics.setLineWidth(5)
+	love.graphics.line(LeftLineX * SCALE, FirstDownMarkerY * SCALE, RightLineX * SCALE, FirstDownMarkerY * SCALE)
+	love.graphics.setLineWidth(1)	-- return width back to default
+end
+
+local function endthegame()
+
+    error()
 
 end
+
 
 function stadium.draw()
     -- call this from love.draw()
@@ -82,6 +96,18 @@ function stadium.draw()
     buttons.drawButtons()
 end
 
+function stadium.update()
+    -- called from love.update()
+
+    --! fake the ending of the scene
+    if love.math.random(1,1000) == 1 then
+        --! end game
+        endthegame()
+    end
+
+
+
+end
 
 function stadium.loadButtons()
     -- call this from love.load()
