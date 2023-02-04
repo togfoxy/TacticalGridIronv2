@@ -41,8 +41,10 @@ function seasonstatus.draw()
 
     -- get the games for this season
     if REFRESH_DB then
+        arr_seasonstatus = {}
         local fbdb = sqlite3.open(DB_FILE)
         local strQuery = "select teams.TEAMNAME, season.TEAMID, season.OFFENCESCORE, season.DEFENCESCORE from season inner join TEAMS on teams.TEAMID = season.TEAMID"
+print(strQuery)
         for row in fbdb:nrows(strQuery) do
             local mytable = {}
             mytable.TEAMNAME = row.TEAMNAME
@@ -68,11 +70,17 @@ function seasonstatus.draw()
             y = 200 + (100 * index)
         end
 
+print(inspect(arr_seasonstatus))
+
         love.graphics.setColor(1,1,1,1)
         love.graphics.print(arr_seasonstatus[index].TEAMNAME, x, y)
+        if arr_seasonstatus[index].OFFENCESCORE ~= nil then
+            love.graphics.print(arr_seasonstatus[index].OFFENCESCORE, x + 150, y)
+        end
         index = index + 1
     end
     buttons.drawButtons()
+print("seasonstatus.draw()")
 end
 
 function seasonstatus.loadButtons()
