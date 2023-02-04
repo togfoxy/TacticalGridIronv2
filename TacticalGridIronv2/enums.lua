@@ -16,6 +16,8 @@ function enums.load()
     enum.buttonSeasonStatusExit = 5
     enum.buttonSeasonStatusNextGame = 6
     enum.buttonStadiumQuit = 7
+    enum.buttonEndGameContinue = 8
+    enum.buttonEndGameQuit = 9
 
 
 end

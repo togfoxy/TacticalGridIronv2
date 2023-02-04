@@ -108,11 +108,10 @@ local function endtheround()
 
     if ROUND == 2 then
         --! reset the field
-print("Hi")
     elseif ROUND == 3 then
-        --! move to the next scene
+        -- move to the next scene
+        REFRESH_DB = true
         cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
-print("Ho")
     end
 end
 
