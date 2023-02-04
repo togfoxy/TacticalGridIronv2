@@ -53,6 +53,8 @@ function love.mousereleased(x, y, button, isTouch)
 		seasonstatus.mousereleased(rx, ry)
 	elseif currentscene == enum.sceneStadium then
 		stadium.mousereleased(rx, ry)
+	elseif currentscene == enum.sceneEndGame then
+		endgame.mousereleased(rx, ry)
 	end
 end
 
@@ -73,6 +75,7 @@ function love.load()
 	credits.loadButtons()
 	seasonstatus.loadButtons()
 	stadium.loadButtons()
+	endgame.loadButtons()
 
 	love.window.setTitle("Tactical Gridiron v2 " .. GAME_VERSION)
 
