@@ -29,6 +29,8 @@ function constants.load()
     DEFENSIVE_TEAMID = nil
     OFFENSIVE_SCORE = nil   -- this is the first team to play
     OFFENSIVE_TIME = 0      -- the number of turns taken to score. Used to break a tie
+    OPPONENTS_SCORE = nil
+    OPPONENTS_TIME = nil
 
     enums.load()
 end

@@ -13,20 +13,24 @@ local function getNextTwoTeams()
     -- navigate arr_seasonstatus to determine next two teams
     -- set global variables and then exit
     for i = 1, #arr_seasonstatus do
+
         if arr_seasonstatus[i].OFFENCESCORE == nil then
             OFFENSIVE_TEAMID = arr_seasonstatus[i].TEAMID
-
             if (i % 2 == 0) then
                 -- even number
                 DEFENSIVE_TEAMID = arr_seasonstatus[i-1].TEAMID
+                OPPONENTS_SCORE = arr_seasonstatus[i-1].OFFENCESCORE
+                OPPONENTS_TIME = arr_seasonstatus[i-1].OFFENCETIME
             else
                 -- odd number
                 DEFENSIVE_TEAMID = arr_seasonstatus[i+1].TEAMID
+                OPPONENTS_SCORE = nil   -- the nil means this teams opponent hasn't played yet
+                OPPONENTS_TIME = nil
             end
             break
         end
     end
-    ROUND = 1       -- can be 1, 2, or 3 = finished
+
 end
 
 function seasonstatus.mousereleased(rx, ry)
@@ -50,7 +54,7 @@ function seasonstatus.draw()
     if REFRESH_DB then
         arr_seasonstatus = {}
         local fbdb = sqlite3.open(DB_FILE)
-        local strQuery = "select teams.TEAMNAME, season.TEAMID, season.OFFENCESCORE, season.DEFENCESCORE from season inner join TEAMS on teams.TEAMID = season.TEAMID"
+        local strQuery = "select teams.TEAMNAME, season.TEAMID, season.OFFENCESCORE, season.DEFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
         for row in fbdb:nrows(strQuery) do
             local mytable = {}
             mytable.TEAMNAME = row.TEAMNAME
@@ -69,11 +73,11 @@ function seasonstatus.draw()
             x = 100
             y = 0 + (100 * index)
         elseif index > 8 and index <= 12 then
-            x = 200
-            y = 100 + (100 * index)
+            x = 400
+            y = 50 + (50 * index)
         elseif index > 12 then
-            x = 300
-            y = 200 + (100 * index)
+            x = 600
+            y = 200 + (20 * index)
         end
 
         love.graphics.setColor(1,1,1,1)

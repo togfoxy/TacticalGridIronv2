@@ -1,6 +1,6 @@
 endgame = {}
 
-local offensiveteamname, defensiveteamname
+local offensiveteamname, defensiveteamname  -- ensure this is module level because it's used by draw AFTER the db refresh
 
 local function seasonOver()
     return false        --!
@@ -9,9 +9,6 @@ end
 function endgame.mousereleased(rx, ry)
     -- call from love.mousereleased()
     local clickedButtonID = buttons.getButtonID(rx, ry)
-
-print(clickedButtonID)
-
     if clickedButtonID == enum.buttonEndGameQuit then
         love.event.quit()
     elseif clickedButtonID == enum.buttonEndGameContinue then
@@ -25,7 +22,41 @@ print(clickedButtonID)
     end
 end
 
+local function getWinningTeamID(team1, score1, time1, team2, score2, time2)
+    if score1 > score2 then
+        return team1
+    elseif score2 > score1 then
+        return team2
+    else
+        -- score is tied
+        -- break tie on smallest time if not zero
+        -- or longest time if zero
+        if score1 > 0 then
+            -- remember score2 = score 1
+            if time1 < time2 then
+                return team1
+            elseif time2 < time1 then
+                return team2
+            else
+                -- score and time is tied
+                error("Game is a draw. Aborting.")  --!
+            end
+        else
+            -- both scores are zero. Winner is the longest time
+            if time1 > time2 then
+                return team1
+            elseif time2 > time1 then
+                return team2
+            else
+                -- draw
+                error("Game is a draw. Aborting.")  --!
+            end
+        end
+    end
+end
+
 function endgame.draw()
+
     if REFRESH_DB then
         local fbdb = sqlite3.open(DB_FILE)
         local strQuery = "select * from TEAMS"
@@ -38,6 +69,14 @@ function endgame.draw()
                 defensiveteamname = row.TEAMNAME
             end
         end
+
+        -- update next bracket if opponent has played
+        if OPPONENTS_SCORE ~= nil then
+            local winningid = getWinningTeamID(OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
+            strQuery = "Insert into SEASON ('TEAMID') values ('" .. winningid .. "')"
+            local dberror = fbdb:exec(strQuery)
+print(dberror, strQuery)
+        end
         REFRESH_DB = false
     end
 
@@ -48,6 +87,9 @@ function endgame.draw()
 
     -- print team name and score
     love.graphics.print(defensiveteamname, 750, 100)
+    if OPPONENTS_SCORE ~= nil then
+        love.graphics.print(OPPONENTS_SCORE, 750, 200)
+    end
 
     buttons.drawButtons()
 end
