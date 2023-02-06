@@ -15,7 +15,14 @@ local function getNextTwoTeams()
     for i = 1, #arr_seasonstatus do
         if arr_seasonstatus[i].OFFENCESCORE == nil then
             OFFENSIVE_TEAMID = arr_seasonstatus[i].TEAMID
-            DEFENSIVE_TEAMID = arr_seasonstatus[i+1].TEAMID
+
+            if (i % 2 == 0) then
+                -- even number
+                DEFENSIVE_TEAMID = arr_seasonstatus[i-1].TEAMID
+            else
+                -- odd number
+                DEFENSIVE_TEAMID = arr_seasonstatus[i+1].TEAMID
+            end
             break
         end
     end
@@ -44,7 +51,6 @@ function seasonstatus.draw()
         arr_seasonstatus = {}
         local fbdb = sqlite3.open(DB_FILE)
         local strQuery = "select teams.TEAMNAME, season.TEAMID, season.OFFENCESCORE, season.DEFENCESCORE from season inner join TEAMS on teams.TEAMID = season.TEAMID"
-print(strQuery)
         for row in fbdb:nrows(strQuery) do
             local mytable = {}
             mytable.TEAMNAME = row.TEAMNAME
@@ -70,8 +76,6 @@ print(strQuery)
             y = 200 + (100 * index)
         end
 
-print(inspect(arr_seasonstatus))
-
         love.graphics.setColor(1,1,1,1)
         love.graphics.print(arr_seasonstatus[index].TEAMNAME, x, y)
         if arr_seasonstatus[index].OFFENCESCORE ~= nil then
@@ -80,7 +84,6 @@ print(inspect(arr_seasonstatus))
         index = index + 1
     end
     buttons.drawButtons()
-print("seasonstatus.draw()")
 end
 
 function seasonstatus.loadButtons()

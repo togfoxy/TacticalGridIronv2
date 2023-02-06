@@ -92,27 +92,56 @@ end
 local function endtheround()
     -- dummy function to test the scene progression
     local score = love.math.random(0, 30)
+    local time = love.math.random(0, 5)
 
     local fbdb = sqlite3.open(DB_FILE)
     local strQuery
-    if ROUND == 1 then
-        strQuery = "Update SEASON set OFFENCESCORE = " .. score .. " where TEAMID = " .. OFFENSIVE_TEAMID
-        OFFENSIVE_SCORE = score
-    else
-        strQuery = "Update SEASON set OFFENCESCORE = " .. score .. " where TEAMID = " .. DEFENSIVE_TEAMID
-        DEFENSIVE_SCORE = score
-    end
+    strQuery = "Update SEASON set OFFENCESCORE = " .. score .. ", OFFENCETIME = " .. time .. " where TEAMID = " .. OFFENSIVE_TEAMID
     local dberror = fbdb:exec(strQuery)
     fbdb:close()
-    ROUND = ROUND + 1
 
-    if ROUND == 2 then
-        --! reset the field
-    elseif ROUND == 3 then
-        -- move to the next scene
-        REFRESH_DB = true
-        cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
-    end
+print(dberror, strQuery)
+
+    OFFENSIVE_SCORE = score
+    OFFENSIVE_TIME = time
+
+    -- move to the next scene
+    REFRESH_DB = true
+    cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
+
+
+
+    -- ROUND = ROUND + 1
+    --
+    -- if ROUND == 2 then
+    --     -- reset the field
+    --
+    --
+    --
+    -- elseif ROUND == 3 then
+    --     local strQuery
+    --     local fbdb = sqlite3.open(DB_FILE)
+    --     if OFFENSIVE_SCORE > DEFENSIVE_SCORE then
+    --         strQuery = "Insert into SEASON ('TEAMID') values ('" .. OFFENSIVE_TEAMID .. "')"
+    --     elseif DEFENSIVE_SCORE > OFFENSIVE_SCORE then
+    --         strQuery = "Insert into SEASON ('TEAMID') values ('" .. DEFENSIVE_TEAMID .. "')"
+    --     elseif OFFENSIVE_SCORE == DEFENSIVE_SCORE then
+    --         -- a draw! Use time to break tie
+    --         if OFFENSIVE_TIME < DEFENSIVE_TIME then
+    --             -- offense wins
+    --             strQuery = "Insert into SEASON ('TEAMID') values ('" .. OFFENSIVE_TEAMID .. "')"
+    --         elseif DEFENSIVE_TIME < OFFENSIVE_TIME then
+    --             --!
+    --             strQuery = "Insert into SEASON ('TEAMID') values ('" .. DEFENSIVE_TEAMID .. "')"
+    --         else
+    --             -- a real tie!
+    --             error("Round tied. Error. Aborting program.")
+    --         end
+    --     end
+    --     local dberror = fbdb:exec(strQuery)
+
+
+    -- end
 end
 
 function stadium.draw()
@@ -127,7 +156,7 @@ function stadium.update()
     -- called from love.update()
 
     --! fake the ending of the scene
-    if love.math.random(1,175) == 1 then
+    if love.math.random(1,100) == 1 then
         --! end game
         endtheround()
     end

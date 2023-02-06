@@ -48,7 +48,6 @@ function endgame.draw()
 
     -- print team name and score
     love.graphics.print(defensiveteamname, 750, 100)
-    love.graphics.print(DEFENSIVE_SCORE, 750, 200)
 
     buttons.drawButtons()
 end
