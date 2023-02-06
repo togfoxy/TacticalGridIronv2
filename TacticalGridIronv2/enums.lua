@@ -18,7 +18,7 @@ function enums.load()
     enum.buttonStadiumQuit = 7
     enum.buttonEndGameContinue = 8
     enum.buttonEndGameQuit = 9
-
+    enum.buttonMainMenuLoad = 10
 
 end
 return enums
