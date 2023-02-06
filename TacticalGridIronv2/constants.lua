@@ -28,8 +28,7 @@ function constants.load()
     OFFENSIVE_TEAMID = nil
     DEFENSIVE_TEAMID = nil
     OFFENSIVE_SCORE = nil   -- this is the first team to play
-    DEFENSIVE_SCORE = nil   -- this is the second team to play
-    ROUND = 1               -- round 1 = first team is on offense. round 2 = 2nd team is on offense. round = 3 means move to next scene
+    OFFENSIVE_TIME = 0      -- the number of turns taken to score. Used to break a tie
 
     enums.load()
 end
