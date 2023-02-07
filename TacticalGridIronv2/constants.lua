@@ -32,6 +32,8 @@ function constants.load()
     OPPONENTS_SCORE = nil
     OPPONENTS_TIME = nil
 
+    CHAMPION_TEAMID = nil
+
     enums.load()
 end
 

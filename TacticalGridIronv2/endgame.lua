@@ -3,7 +3,19 @@ endgame = {}
 local offensiveteamname, defensiveteamname  -- ensure this is module level because it's used by draw AFTER the db refresh
 
 local function seasonOver()
-    return false        --!
+    -- if season has 15 rows then all games are played and the last row is the final winner
+    local fbdb = sqlite3.open(DB_FILE)
+    local strQuery = "select * from SEASON"
+    local index = 0
+    for row in fbdb:nrows(strQuery) do
+        index = index + 1
+        if index == 15 then
+            -- winner winner chicken dinner
+            CHAMPION_TEAMID = row.TEAMID
+            return true
+        end
+    end
+    return false
 end
 
 function endgame.mousereleased(rx, ry)
@@ -13,11 +25,12 @@ function endgame.mousereleased(rx, ry)
         love.event.quit()
     elseif clickedButtonID == enum.buttonEndGameContinue then
         if not seasonOver() then
-            --! go to seasonstatus
+            -- go to seasonstatus
             REFRESH_DB = true
             cf.SwapScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
         else
             --! go to league status
+            cf.SwapScreen(enum.sceneDisplayLeagueStatus, SCREEN_STACK)
         end
     end
 end
@@ -75,7 +88,6 @@ function endgame.draw()
             local winningid = getWinningTeamID(OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
             strQuery = "Insert into SEASON ('TEAMID') values ('" .. winningid .. "')"
             local dberror = fbdb:exec(strQuery)
-print(dberror, strQuery)
         end
         REFRESH_DB = false
     end

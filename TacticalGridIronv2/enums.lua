@@ -7,6 +7,7 @@ function enums.load()
     enum.sceneDisplaySeasonStatus = 3
     enum.sceneStadium = 4
     enum.sceneEndGame = 5
+    enum.sceneDisplayLeagueStatus = 6
 
 
     enum.buttonMainMenuExit = 1

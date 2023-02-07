@@ -124,21 +124,11 @@ local function endtheround()
     local strQuery
     strQuery = "Update SEASON set OFFENCESCORE = " .. score .. ", OFFENCETIME = " .. time .. " where TEAMID = " .. OFFENSIVE_TEAMID
     local dberror = fbdb:exec(strQuery)
-
-
-        -- add the winner to the SEASON table
-
-
-
-
-
-
     fbdb:close()
+
     -- move to the next scene
     REFRESH_DB = true
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
-
-
 end
 
 function stadium.draw()

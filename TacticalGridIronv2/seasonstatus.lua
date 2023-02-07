@@ -74,7 +74,7 @@ function seasonstatus.draw()
             y = 0 + (100 * index)
         elseif index > 8 and index <= 12 then
             x = 400
-            y = 50 + (50 * index)
+            y = 50 + (20 * index)
         elseif index > 12 then
             x = 600
             y = 200 + (20 * index)
