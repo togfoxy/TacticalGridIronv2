@@ -7,9 +7,16 @@ function leaguestatus.draw()
 
     if REFRESH_DB then
         -- write result to the league table
+        REFRESH_DB = false
         local fbdb = sqlite3.open(DB_FILE)
-        local strQuery = "Insert into LEAGUE ('SEASON', 'TEAMID', 'SCORE', 'TIME') values ('" .. CURRENT_SEASON .. "', '" .. CHAMPION_TEAMID .. "', '" .. CHAMPION_SCORE .. "', '" .. CHAMPION_TIME .. "')"
+        local strQuery = "Insert into LEAGUE ('SEASON', 'TEAMID', 'SCORE', 'TIME') values (" .. CURRENT_SEASON .. ", " .. CHAMPION_TEAMID .. ", " .. CHAMPION_SCORE .. ", " .. CHAMPION_TIME .. ")"
+
+print(strQuery)
+
         local dberror = fbdb:exec(strQuery)
+
+        assert(dberror == 0, "Insert failed. Error " .. dberror)
+
         fbdb:close()        --! check that everyone open has a matching close
 
     end

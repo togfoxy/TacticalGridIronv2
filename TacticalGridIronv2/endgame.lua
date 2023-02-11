@@ -22,8 +22,6 @@ local function seasonOver()
         if index == 15 then
             -- winner winner chicken dinner
 
-print(inspect(arr_season))
-
             CHAMPION_TEAMID = row.TEAMID
 
             -- now we have the winner - traverse the array again to work out the score and time for that winner
@@ -39,7 +37,7 @@ print(inspect(arr_season))
             return true
         end
     end
-
+    fbdb:close()
     return false
 end
 
@@ -55,9 +53,8 @@ function endgame.mousereleased(rx, ry)
             cf.SwapScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
         else
             -- go to league status
-
             print("League winner " .. CHAMPION_TEAMID, CHAMPION_SCORE, CHAMPION_TIME)
-
+            REFRESH_DB = true
             cf.SwapScreen(enum.sceneDisplayLeagueStatus, SCREEN_STACK)
         end
     end

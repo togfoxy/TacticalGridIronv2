@@ -29,13 +29,12 @@ local function drawStadium()
     if REFRESH_DB then
         arr_seasonstatus = {}
         local fbdb = sqlite3.open(DB_FILE)
-        local strQuery = "select teams.TEAMNAME, season.TEAMID, season.OFFENCESCORE, season.DEFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
+        local strQuery = "select teams.TEAMNAME, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
         for row in fbdb:nrows(strQuery) do
             local mytable = {}
             mytable.TEAMNAME = row.TEAMNAME
             mytable.TEAMID = row.TEAMID
             mytable.OFFENCESCORE = row.OFFENCESCORE
-            mytable.DEFENCESCORE = row.DEFENCESCORE
             table.insert(arr_seasonstatus, mytable)
 
             if row.TEAMID == OFFENSIVE_TEAMID then
@@ -46,6 +45,7 @@ local function drawStadium()
             end
         end
         REFRESH_DB = false
+        fbdb:close()
     end
 
     LeftLineX = (SCREEN_WIDTH / 2) - ((FieldWidth * SCALE) / 2)	-- how many metres to leave at the leftside of the field?

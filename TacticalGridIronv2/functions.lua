@@ -104,10 +104,19 @@ function functions.createNewGame()
 
 end
 
-function functions.loadGame()
+local function loadGlobals()
 
-
+    local fbdb = sqlite3.open(DB_FILE)
+    local strQuery = "select * from GLOBALS"
+    for row in fbdb:nrows(strQuery) do
+        CURRENT_SEASON = row.CURRENTSEASON
+    end
+    fbdb:close()
+    print("CS = " .. CURRENT_SEASON)
 end
 
+function functions.loadGame()
+    loadGlobals()
+end
 
 return functions

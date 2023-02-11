@@ -56,7 +56,7 @@ function seasonstatus.draw()
     if REFRESH_DB then
         arr_seasonstatus = {}
         local fbdb = sqlite3.open(DB_FILE)
-        local strQuery = "select teams.TEAMNAME, season.TEAMID, season.OFFENCESCORE, season.DEFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
+        local strQuery = "select teams.TEAMNAME, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
         for row in fbdb:nrows(strQuery) do
             local mytable = {}
             mytable.TEAMNAME = row.TEAMNAME
@@ -66,6 +66,7 @@ function seasonstatus.draw()
             table.insert(arr_seasonstatus, mytable)
         end
         REFRESH_DB = false
+        fbdb:close()
     end
 
     local index = 1

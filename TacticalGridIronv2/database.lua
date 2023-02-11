@@ -10,6 +10,7 @@ function db.getTeamName(teamid)
             return row.TEAMNAME
         end
     end
+    fbdb:close()
     return nil
 end
 return db

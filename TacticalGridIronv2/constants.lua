@@ -19,7 +19,7 @@ function constants.load()
     else
         DB_PATH = DB_PATH .. "/TacticalGridIronv2/savedata/"
     end
-    DB_FILE = DB_PATH .. "database.db"
+    DB_FILE = DB_PATH .. "databasenew.db"
 
     NUM_OF_TEAMS = 8
 
