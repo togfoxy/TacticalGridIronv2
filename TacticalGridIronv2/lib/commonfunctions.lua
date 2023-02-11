@@ -1,5 +1,14 @@
 module(...,package.seeall)
 
+function isEven(number)
+	if (number % 2 == 0) then
+		-- even
+		return true
+	else
+		return false
+	end
+end
+
 function round(val, decimal)
 	-- rounding function provided by zorg and Jasoco
 	if not val then return 0 end

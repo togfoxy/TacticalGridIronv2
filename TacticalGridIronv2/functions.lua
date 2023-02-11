@@ -9,6 +9,10 @@ local function deleteAllTables()
         strQuery = "delete from TEAMS"
         intError = fbdb:exec(strQuery)
 
+        if intError ~= 0 then
+            error("DB error: " .. intError)
+        end
+
         strQuery = "delete from SEASON"
         intError = fbdb:exec(strQuery)
 
@@ -22,6 +26,8 @@ local function deleteAllTables()
         intError = fbdb:exec(strQuery)
     end
     fbdb:close()
+
+    print("DB reset")
 end
 
 local function populateSeasonTable()

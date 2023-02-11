@@ -43,7 +43,7 @@ function buttons.getButtonID(rx, ry)
 			-- print(rx, ry, button.x, button.y, button.width, button.height)
 			if rx >= button.x and rx <= button.x + button.width and
 				ry >= button.y and ry <= button.y + button.height then
-print("buttons.getButtonID " .. button.identifier)
+-- print("buttons.getButtonID " .. button.identifier)
 					return button.identifier
 			end
 		end

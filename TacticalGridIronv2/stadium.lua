@@ -1,5 +1,7 @@
 stadium = {}
 
+local arr_seasonstatus, offensiveteamname, defensiveteamname
+
 local TopPostY = 5	-- how many metres to leave at the top of the screen?
 local FieldWidth = 53	-- how wide (yards/metres) is the field?
 local FieldHeight = 100     -- from touchdown to touchdown
@@ -23,6 +25,28 @@ function stadium.mousereleased(rx, ry)
 end
 
 local function drawStadium()
+
+    if REFRESH_DB then
+        arr_seasonstatus = {}
+        local fbdb = sqlite3.open(DB_FILE)
+        local strQuery = "select teams.TEAMNAME, season.TEAMID, season.OFFENCESCORE, season.DEFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
+        for row in fbdb:nrows(strQuery) do
+            local mytable = {}
+            mytable.TEAMNAME = row.TEAMNAME
+            mytable.TEAMID = row.TEAMID
+            mytable.OFFENCESCORE = row.OFFENCESCORE
+            mytable.DEFENCESCORE = row.DEFENCESCORE
+            table.insert(arr_seasonstatus, mytable)
+
+            if row.TEAMID == OFFENSIVE_TEAMID then
+                offensiveteamname = row.TEAMNAME
+            end
+            if row.TEAMID == DEFENSIVE_TEAMID then
+                defensiveteamname = row.TEAMNAME
+            end
+        end
+        REFRESH_DB = false
+    end
 
     LeftLineX = (SCREEN_WIDTH / 2) - ((FieldWidth * SCALE) / 2)	-- how many metres to leave at the leftside of the field?
     LeftLineX = LeftLineX / SCALE   -- need to divide by scale and then further down multiply by scale
@@ -83,8 +107,8 @@ local function drawStadium()
 
     -- print the two teams
     love.graphics.setColor(1,1,1,1)
-    love.graphics.print(OFFENSIVE_TEAMID, 50, 50)       --! this needs to be the team name and not the ID
-    love.graphics.print(DEFENSIVE_TEAMID, SCREEN_WIDTH - 250, 50)
+    love.graphics.print(offensiveteamname, 50, 50)       --! this needs to be the team name and not the ID
+    love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
 
 
 end
@@ -93,6 +117,8 @@ local function endtheround()
     -- dummy function to test the scene progression
     local score = love.math.random(0, 30)
     local time = love.math.random(0, 5)
+    OFFENSIVE_SCORE = score
+    OFFENSIVE_TIME = time
 
     local fbdb = sqlite3.open(DB_FILE)
     local strQuery
@@ -100,48 +126,9 @@ local function endtheround()
     local dberror = fbdb:exec(strQuery)
     fbdb:close()
 
-print(dberror, strQuery)
-
-    OFFENSIVE_SCORE = score
-    OFFENSIVE_TIME = time
-
     -- move to the next scene
     REFRESH_DB = true
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
-
-
-
-    -- ROUND = ROUND + 1
-    --
-    -- if ROUND == 2 then
-    --     -- reset the field
-    --
-    --
-    --
-    -- elseif ROUND == 3 then
-    --     local strQuery
-    --     local fbdb = sqlite3.open(DB_FILE)
-    --     if OFFENSIVE_SCORE > DEFENSIVE_SCORE then
-    --         strQuery = "Insert into SEASON ('TEAMID') values ('" .. OFFENSIVE_TEAMID .. "')"
-    --     elseif DEFENSIVE_SCORE > OFFENSIVE_SCORE then
-    --         strQuery = "Insert into SEASON ('TEAMID') values ('" .. DEFENSIVE_TEAMID .. "')"
-    --     elseif OFFENSIVE_SCORE == DEFENSIVE_SCORE then
-    --         -- a draw! Use time to break tie
-    --         if OFFENSIVE_TIME < DEFENSIVE_TIME then
-    --             -- offense wins
-    --             strQuery = "Insert into SEASON ('TEAMID') values ('" .. OFFENSIVE_TEAMID .. "')"
-    --         elseif DEFENSIVE_TIME < OFFENSIVE_TIME then
-    --             --!
-    --             strQuery = "Insert into SEASON ('TEAMID') values ('" .. DEFENSIVE_TEAMID .. "')"
-    --         else
-    --             -- a real tie!
-    --             error("Round tied. Error. Aborting program.")
-    --         end
-    --     end
-    --     local dberror = fbdb:exec(strQuery)
-
-
-    -- end
 end
 
 function stadium.draw()
