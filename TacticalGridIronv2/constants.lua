@@ -25,6 +25,7 @@ function constants.load()
 
     SCALE = 8   -- for graphics/drawing
 
+    CURRENT_SEASON = 1
     OFFENSIVE_TEAMID = nil
     DEFENSIVE_TEAMID = nil
     OFFENSIVE_SCORE = nil   -- this is the first team to play

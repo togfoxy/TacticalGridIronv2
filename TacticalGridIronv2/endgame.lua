@@ -122,6 +122,7 @@ function endgame.draw()
             local dberror = fbdb:exec(strQuery)
         end
         REFRESH_DB = false
+        fbdb:close()
     end
 
     love.graphics.setColor(1,1,1,1)
