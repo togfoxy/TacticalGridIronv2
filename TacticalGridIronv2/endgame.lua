@@ -9,6 +9,7 @@ local function seasonOver()
     local fbdb = sqlite3.open(DB_FILE)
     local strQuery = "select * from SEASON"
     local index = 0
+    arr_season = {}
     for row in fbdb:nrows(strQuery) do
         index = index + 1
 
@@ -20,6 +21,9 @@ local function seasonOver()
 
         if index == 15 then
             -- winner winner chicken dinner
+
+print(inspect(arr_season))
+
             CHAMPION_TEAMID = row.TEAMID
 
             -- now we have the winner - traverse the array again to work out the score and time for that winner
@@ -52,7 +56,7 @@ function endgame.mousereleased(rx, ry)
         else
             -- go to league status
 
-print("League winner " .. CHAMPION_TEAMID, CHAMPION_SCORE, CHAMPION_TIME)
+            print("League winner " .. CHAMPION_TEAMID, CHAMPION_SCORE, CHAMPION_TIME)
 
             cf.SwapScreen(enum.sceneDisplayLeagueStatus, SCREEN_STACK)
         end
@@ -111,7 +115,7 @@ function endgame.draw()
         if OPPONENTS_SCORE ~= nil then
             assert(OPPONENTS_TIME ~= nil)
 
-print(OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
+            print("alpha " .. OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
 
             local winningid = getWinningTeamID(OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
             strQuery = "Insert into SEASON ('TEAMID') values ('" .. winningid .. "')"
