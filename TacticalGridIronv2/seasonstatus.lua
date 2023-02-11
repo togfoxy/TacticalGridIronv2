@@ -21,6 +21,8 @@ local function getNextTwoTeams()
                 DEFENSIVE_TEAMID = arr_seasonstatus[i-1].TEAMID
                 OPPONENTS_SCORE = arr_seasonstatus[i-1].OFFENCESCORE
                 OPPONENTS_TIME = arr_seasonstatus[i-1].OFFENCETIME
+
+                assert(OPPONENTS_TIME ~= nil)
             else
                 -- odd number
                 DEFENSIVE_TEAMID = arr_seasonstatus[i+1].TEAMID
@@ -60,7 +62,7 @@ function seasonstatus.draw()
             mytable.TEAMNAME = row.TEAMNAME
             mytable.TEAMID = row.TEAMID
             mytable.OFFENCESCORE = row.OFFENCESCORE
-            mytable.DEFENCESCORE = row.DEFENCESCORE
+            mytable.OFFENCETIME = row.OFFENCETIME
             table.insert(arr_seasonstatus, mytable)
         end
         REFRESH_DB = false
