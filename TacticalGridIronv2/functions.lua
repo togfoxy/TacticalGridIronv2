@@ -82,7 +82,6 @@ local function populateGlobalsTable()
     local strQuery = "Insert into GLOBALS ('CURRENTSEASON') values (1)"
     local dberror = fbdb:exec(strQuery)
     fbdb:close()        --! check that evveryone open has a matching close
-
 end
 
 function functions.createNewGame()

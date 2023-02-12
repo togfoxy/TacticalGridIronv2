@@ -33,7 +33,7 @@ local function seasonOver()
                 CHAMPION_SCORE = arr_season[14].OFFENCESCORE
                 CHAMPION_TIME = arr_season[14].OFFENCETIME
             end
-
+            fbdb:close()
             return true
         end
     end
@@ -116,10 +116,12 @@ function endgame.draw()
             print("alpha " .. OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
 
             local winningid = getWinningTeamID(OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
+
             local fbdb = sqlite3.open(DB_FILE)
             strQuery = "Insert into SEASON ('TEAMID') values ('" .. winningid .. "')"
             local dberror = fbdb:exec(strQuery)
             fbdb:close()
+
         end
         REFRESH_DB = false
     end

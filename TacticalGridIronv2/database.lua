@@ -22,7 +22,7 @@ function db.updateLeague(season, teamid, score, time)
     if time == nil then time = 4 end
 
     local fbdb = sqlite3.open(DB_FILE)
-    local strQuery = "Insert into LEAGUES ('SEASON', 'TEAMID', 'SCORE', 'TIME') values (" .. season .. ", " .. teamid .. ", " .. score .. ", ".. time ..")"
+    local strQuery = "Insert into LEAGUE ('SEASON', 'TEAMID', 'SCORE', 'TIME') values (" .. season .. ", " .. teamid .. ", " .. score .. ", ".. time ..")"
     local dberror
 
     dberror = fbdb:exec(strQuery)
