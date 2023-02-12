@@ -9,6 +9,7 @@ local function seasonOver()
     local fbdb = sqlite3.open(DB_FILE)
     local strQuery = "select * from SEASON"
     local index = 0
+    arr_season = {}
     for row in fbdb:nrows(strQuery) do
         index = index + 1
 
@@ -20,6 +21,7 @@ local function seasonOver()
 
         if index == 15 then
             -- winner winner chicken dinner
+
             CHAMPION_TEAMID = row.TEAMID
 
             -- now we have the winner - traverse the array again to work out the score and time for that winner
@@ -31,11 +33,11 @@ local function seasonOver()
                 CHAMPION_SCORE = arr_season[14].OFFENCESCORE
                 CHAMPION_TIME = arr_season[14].OFFENCETIME
             end
-
+            fbdb:close()
             return true
         end
     end
-
+    fbdb:close()
     return false
 end
 
@@ -51,9 +53,8 @@ function endgame.mousereleased(rx, ry)
             cf.SwapScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
         else
             -- go to league status
-
-print("League winner " .. CHAMPION_TEAMID, CHAMPION_SCORE, CHAMPION_TIME)
-
+            print("League winner " .. CHAMPION_TEAMID, CHAMPION_SCORE, CHAMPION_TIME)
+            REFRESH_DB = true
             cf.SwapScreen(enum.sceneDisplayLeagueStatus, SCREEN_STACK)
         end
     end
@@ -106,16 +107,21 @@ function endgame.draw()
                 defensiveteamname = row.TEAMNAME
             end
         end
+        fbdb:close()
 
         -- update next bracket if opponent has played
         if OPPONENTS_SCORE ~= nil then
             assert(OPPONENTS_TIME ~= nil)
 
-print(OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
+            print("alpha " .. OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
 
             local winningid = getWinningTeamID(OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
+
+            local fbdb = sqlite3.open(DB_FILE)
             strQuery = "Insert into SEASON ('TEAMID') values ('" .. winningid .. "')"
             local dberror = fbdb:exec(strQuery)
+            fbdb:close()
+
         end
         REFRESH_DB = false
     end

@@ -19,12 +19,13 @@ function constants.load()
     else
         DB_PATH = DB_PATH .. "/TacticalGridIronv2/savedata/"
     end
-    DB_FILE = DB_PATH .. "database.db"
+    DB_FILE = DB_PATH .. "databasenew.db"
 
     NUM_OF_TEAMS = 8
 
     SCALE = 8   -- for graphics/drawing
 
+    CURRENT_SEASON = 1
     OFFENSIVE_TEAMID = nil
     DEFENSIVE_TEAMID = nil
     OFFENSIVE_SCORE = nil   -- this is the first team to play
