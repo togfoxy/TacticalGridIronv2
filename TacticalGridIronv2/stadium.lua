@@ -139,7 +139,7 @@ function stadium.draw()
     buttons.drawButtons()
 end
 
-function stadium.update()
+function stadium.update(dt)
     -- called from love.update()
 
     --! fake the ending of the scene

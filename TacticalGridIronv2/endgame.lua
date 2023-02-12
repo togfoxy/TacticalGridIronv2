@@ -107,6 +107,7 @@ function endgame.draw()
                 defensiveteamname = row.TEAMNAME
             end
         end
+        fbdb:close()
 
         -- update next bracket if opponent has played
         if OPPONENTS_SCORE ~= nil then
@@ -115,11 +116,12 @@ function endgame.draw()
             print("alpha " .. OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
 
             local winningid = getWinningTeamID(OFFENSIVE_TEAMID, OFFENSIVE_SCORE, OFFENSIVE_TIME, DEFENSIVE_TEAMID, OPPONENTS_SCORE, OPPONENTS_TIME)
+            local fbdb = sqlite3.open(DB_FILE)
             strQuery = "Insert into SEASON ('TEAMID') values ('" .. winningid .. "')"
             local dberror = fbdb:exec(strQuery)
+            fbdb:close()
         end
         REFRESH_DB = false
-        fbdb:close()
     end
 
     love.graphics.setColor(1,1,1,1)
