@@ -26,8 +26,8 @@ function mainmenu.mousereleased(rx, ry)
         if countofgames < 15 then
             cf.AddScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
         else
-            --! go to trading screen
-            error("Need to go to trading screen")
+            -- go to trading screen
+            cf.AddScreen(enum.sceneTradePlayers, SCREEN_STACK)
         end
     end
 end

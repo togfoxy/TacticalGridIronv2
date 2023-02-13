@@ -21,9 +21,10 @@ require 'seasonstatus'
 require 'stadium'
 require 'endgame'
 require 'leaguestatus'
-require 'database'
+require 'tradeplayers'
 
 require 'enums'
+require 'database'
 fun = require 'functions'
 
 SCREEN_WIDTH = 1920
@@ -59,6 +60,8 @@ function love.mousereleased(x, y, button, isTouch)
 		endgame.mousereleased(rx, ry)
 	elseif currentscene == enum.sceneDisplayLeagueStatus then
 		leaguestatus.mousereleased(rx, ry)
+	elseif currentscene == enum.sceneTradePlayers then
+		tradeplayers.mousereleased(rx, ry)
 	end
 end
 
@@ -81,6 +84,7 @@ function love.load()
 	stadium.loadButtons()
 	endgame.loadButtons()
 	stadium.loadButtons()
+	tradeplayers.loadButtons()
 
 	love.window.setTitle("Tactical Gridiron v2 " .. GAME_VERSION)
 
@@ -109,6 +113,8 @@ function love.draw()
 		endgame.draw()
 	elseif currentscene == enum.sceneDisplayLeagueStatus then
 		leaguestatus.draw()
+	elseif currentscene == enum.sceneTradePlayers then
+		tradeplayers.draw()
 	end
 
     res.stop()
@@ -120,8 +126,6 @@ function love.update(dt)
 	local currentscene = cf.CurrentScreenName(SCREEN_STACK)
 	if currentscene == enum.sceneStadium then
 		stadium.update(dt)
-	elseif currentscene == enum.sceneDisplayLeagueStatus then
-		leaguestatus.update(dt)
 	end
 
 
