@@ -24,6 +24,7 @@ function enums.load()
     enum.buttonMainMenuLoad = 10
     enum.buttonLeagueStatusContinue = 11
     enum.buttonTradePlayersContinue = 12
+    enum.buttonTrainNextSeason = 13
 
 end
 return enums

@@ -22,6 +22,7 @@ require 'stadium'
 require 'endgame'
 require 'leaguestatus'
 require 'tradeplayers'
+require 'trainplayers'
 
 require 'enums'
 require 'database'
@@ -62,6 +63,8 @@ function love.mousereleased(x, y, button, isTouch)
 		leaguestatus.mousereleased(rx, ry)
 	elseif currentscene == enum.sceneTradePlayers then
 		tradeplayers.mousereleased(rx, ry)
+	elseif currentscene == enum.sceneTrainPlayers then
+		trainplayers.mousereleased(rx, ry)
 	end
 end
 
@@ -85,6 +88,7 @@ function love.load()
 	endgame.loadButtons()
 	stadium.loadButtons()
 	tradeplayers.loadButtons()
+	trainplayers.loadButtons()
 
 	love.window.setTitle("Tactical Gridiron v2 " .. GAME_VERSION)
 
@@ -115,6 +119,8 @@ function love.draw()
 		leaguestatus.draw()
 	elseif currentscene == enum.sceneTradePlayers then
 		tradeplayers.draw()
+	elseif currentscene == enum.sceneTrainPlayers then
+		trainplayers.draw()
 	end
 
     res.stop()
