@@ -21,7 +21,14 @@ function mainmenu.mousereleased(rx, ry)
     elseif clickedButtonID == enum.buttonMainMenuLoad then
         fun.loadGame()
         REFRESH_DB = true
-        cf.AddScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
+
+        local countofgames = db.getCountSeasonTable()
+        if countofgames < 15 then
+            cf.AddScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
+        else
+            --! go to trading screen
+            error("Need to go to trading screen")
+        end
     end
 end
 

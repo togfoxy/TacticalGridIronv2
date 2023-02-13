@@ -31,4 +31,17 @@ function db.updateLeague(season, teamid, score, time)
     print("LEAGUE update successful")
 end
 
+function db.getCountSeasonTable()
+    -- counts number of rows in SEASON. Helps to determine if the season is over.
+    -- index < 15 means the season is not over
+    local fbdb = sqlite3.open(DB_FILE)
+    local strQuery = "select * from SEASON"
+    local index = 0
+    for row in fbdb:nrows(strQuery) do
+        index = index + 1
+    end
+    fbdb:close()
+    return index
+end
+
 return db
