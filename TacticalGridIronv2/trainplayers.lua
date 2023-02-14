@@ -1,10 +1,35 @@
 trainplayers = {}
 
+local function prepForNextSeason()
+    -- reset database tables for next season
+    local fbdb = sqlite3.open(DB_FILE)
+    local strQuery, dberror
+
+    -- update tables
+    strQuery = "Update GLOBALS set CURRENTSEASON = " .. CURRENT_SEASON + 1
+    CURRENT_SEASON = CURRENT_SEASON + 1
+    dberror = fbdb:exec(strQuery)
+    assert(dberror == 0, dberror .. strQuery)
+
+    -- purge tables
+    strQuery = "delete from SEASON"
+    dberror = fbdb:exec(strQuery)
+    assert(dberror == 0, dberror .. strQuery)
+
+    -- populate tables
+    db.populateSeasonTable()
+
+    fbdb:close()
+
+    REFRESH_DB = true
+    cf.SwapScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
+end
+
 function trainplayers.mousereleased(rx, ry)
     -- call from love.mousereleased()
     local clickedButtonID = buttons.getButtonID(rx, ry)
     if clickedButtonID == enum.buttonTrainNextSeason then
-        error("Under construction")
+        prepForNextSeason()
     end
 end
 

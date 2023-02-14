@@ -7,6 +7,7 @@ function db.getTeamName(teamid)
     local strQuery = "select teams.TEAMNAME, season.TEAMID from season inner join TEAMS on teams.TEAMID = season.TEAMID"
     for row in fbdb:nrows(strQuery) do
         if row.TEAMID == teamid then
+            fbdb:close()
             return row.TEAMNAME
         end
     end
@@ -16,16 +17,14 @@ end
 
 function db.updateLeague(season, teamid, score, time)
 
-    if season == nil then season = 1 end
-    if teamid == nil then teamid = 2 end
-    if score == nil then score = 3 end
-    if time == nil then time = 4 end
+    assert(season ~= nil)
+    assert(teamid ~= nil)
+    assert(score ~= nil)
+    assert(time ~= nil)
 
     local fbdb = sqlite3.open(DB_FILE)
     local strQuery = "Insert into LEAGUE ('SEASON', 'TEAMID', 'SCORE', 'TIME') values (" .. season .. ", " .. teamid .. ", " .. score .. ", ".. time ..")"
-    local dberror
-
-    dberror = fbdb:exec(strQuery)
+    local dberror = fbdb:exec(strQuery)
     assert(dberror == 0, "Insert failed. Error " .. dberror  .. " : " .. strQuery)
     fbdb:close()
     print("LEAGUE update successful")
@@ -42,6 +41,18 @@ function db.getCountSeasonTable()
     end
     fbdb:close()
     return index
+end
+
+ function db.populateSeasonTable()
+
+    local fbdb = sqlite3.open(DB_FILE)
+    local strQuery = "select * from TEAMS"
+    for row in fbdb:nrows(strQuery) do
+        local strQuery2 = "Insert into SEASON ('TEAMID') values ('" .. row.TEAMID .. "')"
+        local dberror = fbdb:exec(strQuery2)
+        assert(dberror == 0, dberror .. strQuery2)
+    end
+    fbdb:close()
 end
 
 return db

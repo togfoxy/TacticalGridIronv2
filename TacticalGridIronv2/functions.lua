@@ -16,9 +16,6 @@ local function deleteAllTables()
         strQuery = "delete from SEASON"
         intError = fbdb:exec(strQuery)
 
-        strQuery = "delete from GAMES"
-        intError = fbdb:exec(strQuery)
-
         strQuery = "delete from PLAYERS"
         intError = fbdb:exec(strQuery)
 
@@ -31,17 +28,6 @@ local function deleteAllTables()
     fbdb:close()
 
     print("DB reset")
-end
-
-local function populateSeasonTable()
-
-    local fbdb = sqlite3.open(DB_FILE)
-    local strQuery = "select * from TEAMS"
-    for row in fbdb:nrows(strQuery) do
-        strQuery = "Insert into SEASON ('TEAMID') values ('" .. row.TEAMID .. "')"
-        local dberror = fbdb:exec(strQuery)
-    end
-    fbdb:close()
 end
 
 function resetGlobalTeamNames()
@@ -98,7 +84,7 @@ function functions.createNewGame()
     -- populate player table
 
     -- populate season table
-    populateSeasonTable()
+    db.populateSeasonTable()
 
 
 end
@@ -111,7 +97,6 @@ local function loadGlobals()
         CURRENT_SEASON = row.CURRENTSEASON
     end
     fbdb:close()
-    print("CS = " .. CURRENT_SEASON)
 end
 
 function functions.loadGame()
