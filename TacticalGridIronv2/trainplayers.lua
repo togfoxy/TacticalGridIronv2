@@ -1,37 +1,49 @@
-leaguestatus = {}
+trainplayers = {}
 
-local champion_team_name
+local function prepForNextSeason()
+    -- reset database tables for next season
+    local fbdb = sqlite3.open(DB_FILE)
+    local strQuery, dberror
 
-function leaguestatus.mousereleased(rx, ry)
+    -- update tables
+    strQuery = "Update GLOBALS set CURRENTSEASON = " .. CURRENT_SEASON + 1
+    CURRENT_SEASON = CURRENT_SEASON + 1
+    dberror = fbdb:exec(strQuery)
+    assert(dberror == 0, dberror .. strQuery)
+
+    -- purge tables
+    strQuery = "delete from SEASON"
+    dberror = fbdb:exec(strQuery)
+    assert(dberror == 0, dberror .. strQuery)
+
+    -- populate tables
+    db.populateSeasonTable()
+
+    fbdb:close()
+
+    REFRESH_DB = true
+    cf.SwapScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
+end
+
+function trainplayers.mousereleased(rx, ry)
     -- call from love.mousereleased()
     local clickedButtonID = buttons.getButtonID(rx, ry)
-    if clickedButtonID == enum.buttonLeagueStatusContinue then
-        cf.SwapScreen(enum.sceneTradePlayers, SCREEN_STACK)
+    if clickedButtonID == enum.buttonTrainNextSeason then
+        prepForNextSeason()
     end
 end
 
-function leaguestatus.draw()
-    -- call this from love.draw()
 
-    if REFRESH_DB then
-        -- write result to the league table
-        REFRESH_DB = false
-        db.updateLeague(CURRENT_SEASON, CHAMPION_TEAMID, CHAMPION_SCORE, CHAMPION_TIME)
-    end
-
-    if CHAMPION_TEAMID ~= nil and champion_team_name == nil then
-        champion_team_name = db.getTeamName(CHAMPION_TEAMID)
-    end
+function trainplayers.draw()
 
     love.graphics.setColor(1,1,1,1)
-    love.graphics.print(champion_team_name, 300, 300)
-    love.graphics.print(CHAMPION_SCORE, 475, 300)
-    love.graphics.print(CHAMPION_TIME, 550, 300)
+    love.graphics.print("Under construction", 400, 400)
 
     buttons.drawButtons()
+
 end
 
-function stadium.loadButtons()
+function trainplayers.loadButtons()
     -- call this from love.load()
 
     local numofbuttons = 1      -- how many buttons on this form, assuming a single column
@@ -47,7 +59,7 @@ function stadium.loadButtons()
     mybutton.bgcolour = {169/255,169/255,169/255,1}
     mybutton.drawOutline = false
     mybutton.outlineColour = {1,1,1,1}
-    mybutton.label = "Save and continue"
+    mybutton.label = "Start next season"
     mybutton.image = nil
     mybutton.imageoffsetx = 20
     mybutton.imageoffsety = 0
@@ -61,9 +73,11 @@ function stadium.loadButtons()
 
     mybutton.state = "on"
     mybutton.visible = true
-    mybutton.scene = enum.sceneDisplayLeagueStatus
-    mybutton.identifier = enum.buttonLeagueStatusContinue
+    mybutton.scene = enum.sceneTrainPlayers
+    mybutton.identifier = enum.buttonTrainNextSeason
     table.insert(GUI_BUTTONS, mybutton)
 end
 
-return leaguestatus
+
+
+return trainplayers
