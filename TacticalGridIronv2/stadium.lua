@@ -46,6 +46,7 @@ local function drawStadium()
         end
         REFRESH_DB = false
         fbdb:close()
+        print("Hi")
     end
 
     LeftLineX = (SCREEN_WIDTH / 2) - ((FieldWidth * SCALE) / 2)	-- how many metres to leave at the leftside of the field?
@@ -55,15 +56,15 @@ local function drawStadium()
 
     -- top goal
     love.graphics.setColor(153/255, 153/255, 255/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)        --! the 10 should be a module level
+    love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
 
     -- bottom goal
     love.graphics.setColor(255/255, 153/255, 51/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight + FieldHeight) * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)     --! work out what the 125 should be
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight + FieldHeight) * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
 
     -- field
     love.graphics.setColor(69/255, 172/255, 79/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)     --! work out what 25 and 100 need to be
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)
 
     -- yard lines
     love.graphics.setColor(1,1,1,1)
@@ -116,13 +117,12 @@ end
 local function endtheround()
     -- dummy function to test the scene progression
     local score = love.math.random(0, 30)
-    local time = love.math.random(0, 5)
     OFFENSIVE_SCORE = score
-    OFFENSIVE_TIME = time
+    OFFENSIVE_TIME = cf.round(OFFENSIVE_TIME, 4)
 
     local fbdb = sqlite3.open(DB_FILE)
     local strQuery
-    strQuery = "Update SEASON set OFFENCESCORE = " .. score .. ", OFFENCETIME = " .. time .. " where TEAMID = " .. OFFENSIVE_TEAMID
+    strQuery = "Update SEASON set OFFENCESCORE = " .. score .. ", OFFENCETIME = " .. OFFENSIVE_TIME .. " where TEAMID = " .. OFFENSIVE_TEAMID
     local dberror = fbdb:exec(strQuery)
     fbdb:close()
 
@@ -142,9 +142,15 @@ end
 function stadium.update(dt)
     -- called from love.update()
 
+    if REFRESH_DB then
+        OFFENSIVE_TIME = 0
+        print("Ho")
+    end
+
     --! fake the ending of the scene
+    OFFENSIVE_TIME = OFFENSIVE_TIME + dt
     if love.math.random(1,100) == 1 then
-        --! end game
+        -- end game
         endtheround()
     end
 end
