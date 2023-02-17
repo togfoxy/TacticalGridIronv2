@@ -93,6 +93,8 @@ function love.load()
 	love.window.setTitle("Tactical Gridiron v2 " .. GAME_VERSION)
 
 	cf.AddScreen(enum.sceneMainMenu, SCREEN_STACK)
+
+	world = love.physics.newWorld(0, 0, true)
 end
 
 function love.resize(w, h)
@@ -132,6 +134,8 @@ function love.update(dt)
 	local currentscene = cf.CurrentScreenName(SCREEN_STACK)
 	if currentscene == enum.sceneStadium then
 		stadium.update(dt)
+
+		
 	end
 
 

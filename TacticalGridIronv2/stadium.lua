@@ -139,12 +139,16 @@ function stadium.draw()
     buttons.drawButtons()
 end
 
+local function beginContact(a, b, coll)
+
+
+end
+
 function stadium.update(dt)
     -- called from love.update()
 
     if REFRESH_DB then
         OFFENSIVE_TIME = 0
-        print("Ho")
     end
 
     --! fake the ending of the scene
@@ -153,6 +157,9 @@ function stadium.update(dt)
         -- end game
         endtheround()
     end
+
+    world:update(dt) --this puts the world into motion
+    world:setCallbacks(beginContact, endContact, preSolve, postSolve)
 end
 
 function stadium.loadButtons()
