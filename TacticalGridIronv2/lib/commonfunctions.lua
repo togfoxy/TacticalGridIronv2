@@ -45,7 +45,7 @@ function deepcopy(orig, copies)
     return copy
 end
 
-function GetDistance(x1, y1, x2, y2)
+function getDistance(x1, y1, x2, y2)
 	-- this is real distance in pixels
 	-- receives two coordinate pairs (not vectors)
 	-- returns a single number
@@ -64,7 +64,7 @@ function GetDistance(x1, y1, x2, y2)
     return distance
 end
 
-function SubtractVectors(x1,y1,x2,y2)
+function subtractVectors(x1,y1,x2,y2)
 	-- subtracts vector2 from vector1 i.e. v1 - v2
 	-- returns a vector (an x/y pair)
 	return (x1-x2),(y1-y2)

@@ -93,6 +93,9 @@ function love.load()
 	love.window.setTitle("Tactical Gridiron v2 " .. GAME_VERSION)
 
 	cf.AddScreen(enum.sceneMainMenu, SCREEN_STACK)
+
+	love.physics.setMeter(1)
+	world = love.physics.newWorld(0, 0, true)
 end
 
 function love.resize(w, h)

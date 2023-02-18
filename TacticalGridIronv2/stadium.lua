@@ -1,20 +1,34 @@
 stadium = {}
 
-local arr_seasonstatus, offensiveteamname, defensiveteamname
+local NumberOfPlayers = 22
+local arr_seasonstatus, offensiveteamname, defensiveteamname, GAME_STATE
 
+local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
+
+-- field dimensions
+local FieldWidth = 49	-- how wide (yards/metres) is the field? 48.8 mtrs wide
+local FieldHeight = 100     -- from goal to goal
+local GoalHeight = 9                    -- endzone is 9m wide
+
+-- field positioning
 local TopPostY = 5	-- how many metres to leave at the top of the screen?
-local FieldWidth = 53	-- how wide (yards/metres) is the field?
-local FieldHeight = 100     -- from touchdown to touchdown
-local LeftLineX
-local RightLineX
-local BottomPostY = TopPostY + 120
-local CentreLineX
-local GoalHeight = 10
-local TopGoalY = TopPostY + 10
-local BottomGoalY = TopPostY + 110
-local ScrimmageY = TopPostY + 90
+local LeftLineX = 100
+
+-- everything else is derived
+local TopGoalY = TopPostY + GoalHeight
+local BottomGoalY = TopGoalY + FieldHeight
+local BottomPostY = BottomGoalY + GoalHeight
+
+local HalfwayY = TopGoalY + ((BottomGoalY - TopGoalY) / 2)
+
+local RightLineX = LeftLineX + FieldWidth
+
+local CentreLineX = LeftLineX + (FieldWidth / 2)
+local ScrimmageY = BottomGoalY - 25
 local FirstDownMarkerY = ScrimmageY - 10		-- yards
 
+print(ScrimmageY, BottomGoalY, TopPostY, FieldHeight)
+-- error()
 
 function stadium.mousereleased(rx, ry)
     -- call from love.mousereleased()
@@ -24,12 +38,45 @@ function stadium.mousereleased(rx, ry)
     end
 end
 
+local function createPhysicsPlayers()
+    -- called once during drawStadium()
+
+    local rndx, rndy
+
+    for i = 1, NumberOfPlayers do
+        rndx = love.math.random(LeftLineX, RightLineX)
+        if i <= (NumberOfPlayers / 2) then      -- attacker
+            rndy = love.math.random(HalfwayY, BottomGoalY)
+        else
+            rndy = love.math.random(TopGoalY, HalfwayY)
+        end
+
+        PHYS_PLAYERS[i] = {}
+        PHYS_PLAYERS[i].body = love.physics.newBody(world, rndx, rndy, "dynamic") --place the body in the the world and make it dynamic
+        PHYS_PLAYERS[i].body:setLinearDamping(0.7)      -- this applies braking force and removes inertia
+        PHYS_PLAYERS[i].body:setMass(love.math.random(80,100))	 -- kilograms
+        PHYS_PLAYERS[i].shape = love.physics.newCircleShape(1)        -- circle radius
+        PHYS_PLAYERS[i].fixture = love.physics.newFixture(PHYS_PLAYERS[i].body, PHYS_PLAYERS[i].shape, 1)   -- Attach fixture to body and give it a density of 1.
+        PHYS_PLAYERS[i].fixture:setRestitution(0.25)        -- bounce/rebound
+        PHYS_PLAYERS[i].fixture:setSensor(true)	    -- start without collisions
+        PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to itself
+
+        PHYS_PLAYERS[i].maxV = love.math.random(146,161)/10		-- max velocity possible for this player (this persons limitations)
+        PHYS_PLAYERS[i].maxF = 1449
+        PHYS_PLAYERS[i].fallen = false
+        PHYS_PLAYERS[i].tartgetx = nil
+        PHYS_PLAYERS[i].targety = nil
+        PHYS_PLAYERS[i].gamestate = enum.gamestateForming
+    end
+
+end
+
 local function drawStadium()
 
     if REFRESH_DB then
         arr_seasonstatus = {}
         local fbdb = sqlite3.open(DB_FILE)
-        local strQuery = "select teams.TEAMNAME, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
+        local strQuery = "select teams.TEAMNAME, teams.RED, teams.GREEN, teams.BLUE, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
         for row in fbdb:nrows(strQuery) do
             local mytable = {}
             mytable.TEAMNAME = row.TEAMNAME
@@ -39,36 +86,48 @@ local function drawStadium()
 
             if row.TEAMID == OFFENSIVE_TEAMID then
                 offensiveteamname = row.TEAMNAME
+                OFF_RED = row.RED
+                OFF_GREEN = row.GREEN
+                OFF_BLUE = row.BLUE
+
             end
             if row.TEAMID == DEFENSIVE_TEAMID then
                 defensiveteamname = row.TEAMNAME
+                DEF_RED = row.RED
+                DEF_GREEN = row.GREEN
+                DEF_BLUE = row.BLUE
             end
         end
         REFRESH_DB = false
         fbdb:close()
-    end
 
-    LeftLineX = (SCREEN_WIDTH / 2) - ((FieldWidth * SCALE) / 2)	-- how many metres to leave at the leftside of the field?
-    LeftLineX = LeftLineX / SCALE   -- need to divide by scale and then further down multiply by scale
-    RightLineX = LeftLineX + FieldWidth
-    CentreLineX = LeftLineX + (FieldWidth / 2)	-- left line + half of the field
+        assert(OFF_RED ~= nil, strQuery)
+        assert(DEF_RED ~= nil, strQuery)
+
+        createPhysicsPlayers()      --! need to destroy these things when leaving the scene
+        GAME_STATE = enum.gamestateForming
+        OFFENSIVE_TIME = 0
+    end
 
     -- top goal
     love.graphics.setColor(153/255, 153/255, 255/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)        --! the 10 should be a module level
+    love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
 
     -- bottom goal
     love.graphics.setColor(255/255, 153/255, 51/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight + FieldHeight) * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)     --! work out what the 125 should be
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight + FieldHeight) * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
 
     -- field
     love.graphics.setColor(69/255, 172/255, 79/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)     --! work out what 25 and 100 need to be
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)
 
     -- yard lines
-    love.graphics.setColor(1,1,1,1)
-    for i = 0,20
-	do
+    for i = 0,20 do
+        if cf.isEven(i) then
+            love.graphics.setColor(1,1,1,1)
+        else
+            love.graphics.setColor(1,1,1,0.5)
+        end
 		love.graphics.line(LeftLineX * SCALE, (TopGoalY + (i * 5))  * SCALE, RightLineX * SCALE, (TopGoalY + (i * 5))  * SCALE)
 	end
 
@@ -93,7 +152,6 @@ local function drawStadium()
     -- draw stadium
 
     -- draw scrimmage
-
 	love.graphics.setColor(93/255, 138/255, 169/255,1)
 	love.graphics.setLineWidth(5)
 	love.graphics.line(LeftLineX * SCALE, ScrimmageY * SCALE, RightLineX * SCALE, ScrimmageY * SCALE)
@@ -110,19 +168,17 @@ local function drawStadium()
     love.graphics.print(offensiveteamname, 50, 50)       --! this needs to be the team name and not the ID
     love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
 
-
 end
 
 local function endtheround()
     -- dummy function to test the scene progression
     local score = love.math.random(0, 30)
-    local time = love.math.random(0, 5)
     OFFENSIVE_SCORE = score
-    OFFENSIVE_TIME = time
+    OFFENSIVE_TIME = cf.round(OFFENSIVE_TIME, 4)
 
     local fbdb = sqlite3.open(DB_FILE)
     local strQuery
-    strQuery = "Update SEASON set OFFENCESCORE = " .. score .. ", OFFENCETIME = " .. time .. " where TEAMID = " .. OFFENSIVE_TEAMID
+    strQuery = "Update SEASON set OFFENCESCORE = " .. score .. ", OFFENCETIME = " .. OFFENSIVE_TIME .. " where TEAMID = " .. OFFENSIVE_TEAMID
     local dberror = fbdb:exec(strQuery)
     fbdb:close()
 
@@ -131,22 +187,170 @@ local function endtheround()
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
 
+local function setFormingTarget(obj)
+    -- receives a single object and sets it's target
+    obj.targetx = love.math.random(LeftLineX, RightLineX)
+    obj.targety = love.math.random(TopGoalY, BottomGoalY)
+end
+
+local function setAllTargets()
+    -- ensure every player has a destination to go to
+    for i = 1, NumberOfPlayers do
+        if PHYS_PLAYERS[i].targetx == nil then
+            if GAME_STATE == enum.gamestateForming then
+                setFormingTarget(PHYS_PLAYERS[i])       --! ensure to clear target when game mode shifts
+            end
+        end
+    end
+end
+
+local function moveAllPlayers(dt)
+
+    local fltForceAdjustment = 2	-- tweak this to get fluid motion
+    local fltMaxVAdjustment= 4		-- tweak this to get fluid motion
+
+    setAllTargets()
+    --! apply force
+
+    for i = 1, NumberOfPlayers do
+        local objx = PHYS_PLAYERS[i].body:getX()
+        local objy = PHYS_PLAYERS[i].body:getY()
+
+        local targetx = PHYS_PLAYERS[i].targetx
+        local targety = PHYS_PLAYERS[i].targety
+
+        -- get distance to target
+        local disttotarget = cf.getDistance(objx, objy, targetx, targety)
+
+        -- see if arrived
+        if disttotarget < 3 then
+            -- arrived
+            if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
+                PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
+            end
+            --! put other game states here
+        else
+            -- player not arrived
+
+            -- determine actual velocity vs intended velocity based on target
+            local playervelx, playervely = PHYS_PLAYERS[i].body:getLinearVelocity()		-- this is the players velocity vector
+
+            -- determine vector to target
+			local vectorxtotarget = targetx - objx
+			local vectorytotarget = targety - objy
+
+            -- determine the aceleration vector that needs to be applied to the velocity vector to reach the target.
+			-- target vector - player velocity vector
+			local acelxvector,acelyvector = cf.subtractVectors(vectorxtotarget, vectorytotarget,playervelx,playervely)
+
+            -- so we now have mass and aceleration. Time to determine Force.
+			-- F = m * a
+			-- Fx = m * Xa
+			-- Fy = m * Ya
+			local intendedxforce = PHYS_PLAYERS[i].body:getMass() * acelxvector
+			local intendedyforce = PHYS_PLAYERS[i].body:getMass() * acelyvector
+
+            -- if target is in front of player and at maxV then discontinue the application of force (intendedforce = 0)
+			-- can't cut aceleration because that is the braking force and we don't want to disallow that
+			if cf.dotVectors(playervelx, playervely,vectorxtotarget,vectorytotarget) > 0 then	-- > 0 means target is in front of player
+				-- if player is exceeding maxV then cancel force
+				if (playervelx > PHYS_PLAYERS[i].maxV * fltMaxVAdjustment) or (playervelx < (PHYS_PLAYERS[i].maxV * -1 * fltMaxVAdjustment)) then
+					-- don't apply any force until vel drops down
+					intendedxforce = 0
+				end
+                -- repeat for y axis vector
+				if (playervely > PHYS_PLAYERS[i].maxV) or (playervely < (PHYS_PLAYERS[i].maxV * -1)) then
+					-- don't apply any force
+					intendedyforce = 0
+				end
+			end
+
+            -- if player intended force is great than the limits for that player then dial that intended force back
+			if intendedxforce > PHYS_PLAYERS[i].maxF then
+				intendedxforce = PHYS_PLAYERS[i].maxF
+			end
+			if intendedyforce > PHYS_PLAYERS[i].maxF then
+				intendedyforce = PHYS_PLAYERS[i].maxF
+			end
+
+            -- if fallen down then no force
+            --! probably want to fill out the ELSE statements here
+            if PHYS_PLAYERS[i].fallen == true then
+                if GAME_STATE == enum.gamestateForming then
+                    PHYS_PLAYERS[i].fallen = false
+                end
+            end
+
+            --! something about safeties moving at half speed
+
+            -- now apply dtime to intended force and then apply a game speed factor that works
+			intendedxforce = intendedxforce * fltForceAdjustment
+			intendedyforce = intendedyforce * fltForceAdjustment
+			-- now we can apply force
+			PHYS_PLAYERS[i].body:applyForce(intendedxforce,intendedyforce)
+        end
+    end
+end
+
+local function drawPlayers()
+
+    for i = 1, NumberOfPlayers do
+        local objx = PHYS_PLAYERS[i].body:getX()
+        local objy = PHYS_PLAYERS[i].body:getY()
+        local objradius = PHYS_PLAYERS[i].shape:getRadius()     --! work out why this line doesn't work
+
+        -- scale to screen
+        objx = objx * SCALE
+        objy = objy * SCALE
+        objradius = objradius * SCALE
+
+        -- draw player
+        if i <= (NumberOfPlayers / 2) then
+            -- offense
+            love.graphics.setColor(OFF_RED/255, OFF_GREEN/255, OFF_BLUE/255, 1)
+        else
+            -- defense
+            love.graphics.setColor(DEF_RED/255, DEF_GREEN/255, DEF_BLUE/255, 1)
+        end
+        love.graphics.circle("fill", objx, objy, objradius)
+    end
+
+end
+
 function stadium.draw()
     -- call this from love.draw()
 
     drawStadium()
+    drawPlayers()
 
     buttons.drawButtons()
+end
+
+local function beginContact(a, b, coll)
 end
 
 function stadium.update(dt)
     -- called from love.update()
 
+    if REFRESH_DB then
+        -- update happens before draw so this bit needs to be placed here to avoid a nil value error
+        OFFENSIVE_TIME = 0
+    end
+
     --! fake the ending of the scene
-    if love.math.random(1,100) == 1 then
-        --! end game
+    OFFENSIVE_TIME = OFFENSIVE_TIME + dt
+    if love.math.random(1,10000) == 1 then
+        -- end game
         endtheround()
     end
+
+    if not REFRESH_DB then
+        -- update gets called before draw so do NOT try to move players before they are initialised and drawn.
+        moveAllPlayers(dt)
+    end
+
+    world:update(dt) --this puts the world into motion
+    world:setCallbacks(beginContact, endContact, preSolve, postSolve)
 end
 
 function stadium.loadButtons()
