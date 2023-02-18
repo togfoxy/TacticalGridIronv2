@@ -67,6 +67,8 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].tartgetx = nil
         PHYS_PLAYERS[i].targety = nil
         PHYS_PLAYERS[i].gamestate = enum.gamestateForming
+
+        ps.setCustomStats(PHYS_PLAYERS[i], i)
     end
 
 end

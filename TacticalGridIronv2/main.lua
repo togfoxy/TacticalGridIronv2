@@ -23,6 +23,7 @@ require 'endgame'
 require 'leaguestatus'
 require 'tradeplayers'
 require 'trainplayers'
+ps = require 'playerstats'
 
 require 'enums'
 require 'database'
