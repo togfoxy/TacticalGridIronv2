@@ -1,20 +1,29 @@
 stadium = {}
 
+local NumberOfPlayers = 22
 local arr_seasonstatus, offensiveteamname, defensiveteamname
 
-local TopPostY = 5	-- how many metres to leave at the top of the screen?
-local FieldWidth = 53	-- how wide (yards/metres) is the field?
-local FieldHeight = 100     -- from touchdown to touchdown
-local LeftLineX
-local RightLineX
-local BottomPostY = TopPostY + 120
-local CentreLineX
-local GoalHeight = 10
-local TopGoalY = TopPostY + 10
-local BottomGoalY = TopPostY + 110
-local ScrimmageY = TopPostY + 90
-local FirstDownMarkerY = ScrimmageY - 10		-- yards
+-- field dimensions
+local FieldWidth = 49	-- how wide (yards/metres) is the field? 48.8 mtrs wide
+local FieldHeight = 100     -- from goal to goal
+local GoalHeight = 9                    -- endzone is 9m wide
 
+-- field positioning
+local TopPostY = 5	-- how many metres to leave at the top of the screen?
+local LeftLineX = 100
+
+-- everything else is derived
+local TopGoalY = TopPostY + GoalHeight
+local BottomGoalY = TopPostY + FieldHeight
+local BottomPostY = BottomGoalY + GoalHeight
+
+local HalfwayY = TopGoalY + ((BottomGoalY - TopGoalY) / 2)
+
+local RightLineX = LeftLineX + FieldWidth
+
+local CentreLineX = LeftLineX + (FieldWidth / 2)
+local ScrimmageY = BottomGoalY - 25
+local FirstDownMarkerY = ScrimmageY - 10		-- yards
 
 function stadium.mousereleased(rx, ry)
     -- call from love.mousereleased()
@@ -22,6 +31,33 @@ function stadium.mousereleased(rx, ry)
     if clickedButtonID == enum.buttonStadiumQuit then
         love.event.quit()
     end
+end
+
+local function createPhysicsPlayers()
+    -- called once during drawStadium()
+
+    local rndx, rndy
+
+    for i = 1, NumberOfPlayers do
+        rndx = love.math.random(LeftLineX, RightLineX)
+        if i <= (NumberOfPlayers / 2) then      -- attacker
+            rndy = love.math.random(HalfwayY, BottomGoalY)
+        else
+            rndy = love.math.random(TopGoalY, HalfwayY)
+        end
+
+        PHYS_PLAYERS[i] = {}
+        PHYS_PLAYERS[i].body = love.physics.newBody(world, rndx, rndy, "dynamic") --place the body in the the world and make it dynamic
+        PHYS_PLAYERS[i].body:setLinearDamping(0.7)      -- this applies braking force and removes inertia
+        PHYS_PLAYERS[i].shape = love.physics.newCircleShape(1)        -- circle radius
+        PHYS_PLAYERS[i].fixture = love.physics.newFixture(PHYS_PLAYERS[i].body, PHYS_PLAYERS[i].shape, 1)   -- Attach fixture to body and give it a density of 1.
+        PHYS_PLAYERS[i].fixture:setRestitution(0.25)        -- bounce/rebound
+        PHYS_PLAYERS[i].fixture:setSensor(true)	    -- start without collisions
+        PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to itself
+
+        PHYS_PLAYERS[i].fallen = false
+    end
+
 end
 
 local function drawStadium()
@@ -46,13 +82,9 @@ local function drawStadium()
         end
         REFRESH_DB = false
         fbdb:close()
-        print("Hi")
-    end
 
-    LeftLineX = (SCREEN_WIDTH / 2) - ((FieldWidth * SCALE) / 2)	-- how many metres to leave at the leftside of the field?
-    LeftLineX = LeftLineX / SCALE   -- need to divide by scale and then further down multiply by scale
-    RightLineX = LeftLineX + FieldWidth
-    CentreLineX = LeftLineX + (FieldWidth / 2)	-- left line + half of the field
+        createPhysicsPlayers()      --! need to destroy these things when leaving the scene
+    end
 
     -- top goal
     love.graphics.setColor(153/255, 153/255, 255/255)
@@ -131,10 +163,30 @@ local function endtheround()
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
 
+local function drawPlayers()
+
+    for i = 1, NumberOfPlayers do
+        local objx = PHYS_PLAYERS[i].body:getX()
+        local objy = PHYS_PLAYERS[i].body:getY()
+        local objradius = PHYS_PLAYERS[i].shape:getRadius()     --! work out why this line doesn't work
+
+        -- scale to screen
+        objx = objx * SCALE
+        objy = objy * SCALE
+        objradius = objradius * SCALE
+
+        -- draw player
+        love.graphics.setColor(1,1,1,1)
+        love.graphics.circle("fill", objx, objy, objradius)
+    end
+
+end
+
 function stadium.draw()
     -- call this from love.draw()
 
     drawStadium()
+    drawPlayers()
 
     buttons.drawButtons()
 end
@@ -153,7 +205,7 @@ function stadium.update(dt)
 
     --! fake the ending of the scene
     OFFENSIVE_TIME = OFFENSIVE_TIME + dt
-    if love.math.random(1,100) == 1 then
+    if love.math.random(1,1000) == 1 then
         -- end game
         endtheround()
     end

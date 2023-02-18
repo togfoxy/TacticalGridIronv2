@@ -94,6 +94,7 @@ function love.load()
 
 	cf.AddScreen(enum.sceneMainMenu, SCREEN_STACK)
 
+	love.physics.setMeter(1)
 	world = love.physics.newWorld(0, 0, true)
 end
 
@@ -135,7 +136,7 @@ function love.update(dt)
 	if currentscene == enum.sceneStadium then
 		stadium.update(dt)
 
-		
+
 	end
 
 

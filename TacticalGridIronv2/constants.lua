@@ -37,6 +37,8 @@ function constants.load()
     CHAMPION_SCORE = nil
     CHAMPION_TIME = nil
 
+    PHYS_PLAYERS = {}       -- array of objects that are players
+
     enums.load()
 end
 
