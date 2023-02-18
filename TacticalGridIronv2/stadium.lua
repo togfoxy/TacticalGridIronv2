@@ -61,10 +61,8 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].fixture:setSensor(true)	    -- start without collisions
         PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to itself
 
-        PHYS_PLAYERS[i].maxV = love.math.random(146,161)/10		-- max velocity possible for this player (this persons limitations)
-        PHYS_PLAYERS[i].maxF = 1449
         PHYS_PLAYERS[i].fallen = false
-        PHYS_PLAYERS[i].tartgetx = nil
+        PHYS_PLAYERS[i].targetx = nil
         PHYS_PLAYERS[i].targety = nil
         PHYS_PLAYERS[i].gamestate = enum.gamestateForming
 
@@ -189,10 +187,145 @@ local function endtheround()
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
 
-local function setFormingTarget(obj)
+local function setFormingTarget(obj, index)
     -- receives a single object and sets it's target
-    obj.targetx = love.math.random(LeftLineX, RightLineX)
-    obj.targety = love.math.random(TopGoalY, BottomGoalY)
+    -- obj.targetx = love.math.random(LeftLineX, RightLineX)
+    -- obj.targety = love.math.random(TopGoalY, BottomGoalY)
+
+    -- player 1 = QB
+    if index == 1 then
+    	obj.targetx = (CentreLineX)	 -- centre line
+    	obj.targety = (ScrimmageY + 8)
+    end
+
+	-- player 2 = WR (left closest to centre)
+    if index == 2 then
+        obj.targetx = (CentreLineX - 20)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
+    end
+
+	-- player 3 = WR (right)
+    if index == 3 then
+        obj.targetx = (CentreLineX + 19)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
+    end
+
+	-- player 4 = WR (left on outside)
+    if index == 4 then
+        obj.targetx = (CentreLineX - 24)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
+    end
+
+	-- player 5 = RB
+    if index == 5 then
+        obj.targetx = (CentreLineX)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 14)	-- just behind scrimmage
+    end
+
+	-- player 6 = TE (right side)
+    if index == 6 then
+        obj.targetx = (CentreLineX + 13)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 5)	-- just behind scrimmage
+    end
+
+	-- player 7 = Centre
+    if index == 7 then
+        obj.targetx = (CentreLineX)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
+    end
+
+	-- player 8 = left guard
+    if index == 8 then
+        objtargetx = (CentreLineX - 4)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
+    end
+
+	-- player 9 = right guard
+    if index == 9 then
+        obj.targetx = (CentreLineX + 4)	 -- left 'wing'
+        obj.targety = (ScrimmageY +2)		-- just behind scrimmage
+    end
+
+	-- player 10 = left tackle
+    if index == 10 then
+        obj.targetx = (CentreLineX - 8)	 -- left 'wing'
+        obj.targety = (ScrimmageY +4)		-- just behind scrimmage
+    end
+
+	-- player 11 = right tackle
+    if index == 11 then
+        obj.targetx = (CentreLineX + 8)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 4)		-- just behind scrimmage
+    end
+
+-- now for the visitors
+
+	-- player 12 = Left tackle (left side of screen)
+    if index == 12 then
+        obj.targetx = (CentreLineX -2)	 -- centre line
+        obj.targety = (ScrimmageY - 2)
+    end
+
+	-- player 13 = Right tackle
+    if index == 13 then
+        obj.targetx = (CentreLineX +2)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
+    end
+
+	-- player 14 = Left end
+    if index == 14 then
+        obj.targetx = (CentreLineX - 6)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
+    end
+
+	-- player 15 = Right end
+    if index == 15 then
+        obj.targetx = (CentreLineX + 6)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
+    end
+
+	-- player 16 = Inside LB
+    if index == 16 then
+        obj.targetx = (CentreLineX)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 11)	-- just behind scrimmage
+    end
+
+	-- player 17 = Left Outside LB
+    if index == 17 then
+        obj.targetx = (CentreLineX - 15)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 10)	-- just behind scrimmage
+    end
+
+	-- player 18 = Right Outside LB
+    if index == 18 then
+        obj.targetx = (CentreLineX +15)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 10)		-- just behind scrimmage
+    end
+
+	-- player 19 = Left CB
+    if index == 19 then
+        obj.targetx = (CentreLineX -24)	 -- left 'wing'
+        obj.targety = (ScrimmageY -18)	 -- just behind scrimmage
+    end
+
+	-- player 20 = right CB
+    if index == 20 then
+        obj.targetx = (CentreLineX + 19)	 -- left 'wing'
+        obj.targety = (ScrimmageY -18)		-- just behind scrimmage
+    end
+
+	-- player 21 = left safety
+    if index == 21 then
+        obj.targetx = (CentreLineX - 4)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 17)		-- just behind scrimmage
+    end
+
+	-- player 22 = right safety
+    if index == 22 then
+        obj.targetx = (CentreLineX + 4)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 17)		-- just behind scrimmage
+    end
+
 end
 
 local function setAllTargets()
@@ -200,7 +333,7 @@ local function setAllTargets()
     for i = 1, NumberOfPlayers do
         if PHYS_PLAYERS[i].targetx == nil then
             if GAME_STATE == enum.gamestateForming then
-                setFormingTarget(PHYS_PLAYERS[i])       --! ensure to clear target when game mode shifts
+                setFormingTarget(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
             end
         end
     end

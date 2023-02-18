@@ -115,9 +115,6 @@ function playerstats.setCustomStats(obj, index)
         obj.maxV = love.math.random(146,161)/10		-- max velocity possible for this player (this persons limitations)
         obj.maxF = 1449
     end
-
-
-
 end
 
 return playerstats
