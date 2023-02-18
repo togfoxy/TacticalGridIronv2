@@ -3,6 +3,8 @@ stadium = {}
 local NumberOfPlayers = 22
 local arr_seasonstatus, offensiveteamname, defensiveteamname
 
+local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
+
 -- field dimensions
 local FieldWidth = 49	-- how wide (yards/metres) is the field? 48.8 mtrs wide
 local FieldHeight = 100     -- from goal to goal
@@ -14,7 +16,7 @@ local LeftLineX = 100
 
 -- everything else is derived
 local TopGoalY = TopPostY + GoalHeight
-local BottomGoalY = TopPostY + FieldHeight
+local BottomGoalY = TopGoalY + FieldHeight
 local BottomPostY = BottomGoalY + GoalHeight
 
 local HalfwayY = TopGoalY + ((BottomGoalY - TopGoalY) / 2)
@@ -24,6 +26,9 @@ local RightLineX = LeftLineX + FieldWidth
 local CentreLineX = LeftLineX + (FieldWidth / 2)
 local ScrimmageY = BottomGoalY - 25
 local FirstDownMarkerY = ScrimmageY - 10		-- yards
+
+print(ScrimmageY, BottomGoalY, TopPostY, FieldHeight)
+-- error()
 
 function stadium.mousereleased(rx, ry)
     -- call from love.mousereleased()
@@ -65,7 +70,7 @@ local function drawStadium()
     if REFRESH_DB then
         arr_seasonstatus = {}
         local fbdb = sqlite3.open(DB_FILE)
-        local strQuery = "select teams.TEAMNAME, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
+        local strQuery = "select teams.TEAMNAME, teams.RED, teams.GREEN, teams.BLUE, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
         for row in fbdb:nrows(strQuery) do
             local mytable = {}
             mytable.TEAMNAME = row.TEAMNAME
@@ -75,13 +80,23 @@ local function drawStadium()
 
             if row.TEAMID == OFFENSIVE_TEAMID then
                 offensiveteamname = row.TEAMNAME
+                OFF_RED = row.RED
+                OFF_GREEN = row.GREEN
+                OFF_BLUE = row.BLUE
+
             end
             if row.TEAMID == DEFENSIVE_TEAMID then
                 defensiveteamname = row.TEAMNAME
+                DEF_RED = row.RED
+                DEF_GREEN = row.GREEN
+                DEF_BLUE = row.BLUE
             end
         end
         REFRESH_DB = false
         fbdb:close()
+
+        assert(OFF_RED ~= nil, strQuery)
+        assert(DEF_RED ~= nil, strQuery)
 
         createPhysicsPlayers()      --! need to destroy these things when leaving the scene
     end
@@ -99,9 +114,14 @@ local function drawStadium()
     love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)
 
     -- yard lines
-    love.graphics.setColor(1,1,1,1)
-    for i = 0,20
-	do
+
+    for i = 0,20 do
+
+        if cf.isEven(i) then
+            love.graphics.setColor(1,1,1,1)
+        else
+            love.graphics.setColor(1,1,1,0.5)
+        end
 		love.graphics.line(LeftLineX * SCALE, (TopGoalY + (i * 5))  * SCALE, RightLineX * SCALE, (TopGoalY + (i * 5))  * SCALE)
 	end
 
@@ -176,7 +196,13 @@ local function drawPlayers()
         objradius = objradius * SCALE
 
         -- draw player
-        love.graphics.setColor(1,1,1,1)
+        if i <= (NumberOfPlayers / 2) then
+            -- offense
+            love.graphics.setColor(OFF_RED/255, OFF_GREEN/255, OFF_BLUE/255, 1)
+        else
+            -- defense
+            love.graphics.setColor(DEF_RED/255, DEF_GREEN/255, DEF_BLUE/255, 1)
+        end
         love.graphics.circle("fill", objx, objy, objradius)
     end
 
@@ -205,7 +231,7 @@ function stadium.update(dt)
 
     --! fake the ending of the scene
     OFFENSIVE_TIME = OFFENSIVE_TIME + dt
-    if love.math.random(1,1000) == 1 then
+    if love.math.random(1,10000) == 1 then
         -- end game
         endtheround()
     end

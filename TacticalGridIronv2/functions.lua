@@ -50,10 +50,18 @@ local function populateTeamsTable()
     local index = 0
     resetGlobalTeamNames()
     repeat
+        local red = love.math.random(0, 255)
+        local green = love.math.random(0, 255)
+        local blue = love.math.random(0, 255)
+
         rndteamnum = love.math.random(1, #TEAM_NAMES)
         -- write to table
-        local strQuery = "INSERT INTO TEAMS ('TEAMNAME', 'PLAYERCONTROLLED') VALUES ('" .. TEAM_NAMES[rndteamnum] .. "', '0');"
+        local strQuery = "INSERT INTO TEAMS ('TEAMNAME', 'PLAYERCONTROLLED', 'RED', 'GREEN', 'BLUE') VALUES ('" .. TEAM_NAMES[rndteamnum] .. "', 0, " .. red ..", " .. green ..", " .. blue .. ");"
         local dberror = fbdb:exec(strQuery)
+        if dberror ~= 0 then
+            print(strQuery)
+            error()
+        end
         -- remove from array so it is not re-used
         table.remove(TEAM_NAMES, rndteamnum)
         index = index + 1
