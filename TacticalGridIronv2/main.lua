@@ -135,8 +135,6 @@ function love.update(dt)
 	local currentscene = cf.CurrentScreenName(SCREEN_STACK)
 	if currentscene == enum.sceneStadium then
 		stadium.update(dt)
-
-
 	end
 
 

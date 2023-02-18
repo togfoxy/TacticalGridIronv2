@@ -1,7 +1,7 @@
 stadium = {}
 
 local NumberOfPlayers = 22
-local arr_seasonstatus, offensiveteamname, defensiveteamname
+local arr_seasonstatus, offensiveteamname, defensiveteamname, GAME_STATE
 
 local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
 
@@ -54,13 +54,19 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i] = {}
         PHYS_PLAYERS[i].body = love.physics.newBody(world, rndx, rndy, "dynamic") --place the body in the the world and make it dynamic
         PHYS_PLAYERS[i].body:setLinearDamping(0.7)      -- this applies braking force and removes inertia
+        PHYS_PLAYERS[i].body:setMass(love.math.random(80,100))	 -- kilograms
         PHYS_PLAYERS[i].shape = love.physics.newCircleShape(1)        -- circle radius
         PHYS_PLAYERS[i].fixture = love.physics.newFixture(PHYS_PLAYERS[i].body, PHYS_PLAYERS[i].shape, 1)   -- Attach fixture to body and give it a density of 1.
         PHYS_PLAYERS[i].fixture:setRestitution(0.25)        -- bounce/rebound
         PHYS_PLAYERS[i].fixture:setSensor(true)	    -- start without collisions
         PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to itself
 
+        PHYS_PLAYERS[i].maxV = love.math.random(146,161)/10		-- max velocity possible for this player (this persons limitations)
+        PHYS_PLAYERS[i].maxF = 1449
         PHYS_PLAYERS[i].fallen = false
+        PHYS_PLAYERS[i].tartgetx = nil
+        PHYS_PLAYERS[i].targety = nil
+        PHYS_PLAYERS[i].gamestate = enum.gamestateForming
     end
 
 end
@@ -99,6 +105,8 @@ local function drawStadium()
         assert(DEF_RED ~= nil, strQuery)
 
         createPhysicsPlayers()      --! need to destroy these things when leaving the scene
+        GAME_STATE = enum.gamestateForming
+        OFFENSIVE_TIME = 0
     end
 
     -- top goal
@@ -114,9 +122,7 @@ local function drawStadium()
     love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)
 
     -- yard lines
-
     for i = 0,20 do
-
         if cf.isEven(i) then
             love.graphics.setColor(1,1,1,1)
         else
@@ -146,7 +152,6 @@ local function drawStadium()
     -- draw stadium
 
     -- draw scrimmage
-
 	love.graphics.setColor(93/255, 138/255, 169/255,1)
 	love.graphics.setLineWidth(5)
 	love.graphics.line(LeftLineX * SCALE, ScrimmageY * SCALE, RightLineX * SCALE, ScrimmageY * SCALE)
@@ -162,7 +167,6 @@ local function drawStadium()
     love.graphics.setColor(1,1,1,1)
     love.graphics.print(offensiveteamname, 50, 50)       --! this needs to be the team name and not the ID
     love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
-
 
 end
 
@@ -181,6 +185,111 @@ local function endtheround()
     -- move to the next scene
     REFRESH_DB = true
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
+end
+
+local function setFormingTarget(obj)
+    -- receives a single object and sets it's target
+    obj.targetx = love.math.random(LeftLineX, RightLineX)
+    obj.targety = love.math.random(TopGoalY, BottomGoalY)
+end
+
+local function setAllTargets()
+    -- ensure every player has a destination to go to
+    for i = 1, NumberOfPlayers do
+        if PHYS_PLAYERS[i].targetx == nil then
+            if GAME_STATE == enum.gamestateForming then
+                setFormingTarget(PHYS_PLAYERS[i])       --! ensure to clear target when game mode shifts
+            end
+        end
+    end
+end
+
+local function moveAllPlayers(dt)
+
+    local fltForceAdjustment = 2	-- tweak this to get fluid motion
+    local fltMaxVAdjustment= 4		-- tweak this to get fluid motion
+
+    setAllTargets()
+    --! apply force
+
+    for i = 1, NumberOfPlayers do
+        local objx = PHYS_PLAYERS[i].body:getX()
+        local objy = PHYS_PLAYERS[i].body:getY()
+
+        local targetx = PHYS_PLAYERS[i].targetx
+        local targety = PHYS_PLAYERS[i].targety
+
+        -- get distance to target
+        local disttotarget = cf.getDistance(objx, objy, targetx, targety)
+
+        -- see if arrived
+        if disttotarget < 3 then
+            -- arrived
+            if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
+                PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
+            end
+            --! put other game states here
+        else
+            -- player not arrived
+
+            -- determine actual velocity vs intended velocity based on target
+            local playervelx, playervely = PHYS_PLAYERS[i].body:getLinearVelocity()		-- this is the players velocity vector
+
+            -- determine vector to target
+			local vectorxtotarget = targetx - objx
+			local vectorytotarget = targety - objy
+
+            -- determine the aceleration vector that needs to be applied to the velocity vector to reach the target.
+			-- target vector - player velocity vector
+			local acelxvector,acelyvector = cf.subtractVectors(vectorxtotarget, vectorytotarget,playervelx,playervely)
+
+            -- so we now have mass and aceleration. Time to determine Force.
+			-- F = m * a
+			-- Fx = m * Xa
+			-- Fy = m * Ya
+			local intendedxforce = PHYS_PLAYERS[i].body:getMass() * acelxvector
+			local intendedyforce = PHYS_PLAYERS[i].body:getMass() * acelyvector
+
+            -- if target is in front of player and at maxV then discontinue the application of force (intendedforce = 0)
+			-- can't cut aceleration because that is the braking force and we don't want to disallow that
+			if cf.dotVectors(playervelx, playervely,vectorxtotarget,vectorytotarget) > 0 then	-- > 0 means target is in front of player
+				-- if player is exceeding maxV then cancel force
+				if (playervelx > PHYS_PLAYERS[i].maxV * fltMaxVAdjustment) or (playervelx < (PHYS_PLAYERS[i].maxV * -1 * fltMaxVAdjustment)) then
+					-- don't apply any force until vel drops down
+					intendedxforce = 0
+				end
+                -- repeat for y axis vector
+				if (playervely > PHYS_PLAYERS[i].maxV) or (playervely < (PHYS_PLAYERS[i].maxV * -1)) then
+					-- don't apply any force
+					intendedyforce = 0
+				end
+			end
+
+            -- if player intended force is great than the limits for that player then dial that intended force back
+			if intendedxforce > PHYS_PLAYERS[i].maxF then
+				intendedxforce = PHYS_PLAYERS[i].maxF
+			end
+			if intendedyforce > PHYS_PLAYERS[i].maxF then
+				intendedyforce = PHYS_PLAYERS[i].maxF
+			end
+
+            -- if fallen down then no force
+            --! probably want to fill out the ELSE statements here
+            if PHYS_PLAYERS[i].fallen == true then
+                if GAME_STATE == enum.gamestateForming then
+                    PHYS_PLAYERS[i].fallen = false
+                end
+            end
+
+            --! something about safeties moving at half speed
+
+            -- now apply dtime to intended force and then apply a game speed factor that works
+			intendedxforce = intendedxforce * fltForceAdjustment
+			intendedyforce = intendedyforce * fltForceAdjustment
+			-- now we can apply force
+			PHYS_PLAYERS[i].body:applyForce(intendedxforce,intendedyforce)
+        end
+    end
 end
 
 local function drawPlayers()
@@ -218,14 +327,13 @@ function stadium.draw()
 end
 
 local function beginContact(a, b, coll)
-
-
 end
 
 function stadium.update(dt)
     -- called from love.update()
 
     if REFRESH_DB then
+        -- update happens before draw so this bit needs to be placed here to avoid a nil value error
         OFFENSIVE_TIME = 0
     end
 
@@ -234,6 +342,11 @@ function stadium.update(dt)
     if love.math.random(1,10000) == 1 then
         -- end game
         endtheround()
+    end
+
+    if not REFRESH_DB then
+        -- update gets called before draw so do NOT try to move players before they are initialised and drawn.
+        moveAllPlayers(dt)
     end
 
     world:update(dt) --this puts the world into motion
