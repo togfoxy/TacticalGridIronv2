@@ -39,6 +39,8 @@ function constants.load()
 
     PHYS_PLAYERS = {}       -- array of objects that are players
 
+    GAME_STATE = nil
+
     enums.load()
 end
 

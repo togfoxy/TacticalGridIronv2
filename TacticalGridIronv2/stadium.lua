@@ -1,7 +1,7 @@
 stadium = {}
 
 local NumberOfPlayers = 22
-local arr_seasonstatus, offensiveteamname, defensiveteamname, GAME_STATE
+local arr_seasonstatus, offensiveteamname, defensiveteamname
 
 local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
 
@@ -55,18 +55,18 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].body = love.physics.newBody(world, rndx, rndy, "dynamic") --place the body in the the world and make it dynamic
         PHYS_PLAYERS[i].body:setLinearDamping(0.7)      -- this applies braking force and removes inertia
         PHYS_PLAYERS[i].body:setMass(love.math.random(80,100))	 -- kilograms
-        PHYS_PLAYERS[i].shape = love.physics.newCircleShape(1)        -- circle radius
+        PHYS_PLAYERS[i].shape = love.physics.newCircleShape(0.75)        -- circle radius
         PHYS_PLAYERS[i].fixture = love.physics.newFixture(PHYS_PLAYERS[i].body, PHYS_PLAYERS[i].shape, 1)   -- Attach fixture to body and give it a density of 1.
         PHYS_PLAYERS[i].fixture:setRestitution(0.25)        -- bounce/rebound
         PHYS_PLAYERS[i].fixture:setSensor(true)	    -- start without collisions
         PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to itself
 
-        PHYS_PLAYERS[i].maxV = love.math.random(146,161)/10		-- max velocity possible for this player (this persons limitations)
-        PHYS_PLAYERS[i].maxF = 1449
         PHYS_PLAYERS[i].fallen = false
-        PHYS_PLAYERS[i].tartgetx = nil
+        PHYS_PLAYERS[i].targetx = nil
         PHYS_PLAYERS[i].targety = nil
         PHYS_PLAYERS[i].gamestate = enum.gamestateForming
+
+        ps.setCustomStats(PHYS_PLAYERS[i], i)
     end
 
 end
@@ -187,10 +187,145 @@ local function endtheround()
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
 
-local function setFormingTarget(obj)
+local function setFormingTarget(obj, index)
     -- receives a single object and sets it's target
-    obj.targetx = love.math.random(LeftLineX, RightLineX)
-    obj.targety = love.math.random(TopGoalY, BottomGoalY)
+    -- obj.targetx = love.math.random(LeftLineX, RightLineX)
+    -- obj.targety = love.math.random(TopGoalY, BottomGoalY)
+
+    -- player 1 = QB
+    if index == 1 then
+    	obj.targetx = (CentreLineX)	 -- centre line
+    	obj.targety = (ScrimmageY + 8)
+    end
+
+	-- player 2 = WR (left closest to centre)
+    if index == 2 then
+        obj.targetx = (CentreLineX - 14)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
+    end
+
+	-- player 3 = WR (right)
+    if index == 3 then
+        obj.targetx = (CentreLineX + 18)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
+    end
+
+	-- player 4 = WR (left on outside)
+    if index == 4 then
+        obj.targetx = (CentreLineX - 18)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
+    end
+
+	-- player 5 = RB
+    if index == 5 then
+        obj.targetx = (CentreLineX)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 14)	-- just behind QB
+    end
+
+	-- player 6 = TE (right side)
+    if index == 6 then
+        obj.targetx = (CentreLineX + 13)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 3)
+    end
+
+	-- player 7 = Centre
+    if index == 7 then
+        obj.targetx = (CentreLineX)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
+    end
+
+	-- player 8 = left guard
+    if index == 8 then
+        obj.targetx = (CentreLineX - 4)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
+    end
+
+	-- player 9 = right guard
+    if index == 9 then
+        obj.targetx = (CentreLineX + 4)	 -- left 'wing'
+        obj.targety = (ScrimmageY +2)		-- just behind scrimmage
+    end
+
+	-- player 10 = left tackle
+    if index == 10 then
+        obj.targetx = (CentreLineX - 7)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 3)		-- just behind scrimmage
+    end
+
+	-- player 11 = right tackle
+    if index == 11 then
+        obj.targetx = (CentreLineX + 7)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 3)		-- just behind scrimmage
+    end
+
+    -- now for the visitors
+
+	-- player 12 = Left tackle (left side of screen)
+    if index == 12 then
+        obj.targetx = (CentreLineX -2)	 -- centre line
+        obj.targety = (ScrimmageY - 2)
+    end
+
+	-- player 13 = Right tackle
+    if index == 13 then
+        obj.targetx = (CentreLineX +2)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
+    end
+
+	-- player 14 = Left end
+    if index == 14 then
+        obj.targetx = (CentreLineX - 6)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
+    end
+
+	-- player 15 = Right end
+    if index == 15 then
+        obj.targetx = (CentreLineX + 6)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
+    end
+
+	-- player 16 = Inside LB
+    if index == 16 then
+        obj.targetx = (CentreLineX)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 11)	-- just behind scrimmage
+    end
+
+	-- player 17 = Left Outside LB
+    if index == 17 then
+        obj.targetx = (CentreLineX - 15)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 10)
+    end
+
+	-- player 18 = Right Outside LB
+    if index == 18 then
+        obj.targetx = (CentreLineX +15)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 10)
+    end
+
+	-- player 19 = Left CB
+    if index == 19 then
+        obj.targetx = (CentreLineX -18)	 -- left 'wing'
+        obj.targety = (ScrimmageY -18)
+    end
+
+	-- player 20 = right CB
+    if index == 20 then
+        obj.targetx = (CentreLineX + 18)	 -- left 'wing'
+        obj.targety = (ScrimmageY -18)
+    end
+
+	-- player 21 = left safety
+    if index == 21 then
+        obj.targetx = (CentreLineX - 4)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 17)
+    end
+
+	-- player 22 = right safety
+    if index == 22 then
+        obj.targetx = (CentreLineX + 4)	 -- left 'wing'
+        obj.targety = (ScrimmageY - 17)
+    end
+
 end
 
 local function setAllTargets()
@@ -198,7 +333,7 @@ local function setAllTargets()
     for i = 1, NumberOfPlayers do
         if PHYS_PLAYERS[i].targetx == nil then
             if GAME_STATE == enum.gamestateForming then
-                setFormingTarget(PHYS_PLAYERS[i])       --! ensure to clear target when game mode shifts
+                setFormingTarget(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
             end
         end
     end
@@ -207,7 +342,7 @@ end
 local function moveAllPlayers(dt)
 
     local fltForceAdjustment = 2	-- tweak this to get fluid motion
-    local fltMaxVAdjustment= 4		-- tweak this to get fluid motion
+    local fltMaxVAdjustment = 4		-- tweak this to get fluid motion
 
     setAllTargets()
     --! apply force
@@ -223,7 +358,7 @@ local function moveAllPlayers(dt)
         local disttotarget = cf.getDistance(objx, objy, targetx, targety)
 
         -- see if arrived
-        if disttotarget < 3 then
+        if disttotarget <=  0.5 then
             -- arrived
             if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
                 PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
@@ -297,7 +432,7 @@ local function drawPlayers()
     for i = 1, NumberOfPlayers do
         local objx = PHYS_PLAYERS[i].body:getX()
         local objy = PHYS_PLAYERS[i].body:getY()
-        local objradius = PHYS_PLAYERS[i].shape:getRadius()     --! work out why this line doesn't work
+        local objradius = PHYS_PLAYERS[i].shape:getRadius()
 
         -- scale to screen
         objx = objx * SCALE
@@ -313,8 +448,23 @@ local function drawPlayers()
             love.graphics.setColor(DEF_RED/255, DEF_GREEN/255, DEF_BLUE/255, 1)
         end
         love.graphics.circle("fill", objx, objy, objradius)
+
+        -- draw position
+        if love.keyboard.isDown("rctrl") or love.keyboard.isDown("lctrl") then
+            local drawx = objx + 10
+            local drawy = objy - 15
+            love.graphics.setColor(1,1,1,1)
+            love.graphics.print(PHYS_PLAYERS[i].positionletters, drawx, drawy)
+        end
     end
 
+    -- draw the QB target
+    if PHYS_PLAYERS[1].targetx ~= nil then
+        local drawx = PHYS_PLAYERS[1].targetx * SCALE
+        local drawy = PHYS_PLAYERS[1].targety * SCALE
+        love.graphics.setColor(1,1,0,1) -- yellow
+        love.graphics.circle("line", drawx, drawy, 0.75 * SCALE)
+    end
 end
 
 function stadium.draw()
@@ -327,6 +477,25 @@ function stadium.draw()
 end
 
 local function beginContact(a, b, coll)
+end
+
+local function checkForStateChange()
+    -- looks for key events that will trigger a change in game state
+    if GAME_STATE == enum.gamestateForming then
+        -- check if everyone is formed up
+        for i = 1, NumberOfPlayers do
+            if PHYS_PLAYERS[i].gamestate ~= enum.gamestateReadyForSnap then
+                -- no state change. Abort.
+                return
+            end
+        end
+        -- if above loop didn't abort then all palyers are ready for snap. Change state
+        GAME_STATE = enum.gamestateInPlay
+        for i = 1, NumberOfPlayers do
+            PHYS_PLAYERS[i].fixture:setSensor(false)
+            PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
+        end
+    end
 end
 
 function stadium.update(dt)
@@ -347,6 +516,7 @@ function stadium.update(dt)
     if not REFRESH_DB then
         -- update gets called before draw so do NOT try to move players before they are initialised and drawn.
         moveAllPlayers(dt)
+        checkForStateChange()
     end
 
     world:update(dt) --this puts the world into motion
