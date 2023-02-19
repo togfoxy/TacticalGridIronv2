@@ -66,6 +66,7 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].targety = nil
         PHYS_PLAYERS[i].targettimer = nil
         PHYS_PLAYERS[i].gamestate = enum.gamestateForming
+        PHYS_PLAYERS[i].hasBall = false
 
         ps.setCustomStats(PHYS_PLAYERS[i], i)
     end
@@ -185,6 +186,9 @@ local function endtheround()
 
     -- move to the next scene
     REFRESH_DB = true
+
+    --! need to reset all sorts of player status here
+
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
 
@@ -329,31 +333,41 @@ local function setFormingTarget(obj, index)
 
 end
 
-local function setInPlayTarget(obj, index, dt)
+local function setInPlayTarget(obj, index, runnerindex, dt)
     -- determine the target for the single obj
+    -- runnerindex might be nil on some calls but is okay because it's only used by players 12+
 
     if obj.targettimer ~= nil then obj.targettimer = obj.targettimer - dt end
 
     if obj.targettimer == nil or obj.targettimer <= 0 then
         -- set new target
-        obj.targettimer = 1
+
+        obj.targettimer = 0     -- only change targets every x seconds
+
         if index <= 11 then
             obj.targety = TopPostY
         else
             -- nothing
+            obj.targetx = PHYS_PLAYERS[runnerindex].body:getX()
+            obj.targety = PHYS_PLAYERS[runnerindex].body:getY()
+
         end
     end
 end
 
 local function setAllTargets(dt)
     -- ensure every player has a destination to go to
+
+    local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
     for i = 1, NumberOfPlayers do
+        if PHYS_PLAYERS[i].hasBall then runnerindex = i end
+
         if GAME_STATE == enum.gamestateForming then
             if PHYS_PLAYERS[i].targetx == nil then
                 setFormingTarget(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
             end
         elseif GAME_STATE == enum.gamestateInPlay then
-            setInPlayTarget(PHYS_PLAYERS[i], i, dt)
+            setInPlayTarget(PHYS_PLAYERS[i], i, runnerindex, dt)
         end
     end
 end
@@ -361,7 +375,7 @@ end
 local function moveAllPlayers(dt)
 
     local fltForceAdjustment = 2	-- tweak this to get fluid motion
-    local fltMaxVAdjustment = 4		-- tweak this to get fluid motion
+    local fltMaxVAdjustment = 3		-- tweak this to get fluid motion
 
     setAllTargets(dt)
     --! apply force
@@ -540,9 +554,30 @@ local function checkForStateChange()
         end
         -- if above loop didn't abort then all palyers are ready for snap. Change state
         GAME_STATE = enum.gamestateInPlay
+         PHYS_PLAYERS[1].hasBall = true
         for i = 1, NumberOfPlayers do
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
+
+        end
+    elseif GAME_STATE == enum.gamestateInPlay then
+        -- check for a number of conditions
+
+        --! the runner is down/fallen
+        for i = 1, 11 do
+            if PHYS_PLAYERS[i].hasBall then
+                if PHYS_PLAYERS[i].fallen then
+                    GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
+                end
+                local objx = PHYS_PLAYERS[i].body:getX()
+                if objx < LeftLineX or objx > RightLineX then
+                    GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
+                end
+            end
+
+        --! runner is across the goal
+
+        --! ball is dropped
         end
     end
 end
@@ -556,8 +591,11 @@ function stadium.update(dt)
     end
 
     --! fake the ending of the scene
-    OFFENSIVE_TIME = OFFENSIVE_TIME + dt
-    if love.math.random(1,10000) == 1 then
+    if GAME_STATE == enum.gamestateInPlay then
+        OFFENSIVE_TIME = OFFENSIVE_TIME + dt
+    end
+
+    if love.math.random(1,5000) == 1 then
         -- end game
         endtheround()
     end
