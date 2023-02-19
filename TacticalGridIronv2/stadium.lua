@@ -200,7 +200,7 @@ local function setFormingTarget(obj, index)
 
 	-- player 2 = WR (left closest to centre)
     if index == 2 then
-        obj.targetx = (CentreLineX - 10)	 -- left 'wing'
+        obj.targetx = (CentreLineX - 14)	 -- left 'wing'
         obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
     end
 
@@ -342,7 +342,7 @@ end
 local function moveAllPlayers(dt)
 
     local fltForceAdjustment = 2	-- tweak this to get fluid motion
-    local fltMaxVAdjustment= 4		-- tweak this to get fluid motion
+    local fltMaxVAdjustment = 4		-- tweak this to get fluid motion
 
     setAllTargets()
     --! apply force
@@ -358,7 +358,7 @@ local function moveAllPlayers(dt)
         local disttotarget = cf.getDistance(objx, objy, targetx, targety)
 
         -- see if arrived
-        if disttotarget <= 1 then
+        if disttotarget <=  0.5 then
             -- arrived
             if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
                 PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
@@ -471,6 +471,21 @@ end
 local function beginContact(a, b, coll)
 end
 
+local function checkForStateChange()
+    -- looks for key events that will trigger a change in game state
+    if GAME_STATE == enum.gamestateForming then
+        -- check if everyone is formed up
+        for i = 1, NumberOfPlayers do
+            if PHYS_PLAYERS[i].gamestate ~= enum.gamestateReadyForSnap then
+                -- no state change. Abort.
+                return
+            end
+        end
+        -- if above loop didn't abort then all palyers are ready for snap. Change state
+        GAME_STATE = enum.gamestateReadyForSnap
+    end
+end
+
 function stadium.update(dt)
     -- called from love.update()
 
@@ -489,6 +504,7 @@ function stadium.update(dt)
     if not REFRESH_DB then
         -- update gets called before draw so do NOT try to move players before they are initialised and drawn.
         moveAllPlayers(dt)
+        checkForStateChange()
     end
 
     world:update(dt) --this puts the world into motion
