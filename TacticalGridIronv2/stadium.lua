@@ -55,7 +55,7 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].body = love.physics.newBody(world, rndx, rndy, "dynamic") --place the body in the the world and make it dynamic
         PHYS_PLAYERS[i].body:setLinearDamping(0.7)      -- this applies braking force and removes inertia
         PHYS_PLAYERS[i].body:setMass(love.math.random(80,100))	 -- kilograms
-        PHYS_PLAYERS[i].shape = love.physics.newCircleShape(1)        -- circle radius
+        PHYS_PLAYERS[i].shape = love.physics.newCircleShape(0.75)        -- circle radius
         PHYS_PLAYERS[i].fixture = love.physics.newFixture(PHYS_PLAYERS[i].body, PHYS_PLAYERS[i].shape, 1)   -- Attach fixture to body and give it a density of 1.
         PHYS_PLAYERS[i].fixture:setRestitution(0.25)        -- bounce/rebound
         PHYS_PLAYERS[i].fixture:setSensor(true)	    -- start without collisions
@@ -200,32 +200,32 @@ local function setFormingTarget(obj, index)
 
 	-- player 2 = WR (left closest to centre)
     if index == 2 then
-        obj.targetx = (CentreLineX - 20)	 -- left 'wing'
+        obj.targetx = (CentreLineX - 10)	 -- left 'wing'
         obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
     end
 
 	-- player 3 = WR (right)
     if index == 3 then
-        obj.targetx = (CentreLineX + 19)	 -- left 'wing'
+        obj.targetx = (CentreLineX + 18)	 -- left 'wing'
         obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
     end
 
 	-- player 4 = WR (left on outside)
     if index == 4 then
-        obj.targetx = (CentreLineX - 24)	 -- left 'wing'
+        obj.targetx = (CentreLineX - 18)	 -- left 'wing'
         obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
     end
 
 	-- player 5 = RB
     if index == 5 then
         obj.targetx = (CentreLineX)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 14)	-- just behind scrimmage
+        obj.targety = (ScrimmageY + 14)	-- just behind QB
     end
 
 	-- player 6 = TE (right side)
     if index == 6 then
         obj.targetx = (CentreLineX + 13)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 5)	-- just behind scrimmage
+        obj.targety = (ScrimmageY + 3)
     end
 
 	-- player 7 = Centre
@@ -236,7 +236,7 @@ local function setFormingTarget(obj, index)
 
 	-- player 8 = left guard
     if index == 8 then
-        objtargetx = (CentreLineX - 4)	 -- left 'wing'
+        obj.targetx = (CentreLineX - 4)	 -- left 'wing'
         obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
     end
 
@@ -248,17 +248,17 @@ local function setFormingTarget(obj, index)
 
 	-- player 10 = left tackle
     if index == 10 then
-        obj.targetx = (CentreLineX - 8)	 -- left 'wing'
-        obj.targety = (ScrimmageY +4)		-- just behind scrimmage
+        obj.targetx = (CentreLineX - 7)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 3)		-- just behind scrimmage
     end
 
 	-- player 11 = right tackle
     if index == 11 then
-        obj.targetx = (CentreLineX + 8)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 4)		-- just behind scrimmage
+        obj.targetx = (CentreLineX + 7)	 -- left 'wing'
+        obj.targety = (ScrimmageY + 3)		-- just behind scrimmage
     end
 
--- now for the visitors
+    -- now for the visitors
 
 	-- player 12 = Left tackle (left side of screen)
     if index == 12 then
@@ -293,37 +293,37 @@ local function setFormingTarget(obj, index)
 	-- player 17 = Left Outside LB
     if index == 17 then
         obj.targetx = (CentreLineX - 15)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 10)	-- just behind scrimmage
+        obj.targety = (ScrimmageY - 10)
     end
 
 	-- player 18 = Right Outside LB
     if index == 18 then
         obj.targetx = (CentreLineX +15)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 10)		-- just behind scrimmage
+        obj.targety = (ScrimmageY - 10)
     end
 
 	-- player 19 = Left CB
     if index == 19 then
-        obj.targetx = (CentreLineX -24)	 -- left 'wing'
-        obj.targety = (ScrimmageY -18)	 -- just behind scrimmage
+        obj.targetx = (CentreLineX -18)	 -- left 'wing'
+        obj.targety = (ScrimmageY -18)
     end
 
 	-- player 20 = right CB
     if index == 20 then
-        obj.targetx = (CentreLineX + 19)	 -- left 'wing'
-        obj.targety = (ScrimmageY -18)		-- just behind scrimmage
+        obj.targetx = (CentreLineX + 18)	 -- left 'wing'
+        obj.targety = (ScrimmageY -18)
     end
 
 	-- player 21 = left safety
     if index == 21 then
         obj.targetx = (CentreLineX - 4)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 17)		-- just behind scrimmage
+        obj.targety = (ScrimmageY - 17)
     end
 
 	-- player 22 = right safety
     if index == 22 then
         obj.targetx = (CentreLineX + 4)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 17)		-- just behind scrimmage
+        obj.targety = (ScrimmageY - 17)
     end
 
 end
@@ -358,7 +358,7 @@ local function moveAllPlayers(dt)
         local disttotarget = cf.getDistance(objx, objy, targetx, targety)
 
         -- see if arrived
-        if disttotarget < 3 then
+        if disttotarget <= 1 then
             -- arrived
             if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
                 PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
@@ -432,7 +432,7 @@ local function drawPlayers()
     for i = 1, NumberOfPlayers do
         local objx = PHYS_PLAYERS[i].body:getX()
         local objy = PHYS_PLAYERS[i].body:getY()
-        local objradius = PHYS_PLAYERS[i].shape:getRadius()     --! work out why this line doesn't work
+        local objradius = PHYS_PLAYERS[i].shape:getRadius()
 
         -- scale to screen
         objx = objx * SCALE
@@ -448,8 +448,15 @@ local function drawPlayers()
             love.graphics.setColor(DEF_RED/255, DEF_GREEN/255, DEF_BLUE/255, 1)
         end
         love.graphics.circle("fill", objx, objy, objradius)
-    end
 
+        -- draw position
+        if love.keyboard.isDown("rctrl") or love.keyboard.isDown("lctrl") then
+            local drawx = objx + 10
+            local drawy = objy - 15
+            love.graphics.setColor(1,1,1,1)
+            love.graphics.print(PHYS_PLAYERS[i].positionletters, drawx, drawy)
+        end
+    end
 end
 
 function stadium.draw()
