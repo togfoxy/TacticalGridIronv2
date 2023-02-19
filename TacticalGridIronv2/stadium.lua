@@ -1,7 +1,7 @@
 stadium = {}
 
 local NumberOfPlayers = 22
-local arr_seasonstatus, offensiveteamname, defensiveteamname, GAME_STATE
+local arr_seasonstatus, offensiveteamname, defensiveteamname
 
 local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
 
@@ -457,6 +457,14 @@ local function drawPlayers()
             love.graphics.print(PHYS_PLAYERS[i].positionletters, drawx, drawy)
         end
     end
+
+    -- draw the QB target
+    if PHYS_PLAYERS[1].targetx ~= nil then
+        local drawx = PHYS_PLAYERS[1].targetx * SCALE
+        local drawy = PHYS_PLAYERS[1].targety * SCALE
+        love.graphics.setColor(1,1,0,1) -- yellow
+        love.graphics.circle("line", drawx, drawy, 0.75 * SCALE)
+    end
 end
 
 function stadium.draw()
@@ -482,7 +490,11 @@ local function checkForStateChange()
             end
         end
         -- if above loop didn't abort then all palyers are ready for snap. Change state
-        GAME_STATE = enum.gamestateReadyForSnap
+        GAME_STATE = enum.gamestateInPlay
+        for i = 1, NumberOfPlayers do
+            PHYS_PLAYERS[i].fixture:setSensor(false)
+            PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
+        end
     end
 end
 

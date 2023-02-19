@@ -46,6 +46,38 @@ function love.keyreleased( key, scancode )
 	end
 end
 
+function love.keypressed(key, scancode, isrepeat)
+	if GAME_STATE == enum.gamestateReadyForSnap then
+		if scancode == "a" then
+			GAME_STATE = enum.gamestateInPlay
+
+		elseif scancode == "s" then
+			GAME_STATE = enum.gamestateInPlay
+
+		elseif scancode == "d" then
+			GAME_STATE = enum.gamestateInPlay
+
+		elseif scancode == "w" then
+			GAME_STATE = enum.gamestateInPlay
+		end
+	end
+
+	if GAME_STATE == enum.gamestateInPlay then
+		if scancode == "a" then
+			PHYS_PLAYERS[1].targetx = PHYS_PLAYERS[1].targetx - 1
+
+		elseif scancode == "s" then
+			PHYS_PLAYERS[1].targety = PHYS_PLAYERS[1].targety + 1
+
+		elseif scancode == "d" then
+			PHYS_PLAYERS[1].targetx = PHYS_PLAYERS[1].targetx + 1
+
+		elseif scancode == "w" then
+			PHYS_PLAYERS[1].targety = PHYS_PLAYERS[1].targety - 1
+		end
+	end
+end
+
 function love.mousereleased(x, y, button, isTouch)
 	local rx, ry = res.toGame(x,y)		-- does this need to be applied consistently across all mouse clicks?
 	local currentscene = cf.CurrentScreenName(SCREEN_STACK)
@@ -94,6 +126,8 @@ function love.load()
 	love.window.setTitle("Tactical Gridiron v2 " .. GAME_VERSION)
 
 	cf.AddScreen(enum.sceneMainMenu, SCREEN_STACK)
+
+	love.keyboard.setKeyRepeat(true)
 
 	love.physics.setMeter(1)
 	world = love.physics.newWorld(0, 0, true)
