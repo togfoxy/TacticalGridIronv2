@@ -64,6 +64,7 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].fallen = false
         PHYS_PLAYERS[i].targetx = nil
         PHYS_PLAYERS[i].targety = nil
+        PHYS_PLAYERS[i].targettimer = nil
         PHYS_PLAYERS[i].gamestate = enum.gamestateForming
 
         ps.setCustomStats(PHYS_PLAYERS[i], i)
@@ -328,13 +329,31 @@ local function setFormingTarget(obj, index)
 
 end
 
-local function setAllTargets()
+local function setInPlayTarget(obj, index, dt)
+    -- determine the target for the single obj
+
+    if obj.targettimer ~= nil then obj.targettimer = obj.targettimer - dt end
+
+    if obj.targettimer == nil or obj.targettimer <= 0 then
+        -- set new target
+        obj.targettimer = 1
+        if index <= 11 then
+            obj.targety = TopPostY
+        else
+            -- nothing
+        end
+    end
+end
+
+local function setAllTargets(dt)
     -- ensure every player has a destination to go to
     for i = 1, NumberOfPlayers do
-        if PHYS_PLAYERS[i].targetx == nil then
-            if GAME_STATE == enum.gamestateForming then
+        if GAME_STATE == enum.gamestateForming then
+            if PHYS_PLAYERS[i].targetx == nil then
                 setFormingTarget(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
             end
+        elseif GAME_STATE == enum.gamestateInPlay then
+            setInPlayTarget(PHYS_PLAYERS[i], i, dt)
         end
     end
 end
@@ -344,7 +363,7 @@ local function moveAllPlayers(dt)
     local fltForceAdjustment = 2	-- tweak this to get fluid motion
     local fltMaxVAdjustment = 4		-- tweak this to get fluid motion
 
-    setAllTargets()
+    setAllTargets(dt)
     --! apply force
 
     for i = 1, NumberOfPlayers do
