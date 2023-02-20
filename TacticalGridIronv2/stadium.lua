@@ -184,8 +184,15 @@ local function endtheround(score)
     -- move to the next scene
     REFRESH_DB = true
 
-    --! need to reset all sorts of player status here
-
+    -- need to reset all sorts of player status here
+    for i = 1, NumberOfPlayers do
+        PHYS_PLAYERS[i].body:destroy()
+    end
+    GAME_STATE = nil
+    downNumber = 1
+    ScrimmageY = BottomGoalY - 25
+    FirstDownMarkerY = ScrimmageY - 10
+    
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
 
@@ -566,7 +573,7 @@ local function resetFirstDown(y)
     -- a first down is detected
     -- y = the y value of the new line of scrimmage
     FirstDownMarkerY = ScrimmageY - 10
-    if FirstDownMarkerY < TopGoalY then FirstDownMarkerY == TopGoalY end
+    if FirstDownMarkerY < TopGoalY then FirstDownMarkerY = TopGoalY end
     downNumber = 1
 end
 
