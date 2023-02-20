@@ -5,6 +5,7 @@ function playerstats.setCustomStats(obj, index)
     -- index is the number within the array (1 -> 22) and is used to know what position the object is in
 
     obj.balance = love.math.random(94,96)       -- default value that is overridden below
+    obj.balance = 50
 
     if index == 1 then
         obj.positionletters = "QB"
