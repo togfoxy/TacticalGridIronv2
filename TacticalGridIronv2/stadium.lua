@@ -562,6 +562,14 @@ local function resetFallenPlayers()
     end
 end
 
+local function resetFirstDown(y)
+    -- a first down is detected
+    -- y = the y value of the new line of scrimmage
+    FirstDownMarkerY = ScrimmageY - 10
+    if FirstDownMarkerY < TopGoalY then FirstDownMarkerY == TopGoalY end
+    downNumber = 1
+end
+
 local function checkForStateChange(dt)
     -- looks for key events that will trigger a change in game state
     if GAME_STATE == enum.gamestateForming then
@@ -591,7 +599,9 @@ local function checkForStateChange(dt)
                     downNumber = downNumber + 1
                     deadBallTimer = 3       -- three second pause before resetting
                     ScrimmageY = PHYS_PLAYERS[i].body:getY()
-                    if ScrimmageY <= FirstDownMarkerY then FirstDownMarkerY = ScrimmageY - 10 end
+                    if ScrimmageY <= FirstDownMarkerY then
+                        resetFirstDown(ScrimmageY)
+                    end
                 end
 
                 -- runner is outside the field
@@ -601,7 +611,9 @@ local function checkForStateChange(dt)
                     downNumber = downNumber + 1
                     deadBallTimer = 3       -- three second pause before resetting
                     ScrimmageY = PHYS_PLAYERS[i].body:getY()
-                    if ScrimmageY <= FirstDownMarkerY then FirstDownMarkerY = ScrimmageY - 10 end
+                    if ScrimmageY <= FirstDownMarkerY then
+                        resetFirstDown(ScrimmageY)
+                    end
                 end
 
                 -- runner is across the goal
