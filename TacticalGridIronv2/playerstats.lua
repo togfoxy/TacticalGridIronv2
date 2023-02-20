@@ -4,6 +4,8 @@ function playerstats.setCustomStats(obj, index)
     -- sets up the stats for this single object.
     -- index is the number within the array (1 -> 22) and is used to know what position the object is in
 
+    obj.balance = love.math.random(94,96)       -- default value that is overridden below
+
     if index == 1 then
         obj.positionletters = "QB"
         obj.body:setMass(love.math.random(91,110))	-- kilograms

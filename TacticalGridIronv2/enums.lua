@@ -29,6 +29,8 @@ function enums.load()
     enum.gamestateForming = 1
     enum.gamestateReadyForSnap = 2
     enum.gamestateInPlay = 3
+    enum.gamestateDeadBall = 4
+    enum.gamestateGameOver = 5
 
 end
 return enums
