@@ -172,9 +172,8 @@ local function drawStadium()
 
 end
 
-local function endtheround()
-    -- dummy function to test the scene progression
-    local score = love.math.random(0, 30)
+local function endtheround(score)
+    -- end the game
     OFFENSIVE_SCORE = score
     OFFENSIVE_TIME = cf.round(OFFENSIVE_TIME, 4)
 
@@ -563,21 +562,29 @@ local function checkForStateChange()
     elseif GAME_STATE == enum.gamestateInPlay then
         -- check for a number of conditions
 
-        --! the runner is down/fallen
         for i = 1, 11 do
             if PHYS_PLAYERS[i].hasBall then
                 if PHYS_PLAYERS[i].fallen then
+                    -- the runner is down/fallen
                     GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
                 end
+
+                -- runner is outside the field
                 local objx = PHYS_PLAYERS[i].body:getX()
                 if objx < LeftLineX or objx > RightLineX then
                     GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
                 end
+
+                -- runner is across the goal
+                local objy = PHYS_PLAYERS[i].body:getY()
+                if objy <= TopGoalY then
+                    -- touchdown!
+                    GAME_STATE = enum.gamestateGameOver
+                    endtheround(6)
+                end
             end
 
-        --! runner is across the goal
-
-        --! ball is dropped
+            --! ball is dropped
         end
     end
 end
@@ -595,10 +602,10 @@ function stadium.update(dt)
         OFFENSIVE_TIME = OFFENSIVE_TIME + dt
     end
 
-    if love.math.random(1,5000) == 1 then
-        -- end game
-        endtheround()
-    end
+    -- if love.math.random(1,5000) == 1 then
+    --     -- end game
+    --     endtheround()
+    -- end
 
     if not REFRESH_DB then
         -- update gets called before draw so do NOT try to move players before they are initialised and drawn.
