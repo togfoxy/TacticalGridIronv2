@@ -4,7 +4,9 @@ function playerstats.setCustomStats(obj, index)
     -- sets up the stats for this single object.
     -- index is the number within the array (1 -> 22) and is used to know what position the object is in
 
-    obj.balance = love.math.random(94,96)       -- default value that is overridden below
+    obj.balance = love.math.random(85,90)       -- default value that is overridden below
+
+    -- obj.balance = 50
 
     if index == 1 then
         obj.positionletters = "QB"
@@ -27,7 +29,7 @@ function playerstats.setCustomStats(obj, index)
         obj.maxpossibleV = 16.3					-- max velocity possible for this position
         obj.maxV = love.math.random(148,163)/10		-- max velocity possible for this player (this persons limitations)
         obj.maxF = 1565							-- maximum force (how much force to apply to make them move)
-        obj.balance = love.math.random(95,97)		-- this is a percentage eg 95% chance of NOT falling down
+        obj.balance = love.math.random(90,95)		-- this is a percentage eg 95% chance of NOT falling down
         obj.catchskill = love.math.random(85,95)	-- RB's get handoffs and not catches so make this high
     elseif index == 6 then
         obj.positionletters = "TE"
