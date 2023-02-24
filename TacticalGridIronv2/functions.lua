@@ -78,23 +78,150 @@ local function populateGlobalsTable()
     fbdb:close()
 end
 
-function functions.createNewGame()
+local function createNewPlayer(fbdb, index, teamid)
+    -- given index (1 -> 11) write a new row into the players table
+    -- fbdb = the database passed into this subprocedure
 
-    deleteAllTables()
+    local firstname = "Joe"
+    local familyname = "Blow"       --!
 
-    -- populate global table
-    populateGlobalsTable()
-    CURRENT_SEASON = 1
+    local positionletters, mass, maxpossibleV, maxV, maxF
+    local throwaccuracy = 0
+    local catchskill = 0
+    local balance = 0
 
-    -- populate teams table
-    populateTeamsTable()
+    if index == 1 then
+        positionletters = "QB"
+        mass = (love.math.random(91,110))	-- kilograms
+        maxpossibleV = 14.8					-- max velocity possible for this position
+        maxV = love.math.random(133,148)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1495							-- maximum force (how much force to apply to make them move)
+        throwaccuracy = love.math.random(90,100)	-- this distance ball lands from intended target
+    elseif index == 2 or index == 3 or index == 4 then
+        positionletters = "WR"
+        mass = (love.math.random(80,100))	-- kilograms
+        maxpossibleV = 16.3					-- max velocity possible for this position
+        maxV = love.math.random(148,163)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1467							-- maximum force (how much force to apply to make them move)
+        catchskill = love.math.random(80,90)			-- % chance of catching ball
+        -- if catchskill is changed here then need to update coloured boxes
+    elseif index == 5 then
+        positionletters = "RB"
+        mass = (love.math.random(86,106))	-- kilograms
+        maxpossibleV = 16.3					-- max velocity possible for this position
+        maxV = love.math.random(148,163)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1565							-- maximum force (how much force to apply to make them move)
+        local balance = love.math.random(90,95)		-- this is a percentage eg 95% chance of NOT falling down
+        local catchskill = love.math.random(85,95)	-- RB's get handoffs and not catches so make this high
+    elseif index == 6 then
+        positionletters = "TE"
+        mass = (love.math.random(104,124))	-- kilograms
+        maxpossibleV = 15.4					-- max velocity possible for this position
+        maxV = love.math.random(149,154)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1756							-- maximum force (how much force to apply to make them move)
+    elseif index == 7 then
+        positionletters = "C"
+        mass = (love.math.random(131,151))	-- kilograms
+        maxpossibleV = 13.8					-- max velocity possible for this position
+        maxV = love.math.random(123,138)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1946							-- maximum force (how much force to apply to make them move)
+    elseif index == 8 then
+        positionletters = "LG"					-- left guard offense
+        mass = (love.math.random(131,151))	-- kilograms
+        maxpossibleV = 13.6					-- max velocity possible for this position
+        maxV = love.math.random(121,136)/10	-- max velocity possible for this player (this persons limitations)
+        maxF = 1918							-- maximum force (how much force to apply to make them move)
+    elseif index == 9 then
+        positionletters = "RG"					-- right guard offense
+        mass = (love.math.random(131,151))	-- kilograms
+        maxpossibleV = 13.6					-- max velocity possible for this position
+        maxV = love.math.random(121,136)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1918							-- maximum force (how much force to apply to make them move)
+    elseif index == 10 then
+        positionletters = "LT"					-- left tackle offense
+        mass = (love.math.random(131,151))	-- kilograms
+        maxpossibleV = 13.7					-- max velocity possible for this position
+        maxV = love.math.random(122,137)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1932							-- maximum force (how much force to apply to make them move)
+    elseif index == 11 then
+        positionletters = "RT"					-- left tackle offense
+        mass = (love.math.random(131,151))	-- kilograms
+        maxpossibleV = 13.7					-- max velocity possible for this position
+        maxV = love.math.random(122,137)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1932							-- maximum force (how much force to apply to make them move)
 
-    -- populate player table
+    -- opposing team
 
-    -- populate season table
-    db.populateSeasonTable()
+    elseif index == 12 or index == 13 then
+        positionletters = "DT"
+        mass = (love.math.random(129,149))	-- kilograms
+        maxpossibleV = 14.5					-- max velocity possible for this position
+        maxV = love.math.random(130,145)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 2016							-- maximum force (how much force to apply to make them move)
+    elseif index == 14 then
+        positionletters = "LE"
+        mass = (love.math.random(116,136))	-- kilograms
+        maxpossibleV = 15.2					-- max velocity possible for this position
+        maxV = love.math.random(137,152)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1915							-- maximum force (how much force to apply to make them move)
+    elseif index == 15 then
+        positionletters = "RE"
+        mass = (love.math.random(116,136))	-- kilograms
+        maxpossibleV = 15.2					-- max velocity possible for this position
+        maxV = love.math.random(137,152)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1915							-- maximum force (how much force to apply to make them move)
+    elseif index == 16 then
+        positionletters = "ILB"
+        mass = (love.math.random(100,120))	-- kilograms
+        maxpossibleV = 15.6					-- max velocity possible for this position
+        maxV = love.math.random(141,156)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1716							-- maximum force (how much force to apply to make them move)
+    elseif index == 17 or index == 18 then
+        positionletters = "OLB"
+        mass = (love.math.random(100,120))	-- kilograms
+        maxpossibleV = 15.7					-- max velocity possible for this position
+        maxV = love.math.random(142,157)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1727							-- maximum force (how much force to apply to make them move)
+    elseif index == 19 or index == 20 then
+        positionletters = "CB"
+        mass = (love.math.random(80,100))	-- kilograms
+        maxpossibleV = 16.3					-- max velocity possible for this position
+        maxV = love.math.random(148,163)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1467							-- maximum force (how much force to apply to make them move)
+    elseif index == 21 then
+        positionletters = "S"
+        mass = (love.math.random(80,100))	-- kilograms
+        maxpossibleV = 16.1					-- max velocity possible for this position
+        maxV = love.math.random(146,161)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1449
+    elseif index == 22 then
+        positionletters = "S"
+        mass = (love.math.random(80,100))	-- kilograms
+        maxpossibleV = 16.1					-- max velocity possible for this position
+        maxV = love.math.random(146,161)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1449
+    end
 
+    -- local fbdb = sqlite3.open(DB_FILE)
+    local strQuery = "Insert into PLAYERS ('TEAMID', 'FIRSTNAME', 'FAMILYNAME', 'POSITION', 'MASS', 'MAXPOSSIBLEV', 'MAXV', 'MAXF', 'BALANCE', 'THROWACCURACY', 'CATCHSKILL') "
+    strQuery = strQuery .. "values ('" .. teamid .. "', '" .. firstname .."', '" .. familyname .. "', '" .. positionletters .. "', '" .. mass .. "', '"
+    strQuery = strQuery .. maxpossibleV .. "', '" .. maxV .. "', '" .. maxF .. "', '" .. balance .. "', '" .. throwaccuracy .. "', '" .. catchskill .. "')"
+    local dberror = fbdb:exec(strQuery)
+    assert(dberror == 0, dberror)
+end
 
+local function populatePlayersTable()
+    -- there are eight teams
+
+    local fbdb = sqlite3.open(DB_FILE)
+    local strQuery = "select TEAMID from TEAMS"
+    for row in fbdb:nrows(strQuery) do
+        -- eleven players
+        for j = 1, 22 do
+            createNewPlayer(fbdb, j, row.TEAMID)
+        end
+    end
+    fbdb:close()
 end
 
 local function loadGlobals()
@@ -107,8 +234,56 @@ local function loadGlobals()
     fbdb:close()
 end
 
+local function loadPlayers()
+    -- load players into the global table for later use
+    local fbdb = sqlite3.open(DB_FILE)
+    PLAYERS = {}
+    strQuery = "Select * from PLAYERS"
+    for row in fbdb:nrows(strQuery) do
+        local thisplayer = {}
+        thisplayer.TEAMID = row.TEAMID
+        thisplayer.FIRSTNAME = row.FIRSTNAME
+        thisplayer.FAMILYNAME = row.FAMILYNAME
+        thisplayer.POSITION = row.POSITION
+        thisplayer.MASS = row.MASS
+        thisplayer.MAXPOSSIBLEV = row.MAXPOSSIBLEV
+        thisplayer.MAXV = row.MAXV
+        thisplayer.MAXF = row.MAXF
+        thisplayer.BALANCE = row.BALANCE
+        thisplayer.THROWACCURACY = row.THROWACCURACY
+        thisplayer.CATCHSKILL = row.CATCHSKILL
+        table.insert(PLAYERS, thisplayer)
+    end
+    fbdb:close()
+end
+
 function functions.loadGame()
     loadGlobals()
+    loadPlayers()       -- load players into the global table for later use
+end
+
+function functions.createNewGame()
+
+    deleteAllTables()
+
+    -- populate global table
+    populateGlobalsTable()
+    CURRENT_SEASON = 1
+
+    -- populate teams table
+    populateTeamsTable()
+
+    -- populate player table
+    populatePlayersTable()
+
+    -- assign players to teams
+
+    -- populate season table
+    db.populateSeasonTable()
+
+    -- after populating the database, load them into tables
+    fun.loadGame()
+
 end
 
 

@@ -2,6 +2,8 @@ stadium = {}
 
 local NumberOfPlayers = 22
 local arr_seasonstatus, offensiveteamname, defensiveteamname, deadBallTimer
+local playcall_offense = 1 --!enum.playcallRun
+local playcall_defense = 2 --!enum.playcallManOnMan
 local downNumber = 1
 
 local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
@@ -27,6 +29,51 @@ local RightLineX = LeftLineX + FieldWidth
 local CentreLineX = LeftLineX + (FieldWidth / 2)
 local ScrimmageY = BottomGoalY - 25
 local FirstDownMarkerY = ScrimmageY - 10		-- yards
+
+local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
+	-- receives the player in question and the target type string (eg "WR") and finds the closest enemy player of that type
+	-- enemytype can be an empty string ("") which will search for ANY type
+	-- bolCheckOwnTeam = false means scan only the enemy
+	-- returns (zero, 1000) if none found
+    -- returns (index, dist) if an object is found
+
+	local myclosestdist = 1000
+	local myclosesttarget = 0
+
+	local currentplayerX = PHYS_PLAYERS[playernum].body:getX()
+	local currentplayerY = PHYS_PLAYERS[playernum].body:getY()
+
+	-- set up loop to scan opposing team or the whole team
+	if bolCheckOwnTeam then
+		a = 1
+		b = NumberOfPlayers
+	else
+		if playernum > (NumberOfPlayers / 2) then
+			a = 1
+			b = NumberOfPlayers / 2
+		else
+			a = (NumberOfPlayers / 2) + 1
+			b = NumberOfPlayers
+		end
+	end
+	for i = a,b do
+		if not PHYS_PLAYERS[i].fallen then
+			if PHYS_PLAYERS[i].positionletters == enemytype or enemytype == "" then
+				-- determine distance
+				local thisdistance = cf.getDistance(currentplayerX, currentplayerY, PHYS_PLAYERS[i].body:getX(), PHYS_PLAYERS[i].body:getY())
+
+				if thisdistance < myclosestdist then
+					-- found a closer target. Make that one the focuse
+					myclosesttarget = i
+					myclosestdist = thisdistance
+					--print("Just set closest target for player " .. playernum .. " to " .. i)
+				end
+			end
+		end
+	end		-- for loop
+
+	return myclosesttarget, myclosestdist
+end
 
 function stadium.mousereleased(rx, ry)
     -- call from love.mousereleased()
@@ -67,6 +114,7 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].hasBall = false
 
         ps.setCustomStats(PHYS_PLAYERS[i], i)
+		ps.getStatsFromDB(PHYS_PLAYERS[i], i)
     end
 
 end
@@ -104,7 +152,7 @@ local function drawStadium()
         assert(OFF_RED ~= nil, strQuery)
         assert(DEF_RED ~= nil, strQuery)
 
-        createPhysicsPlayers()      --! need to destroy these things when leaving the scene
+        createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
         GAME_STATE = enum.gamestateForming
         OFFENSIVE_TIME = 0
     end
@@ -165,8 +213,11 @@ local function drawStadium()
 
     -- print the two teams
     love.graphics.setColor(1,1,1,1)
-    love.graphics.print(offensiveteamname, 50, 50)       --! this needs to be the team name and not the ID
+    love.graphics.print(offensiveteamname, 50, 50)       -- this needs to be the team name and not the ID
     love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
+
+	-- print some key player stats
+	love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 100)
 
 end
 
@@ -192,7 +243,7 @@ local function endtheround(score)
     downNumber = 1
     ScrimmageY = BottomGoalY - 25
     FirstDownMarkerY = ScrimmageY - 10
-    
+
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
 
@@ -211,6 +262,7 @@ local function setFormingTarget(obj, index)
     if index == 2 then
         obj.targetx = (CentreLineX - 14)	 -- left 'wing'
         obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
+
     end
 
 	-- player 3 = WR (right)
@@ -337,28 +389,56 @@ local function setFormingTarget(obj, index)
 
 end
 
+local function setInPlayTargetRun(obj, index)
+	-- the targets for obj[index] players to rush the goal
+	if index == 1 then
+		obj.targety = TopPostY
+	else
+		local enemyindex, enemydist = determineClosestObject(index, "", false)
+		if enemyindex == 0 then
+			-- no target (what?!)
+			obj.targety = TopPostY
+		else
+			-- bee line to the nearest defender
+			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+		end
+	end
+end
+
+local function setInPlayTargetManOnMan(obj, carrierindex)
+	-- sets the defense to target the carrier
+	--! this is not the correct behavior for man on man
+	obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
+	obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
+end
+
 local function setInPlayTarget(obj, index, runnerindex, dt)
     -- determine the target for the single obj
     -- runnerindex might be nil on some calls but is okay because it's only used by players 12+
+	-- obj = the physical obj
+	-- index = index
+	-- runner index = the carrier with the ball
 
     if obj.targettimer ~= nil then obj.targettimer = obj.targettimer - dt end
 
     if obj.targettimer == nil or obj.targettimer <= 0 then
         -- set new target
-
         obj.targettimer = 0     -- only change targets every x seconds
 
-        if index <= 11 then
-            obj.targety = TopPostY
-        else
-            obj.targetx = PHYS_PLAYERS[runnerindex].body:getX()
-
-            --if PHYS_PLAYERS[runnerindex].body:getY() < obj.body:getY() then
-                -- QB is behind this object so chase it
-                obj.targety = PHYS_PLAYERS[runnerindex].body:getY() - 15
-            --end
-
-        end
+		if index <= 11 then
+			if playcall_offense == enum.playcallRun then
+				setInPlayTargetRun(obj, index)		-- sets target for a single index
+			else
+				--! add more plays here
+			end
+		else
+			if playcall_defense == enum.playcallManOnMan then
+				setInPlayTargetManOnMan(obj, runnerindex)
+			else
+				--! add more plays here
+			end
+		end
     end
 end
 
@@ -381,8 +461,8 @@ end
 
 local function moveAllPlayers(dt)
 
-    local fltForceAdjustment = 2	-- tweak this to get fluid motion
-    local fltMaxVAdjustment = 3		-- tweak this to get fluid motion
+    local fltForceAdjustment = 0.5	-- tweak this to get fluid motion
+    local fltMaxVAdjustment = 1		-- tweak this to get fluid motion
 
     if GAME_STATE ~= enum.gamestateDeadBall then
 
@@ -416,6 +496,12 @@ local function moveAllPlayers(dt)
                     -- determine vector to target
         			local vectorxtotarget = targetx - objx
         			local vectorytotarget = targety - objy
+
+                    -- if the game is in play, then make sure obj doesn't stop short of target
+                    if GAME_STATE == enum.gamestateInPlay then
+                        vectorxtotarget = vectorxtotarget * 10
+                        vectorytotarget = vectorytotarget * 10
+                    end
 
                     -- determine the aceleration vector that needs to be applied to the velocity vector to reach the target.
         			-- target vector - player velocity vector
@@ -536,20 +622,27 @@ local function beginContact(a, b, coll)
         local aindex = a:getUserData()
         local bindex = b:getUserData()
 
-        if (aindex <= 11 and bindex >= 12) or (aindex >= 12 and bindex <= 11) then
-            -- enemy contact
-            abalance = PHYS_PLAYERS[aindex].balance
-            bbalance = PHYS_PLAYERS[bindex].balance
+		-- print(PHYS_PLAYERS[aindex].fixture:isSensor(), PHYS_PLAYERS[bindex].fixture:isSensor())
 
-            if love.math.random(0, 100) > abalance then
-                PHYS_PLAYERS[aindex].fallen = true
-                PHYS_PLAYERS[aindex].fixture:setSensor(true)
-            end
+		if (aindex <= (NumberOfPlayers / 2) and bindex >= (NumberOfPlayers / 2 + 1)) or (aindex >= (NumberOfPlayers / 2 +1) and bindex <= NumberOfPlayers / 2) then
+            -- contact with the enemy
 
-            if love.math.random(0, 100) > bbalance then
-                PHYS_PLAYERS[bindex].fallen = true
-                PHYS_PLAYERS[bindex].fixture:setSensor(true)
-            end
+			if PHYS_PLAYERS[aindex].fallen == true or PHYS_PLAYERS[bindex].fallen == true then
+				-- can't fall over fallen players. Do nothing
+			else
+	            abalance = PHYS_PLAYERS[aindex].balance
+	            bbalance = PHYS_PLAYERS[bindex].balance
+
+	            if love.math.random(0, 100) > abalance then
+	                PHYS_PLAYERS[aindex].fallen = true
+	                PHYS_PLAYERS[aindex].fixture:setSensor(true)
+	            end
+
+	            if love.math.random(0, 100) > bbalance then
+	                PHYS_PLAYERS[bindex].fallen = true
+	                PHYS_PLAYERS[bindex].fixture:setSensor(true)
+	            end
+			end
         else
             -- friendly contact. Do nothing
         end
@@ -598,7 +691,7 @@ local function checkForStateChange(dt)
     elseif GAME_STATE == enum.gamestateInPlay then
         -- check for a number of conditions
 
-        for i = 1, 11 do
+        for i = 1, NumberOfPlayers / 2 do
             if PHYS_PLAYERS[i].hasBall then
                 if PHYS_PLAYERS[i].fallen then
                     -- the runner is down/fallen

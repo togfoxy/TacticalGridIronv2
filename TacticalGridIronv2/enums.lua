@@ -11,7 +11,6 @@ function enums.load()
     enum.sceneTradePlayers = 7
     enum.sceneTrainPlayers = 8
 
-
     enum.buttonMainMenuExit = 1
     enum.buttonMainMenuCredits = 2
     enum.buttonCreditsExit = 3
@@ -31,6 +30,9 @@ function enums.load()
     enum.gamestateInPlay = 3
     enum.gamestateDeadBall = 4
     enum.gamestateGameOver = 5
+
+    enum.playcallRun = 1
+    enum.playcallManOnMan = 2
 
 end
 return enums
