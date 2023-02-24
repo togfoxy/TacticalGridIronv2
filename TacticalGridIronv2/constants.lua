@@ -38,6 +38,7 @@ function constants.load()
     CHAMPION_TIME = nil
 
     PHYS_PLAYERS = {}       -- array of objects that are players
+    PLAYERS = {}            -- every player for every team
 
     GAME_STATE = nil
 

@@ -114,6 +114,7 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].hasBall = false
 
         ps.setCustomStats(PHYS_PLAYERS[i], i)
+		ps.getStatsFromDB(PHYS_PLAYERS[i], i)
     end
 
 end
@@ -151,7 +152,7 @@ local function drawStadium()
         assert(OFF_RED ~= nil, strQuery)
         assert(DEF_RED ~= nil, strQuery)
 
-        createPhysicsPlayers()      --! need to destroy these things when leaving the scene
+        createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
         GAME_STATE = enum.gamestateForming
         OFFENSIVE_TIME = 0
     end
@@ -212,8 +213,11 @@ local function drawStadium()
 
     -- print the two teams
     love.graphics.setColor(1,1,1,1)
-    love.graphics.print(offensiveteamname, 50, 50)       --! this needs to be the team name and not the ID
+    love.graphics.print(offensiveteamname, 50, 50)       -- this needs to be the team name and not the ID
     love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
+
+	-- print some key player stats
+	love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 100)
 
 end
 
@@ -409,8 +413,6 @@ local function setInPlayTargetManOnMan(obj, carrierindex)
 	obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
 end
 
-
-
 local function setInPlayTarget(obj, index, runnerindex, dt)
     -- determine the target for the single obj
     -- runnerindex might be nil on some calls but is okay because it's only used by players 12+
@@ -459,8 +461,8 @@ end
 
 local function moveAllPlayers(dt)
 
-    local fltForceAdjustment = 2	-- tweak this to get fluid motion
-    local fltMaxVAdjustment = 3		-- tweak this to get fluid motion
+    local fltForceAdjustment = 0.5	-- tweak this to get fluid motion
+    local fltMaxVAdjustment = 1		-- tweak this to get fluid motion
 
     if GAME_STATE ~= enum.gamestateDeadBall then
 

@@ -43,7 +43,7 @@ function db.getCountSeasonTable()
     return index
 end
 
- function db.populateSeasonTable()
+function db.populateSeasonTable()
 
     local fbdb = sqlite3.open(DB_FILE)
     local strQuery = "select * from TEAMS"

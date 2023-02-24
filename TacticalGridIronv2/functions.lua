@@ -80,8 +80,10 @@ end
 
 local function createNewPlayer(fbdb, index, teamid)
     -- given index (1 -> 11) write a new row into the players table
+    -- fbdb = the database passed into this subprocedure
+
     local firstname = "Joe"
-    local familyname = "Blow"
+    local familyname = "Blow"       --!
 
     local positionletters, mass, maxpossibleV, maxV, maxF
     local throwaccuracy = 0
@@ -204,14 +206,8 @@ local function createNewPlayer(fbdb, index, teamid)
     local strQuery = "Insert into PLAYERS ('TEAMID', 'FIRSTNAME', 'FAMILYNAME', 'POSITION', 'MASS', 'MAXPOSSIBLEV', 'MAXV', 'MAXF', 'BALANCE', 'THROWACCURACY', 'CATCHSKILL') "
     strQuery = strQuery .. "values ('" .. teamid .. "', '" .. firstname .."', '" .. familyname .. "', '" .. positionletters .. "', '" .. mass .. "', '"
     strQuery = strQuery .. maxpossibleV .. "', '" .. maxV .. "', '" .. maxF .. "', '" .. balance .. "', '" .. throwaccuracy .. "', '" .. catchskill .. "')"
-
-print(strQuery)
-
     local dberror = fbdb:exec(strQuery)
-
     assert(dberror == 0, dberror)
-
-    -- fbdb1:close()
 end
 
 local function populatePlayersTable()
@@ -228,6 +224,44 @@ local function populatePlayersTable()
     fbdb:close()
 end
 
+local function loadGlobals()
+
+    local fbdb = sqlite3.open(DB_FILE)
+    local strQuery = "select * from GLOBALS"
+    for row in fbdb:nrows(strQuery) do
+        CURRENT_SEASON = row.CURRENTSEASON
+    end
+    fbdb:close()
+end
+
+local function loadPlayers()
+    -- load players into the global table for later use
+    local fbdb = sqlite3.open(DB_FILE)
+    PLAYERS = {}
+    strQuery = "Select * from PLAYERS"
+    for row in fbdb:nrows(strQuery) do
+        local thisplayer = {}
+        thisplayer.TEAMID = row.TEAMID
+        thisplayer.FIRSTNAME = row.FIRSTNAME
+        thisplayer.FAMILYNAME = row.FAMILYNAME
+        thisplayer.POSITION = row.POSITION
+        thisplayer.MASS = row.MASS
+        thisplayer.MAXPOSSIBLEV = row.MAXPOSSIBLEV
+        thisplayer.MAXV = row.MAXV
+        thisplayer.MAXF = row.MAXF
+        thisplayer.BALANCE = row.BALANCE
+        thisplayer.THROWACCURACY = row.THROWACCURACY
+        thisplayer.CATCHSKILL = row.CATCHSKILL
+        table.insert(PLAYERS, thisplayer)
+    end
+    fbdb:close()
+end
+
+function functions.loadGame()
+    loadGlobals()
+    loadPlayers()       -- load players into the global table for later use
+end
+
 function functions.createNewGame()
 
     deleteAllTables()
@@ -242,29 +276,14 @@ function functions.createNewGame()
     -- populate player table
     populatePlayersTable()
 
-
     -- assign players to teams
-
-
 
     -- populate season table
     db.populateSeasonTable()
 
+    -- after populating the database, load them into tables
+    fun.loadGame()
 
-end
-
-local function loadGlobals()
-
-    local fbdb = sqlite3.open(DB_FILE)
-    local strQuery = "select * from GLOBALS"
-    for row in fbdb:nrows(strQuery) do
-        CURRENT_SEASON = row.CURRENTSEASON
-    end
-    fbdb:close()
-end
-
-function functions.loadGame()
-    loadGlobals()
 end
 
 
