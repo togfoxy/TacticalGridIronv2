@@ -8,6 +8,11 @@ function constants.load()
 
     SCREEN_WIDTH, SCREEN_HEIGHT = love.window.getDesktopDimensions(1)
 
+    -- camera
+    ZOOMFACTOR = 1
+    TRANSLATEX = cf.round(SCREEN_WIDTH / 2)		-- starts the camera in the middle of the ocean
+    TRANSLATEY = cf.round(SCREEN_HEIGHT / 2)	-- need to round because this is working with pixels
+
     -- declaring these nil for readability
     DB_PATH = nil
     DB_FILE = nil

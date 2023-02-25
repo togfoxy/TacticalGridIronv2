@@ -30,12 +30,91 @@ local CentreLineX = LeftLineX + (FieldWidth / 2)
 local ScrimmageY = BottomGoalY - 25
 local FirstDownMarkerY = ScrimmageY - 10		-- yards
 
+function stadium.keypressed( key, scancode, isrepeat )
+	if GAME_STATE == enum.gamestateReadyForSnap then
+		if scancode == "a" then
+			GAME_STATE = enum.gamestateInPlay
+
+		elseif scancode == "s" then
+			GAME_STATE = enum.gamestateInPlay
+
+		elseif scancode == "d" then
+			GAME_STATE = enum.gamestateInPlay
+
+		elseif scancode == "w" then
+			GAME_STATE = enum.gamestateInPlay
+		end
+	end
+
+	if GAME_STATE == enum.gamestateInPlay then
+		if scancode == "a" then
+			PHYS_PLAYERS[1].targetx = PHYS_PLAYERS[1].targetx - 1
+
+		elseif scancode == "s" then
+			PHYS_PLAYERS[1].targety = PHYS_PLAYERS[1].targety + 1
+
+		elseif scancode == "d" then
+			PHYS_PLAYERS[1].targetx = PHYS_PLAYERS[1].targetx + 1
+
+		elseif scancode == "w" then
+			PHYS_PLAYERS[1].targety = PHYS_PLAYERS[1].targety - 1
+		end
+	end
+
+	local translatefactor = 5 * (ZOOMFACTOR * 2)		-- screen moves faster when zoomed in
+
+	local leftpressed = love.keyboard.isDown("left")
+	local rightpressed = love.keyboard.isDown("right")
+	local uppressed = love.keyboard.isDown("up")
+	local downpressed = love.keyboard.isDown("down")
+	local shiftpressed = love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift")	-- either shift key will work
+
+	-- adjust translatex/y based on keypress combinations
+	if shiftpressed then translatefactor = translatefactor * 2 end	-- ensure this line is above the lines below
+	if leftpressed then TRANSLATEX = TRANSLATEX - translatefactor end
+	if rightpressed then TRANSLATEX = TRANSLATEX + translatefactor end
+	if uppressed then TRANSLATEY = TRANSLATEY - translatefactor end
+	if downpressed then TRANSLATEY = TRANSLATEY + translatefactor end
+end
+
+function stadium.keyreleased(key, scancode)
+
+	if key == "kp5" then		--! make this scancode later on
+		ZOOMFACTOR = 1
+		TRANSLATEX = SCREEN_WIDTH / 2
+		TRANSLATEY = SCREEN_HEIGHT / 2
+	end
+
+	if key == "-" then
+		ZOOMFACTOR = ZOOMFACTOR - 0.05
+	end
+	if key == "=" then
+		ZOOMFACTOR = ZOOMFACTOR + 0.05
+	end
+end
+
+function stadium.wheelmoved(x, y)
+
+	if y > 0 then
+		-- wheel moved up. Zoom in
+		ZOOMFACTOR = ZOOMFACTOR + 0.05
+	end
+	if y < 0 then
+		ZOOMFACTOR = ZOOMFACTOR - 0.05
+	end
+	if ZOOMFACTOR < 0.8 then ZOOMFACTOR = 0.8 end
+	if ZOOMFACTOR > 3 then ZOOMFACTOR = 3 end
+	print("Zoom factor = " .. ZOOMFACTOR)
+end
+
 local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
-	-- receives the player in question and the target type string (eg "WR") and finds the closest enemy player of that type
+	-- receives the player index in question and the target type string (eg "WR") and finds the closest enemy player of that type
 	-- enemytype can be an empty string ("") which will search for ANY type
 	-- bolCheckOwnTeam = false means scan only the enemy
-	-- returns (zero, 1000) if none found
-    -- returns (index, dist) if an object is found
+	-- will not target fallen players
+	-- returns two values:
+		-- returns (zero, 1000) if none found
+	    -- returns (index, dist) if an object is found. Index is (1 -> 22)
 
 	local myclosestdist = 1000
 	local myclosesttarget = 0
@@ -116,7 +195,6 @@ local function createPhysicsPlayers()
         ps.setCustomStats(PHYS_PLAYERS[i], i)
 		ps.getStatsFromDB(PHYS_PLAYERS[i], i)
     end
-
 end
 
 local function drawStadium()
@@ -386,14 +464,48 @@ local function setFormingTarget(obj, index)
         obj.targetx = (CentreLineX + 4)	 -- left 'wing'
         obj.targety = (ScrimmageY - 17)
     end
-
 end
 
 local function setInPlayTargetRun(obj, index)
 	-- the targets for obj[index] players to rush the goal
 	if index == 1 then
 		obj.targety = TopPostY
+	elseif index == 2 or index == 3 or index == 4 then	-- WR
+		local enemyindex, enemydist = determineClosestObject(index, "CB", false)
+		if enemyindex == 0 then
+			local enemyindex, enemydist = determineClosestObject(index, "", false)
+			if enemyindex == 0 then
+				-- no target (what?!)
+				obj.targety = TopPostY
+			else
+				-- bee line to the nearest defender
+				obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+				obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+			end
+		else
+			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+		end
+	elseif index == 6 then		-- TE
+		local enemyindex, enemydist = determineClosestObject(index, "ILB", false)
+		if enemyindex == 0 then
+			-- target closest player
+			local enemyindex, enemydist = determineClosestObject(index, "", false)
+			if enemyindex == 0 then
+				-- no target (what?!)
+				obj.targety = TopPostY
+			else
+				-- bee line to the nearest defender
+				obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+				obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+			end
+		else
+			-- bee line to the nearest defender
+			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+		end
 	else
+		-- target closest player
 		local enemyindex, enemydist = determineClosestObject(index, "", false)
 		if enemyindex == 0 then
 			-- no target (what?!)
@@ -409,8 +521,45 @@ end
 local function setInPlayTargetManOnMan(obj, carrierindex)
 	-- sets the defense to target the carrier
 	--! this is not the correct behavior for man on man
+
+	-- default to carrier and then overwrite below
 	obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
 	obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
+
+	local thisindex = obj.fixture:getUserData()
+
+	if obj.positionletters == "DT" or obj.positionletters == "LE" or obj.positionletters == "RE" then
+		-- rush the carrier
+		obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
+		obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
+
+	elseif obj.positionletters == "CB" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		end
+	elseif obj.positionletters == "ILB" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "RB", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		end
+	elseif obj.positionletters == "S" then
+		-- target TE first and then WR
+		local targetindex, targetdist = determineClosestObject(thisindex, "TE", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			-- if no TE then target WR
+			local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
+			if targetindex ~= 0 then
+				obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+				obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			end
+		end
+	end
 end
 
 local function setInPlayTarget(obj, index, runnerindex, dt)
@@ -610,10 +759,14 @@ end
 function stadium.draw()
     -- call this from love.draw()
 
+	cam:attach()		--! will need to put cam in the right place later on
+
     drawStadium()
     drawPlayers()
 
     buttons.drawButtons()
+
+	cam:detach()
 end
 
 local function beginContact(a, b, coll)
@@ -765,6 +918,9 @@ function stadium.update(dt)
 
     world:update(dt) --this puts the world into motion
     world:setCallbacks(beginContact, endContact, preSolve, postSolve)
+
+	cam:setZoom(ZOOMFACTOR)
+	cam:setPos(TRANSLATEX,	TRANSLATEY)
 end
 
 function stadium.loadButtons()
