@@ -393,7 +393,42 @@ local function setInPlayTargetRun(obj, index)
 	-- the targets for obj[index] players to rush the goal
 	if index == 1 then
 		obj.targety = TopPostY
+	elseif index == 2 or index == 3 or index == 4 then	-- WR
+		local enemyindex, enemydist = determineClosestObject(index, "CB", false)
+		if enemyindex == 0 then
+			local enemyindex, enemydist = determineClosestObject(index, "", false)
+			if enemyindex == 0 then
+				-- no target (what?!)
+				obj.targety = TopPostY
+			else
+				-- bee line to the nearest defender
+				obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+				obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+			end
+		else
+			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+		end
+	elseif index == 6 then		-- TE
+		local enemyindex, enemydist = determineClosestObject(index, "ILB", false)
+		if enemyindex == 0 then
+			-- target closest player
+			local enemyindex, enemydist = determineClosestObject(index, "", false)
+			if enemyindex == 0 then
+				-- no target (what?!)
+				obj.targety = TopPostY
+			else
+				-- bee line to the nearest defender
+				obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+				obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+			end
+		else
+			-- bee line to the nearest defender
+			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+		end
 	else
+		-- target closest player
 		local enemyindex, enemydist = determineClosestObject(index, "", false)
 		if enemyindex == 0 then
 			-- no target (what?!)
