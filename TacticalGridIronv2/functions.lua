@@ -51,7 +51,7 @@ local function populateTeamsTable()
     resetGlobalTeamNames()
     repeat
         local red = love.math.random(0, 255)
-        local green = love.math.random(0, 255)
+        local green = love.math.random(0, 100)      -- green is intentionally reduced so no conflict with grass
         local blue = love.math.random(0, 255)
 
         rndteamnum = love.math.random(1, #TEAM_NAMES)
@@ -68,8 +68,6 @@ local function populateTeamsTable()
     until index == 8
     fbdb:close()
 end
-
-
 
 local function populateGlobalsTable()
     local fbdb = sqlite3.open(DB_FILE)

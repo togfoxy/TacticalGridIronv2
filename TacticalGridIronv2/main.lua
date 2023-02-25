@@ -13,6 +13,7 @@ require 'lib.sqlite3.sqlite3'
 
 
 require 'lib.buttons'
+require 'enums'
 
 require 'constants'
 require 'mainmenu'
@@ -25,7 +26,6 @@ require 'tradeplayers'
 require 'trainplayers'
 ps = require 'playerstats'
 
-require 'enums'
 require 'database'
 fun = require 'functions'
 

@@ -31,11 +31,13 @@ local ScrimmageY = BottomGoalY - 25
 local FirstDownMarkerY = ScrimmageY - 10		-- yards
 
 local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
-	-- receives the player in question and the target type string (eg "WR") and finds the closest enemy player of that type
+	-- receives the player index in question and the target type string (eg "WR") and finds the closest enemy player of that type
 	-- enemytype can be an empty string ("") which will search for ANY type
 	-- bolCheckOwnTeam = false means scan only the enemy
-	-- returns (zero, 1000) if none found
-    -- returns (index, dist) if an object is found
+	-- will not target fallen players
+	-- returns two values:
+		-- returns (zero, 1000) if none found
+	    -- returns (index, dist) if an object is found. Index is (1 -> 22)
 
 	local myclosestdist = 1000
 	local myclosesttarget = 0
@@ -116,7 +118,6 @@ local function createPhysicsPlayers()
         ps.setCustomStats(PHYS_PLAYERS[i], i)
 		ps.getStatsFromDB(PHYS_PLAYERS[i], i)
     end
-
 end
 
 local function drawStadium()
@@ -386,7 +387,6 @@ local function setFormingTarget(obj, index)
         obj.targetx = (CentreLineX + 4)	 -- left 'wing'
         obj.targety = (ScrimmageY - 17)
     end
-
 end
 
 local function setInPlayTargetRun(obj, index)
@@ -409,8 +409,45 @@ end
 local function setInPlayTargetManOnMan(obj, carrierindex)
 	-- sets the defense to target the carrier
 	--! this is not the correct behavior for man on man
+
+	-- default to carrier and then overwrite below
 	obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
 	obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
+
+	local thisindex = obj.fixture:getUserData()
+
+	if obj.positionletters == "DT" or obj.positionletters == "LE" or obj.positionletters == "RE" then
+		-- rush the carrier
+		obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
+		obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
+
+	elseif obj.positionletters == "CB" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		end
+	elseif obj.positionletters == "ILB" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "RB", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		end
+	elseif obj.positionletters == "S" then
+		-- target TE first and then WR
+		local targetindex, targetdist = determineClosestObject(thisindex, "TE", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			-- if no TE then target WR
+			local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
+			if targetindex ~= 0 then
+				obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+				obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			end
+		end
+	end
 end
 
 local function setInPlayTarget(obj, index, runnerindex, dt)
