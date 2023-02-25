@@ -11,6 +11,9 @@ require 'lib.sqlite3.sqlite3'
 -- https://www.sqlite.org/index.html
 -- https://www.sqlitetutorial.net/
 
+Camera = require 'lib.cam11.cam11'
+-- https://notabug.org/pgimeno/cam11
+
 
 require 'lib.buttons'
 require 'enums'
@@ -42,39 +45,14 @@ function love.keyreleased( key, scancode )
 	elseif currentscene == enum.sceneDisplaySeasonStatus then
 		seasonstatus.keyreleased(key)
 	elseif currentscene == enum.sceneStadium then
-		-- stadium.keyreleased(rx, ry)
+		stadium.keyreleased(key, scancode)
 	end
 end
 
 function love.keypressed(key, scancode, isrepeat)
-	if GAME_STATE == enum.gamestateReadyForSnap then
-		if scancode == "a" then
-			GAME_STATE = enum.gamestateInPlay
-
-		elseif scancode == "s" then
-			GAME_STATE = enum.gamestateInPlay
-
-		elseif scancode == "d" then
-			GAME_STATE = enum.gamestateInPlay
-
-		elseif scancode == "w" then
-			GAME_STATE = enum.gamestateInPlay
-		end
-	end
-
-	if GAME_STATE == enum.gamestateInPlay then
-		if scancode == "a" then
-			PHYS_PLAYERS[1].targetx = PHYS_PLAYERS[1].targetx - 1
-
-		elseif scancode == "s" then
-			PHYS_PLAYERS[1].targety = PHYS_PLAYERS[1].targety + 1
-
-		elseif scancode == "d" then
-			PHYS_PLAYERS[1].targetx = PHYS_PLAYERS[1].targetx + 1
-
-		elseif scancode == "w" then
-			PHYS_PLAYERS[1].targety = PHYS_PLAYERS[1].targety - 1
-		end
+	local currentscene = cf.CurrentScreenName(SCREEN_STACK)
+	if currentscene == enum.sceneStadium then
+		stadium.keypressed(key, scancode, isrepeat)
 	end
 end
 
@@ -101,6 +79,15 @@ function love.mousereleased(x, y, button, isTouch)
 	end
 end
 
+function love.wheelmoved(x, y)
+	local currentscene = cf.CurrentScreenName(SCREEN_STACK)
+	if currentscene == enum.sceneStadium then
+		stadium.wheelmoved(x, y)
+	end
+
+end
+
+
 function love.load()
 
 	res.init({width = 1920, height = 1080, mode = 3})
@@ -122,6 +109,10 @@ function love.load()
 	stadium.loadButtons()
 	tradeplayers.loadButtons()
 	trainplayers.loadButtons()
+
+	cam = Camera.new(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 1)
+	cam:setZoom(ZOOMFACTOR)
+	cam:setPos(TRANSLATEX,	TRANSLATEY)
 
 	love.window.setTitle("Tactical Gridiron v2 " .. GAME_VERSION)
 
