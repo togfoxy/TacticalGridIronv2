@@ -154,6 +154,19 @@ local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
 	return myclosesttarget, myclosestdist
 end
 
+local function getCarrierXY()
+	-- searches for the carrier and then returns the x/y of that carrier
+	-- returns two values or nil, nil
+	for i = 1, NumberOfPlayers / 2 do
+		if PHYS_PLAYERS[i].hasBall then
+			local objx = PHYS_PLAYERS[i].body:getX()
+			local objy = PHYS_PLAYERS[i].body:getY()
+			return objx, objy
+		end
+	end
+	return nil, nil
+end
+
 function stadium.mousereleased(rx, ry)
     -- call from love.mousereleased()
     local clickedButtonID = buttons.getButtonID(rx, ry)
@@ -192,7 +205,7 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].gamestate = enum.gamestateForming
         PHYS_PLAYERS[i].hasBall = false
 
-        ps.setCustomStats(PHYS_PLAYERS[i], i)
+        ps.setCustomStats(PHYS_PLAYERS[i], i)		--! not sure if this is still needed
 		ps.getStatsFromDB(PHYS_PLAYERS[i], i)
     end
 end
@@ -488,7 +501,7 @@ local function setInPlayTargetRun(obj, index)
 		end
 	elseif index == 6 then		-- TE
 		local enemyindex, enemydist = determineClosestObject(index, "ILB", false)
-		if enemyindex == 0 then
+		if enemyindex == 0 then		-- 0 means the correct position type was not found
 			-- target closest player
 			local enemyindex, enemydist = determineClosestObject(index, "", false)
 			if enemyindex == 0 then
@@ -503,6 +516,28 @@ local function setInPlayTargetRun(obj, index)
 			-- bee line to the nearest defender
 			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
 			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+		end
+	elseif index == 7 or index == 8 or index == 9 or index == 10 or index == 11 then
+		-- target closest player
+		local enemyindex, enemydist = determineClosestObject(index, "", false)
+		if enemyindex ~= 0 then
+			local enemyx = PHYS_PLAYERS[enemyindex].body:getX()
+			local enemyy = PHYS_PLAYERS[enemyindex].body:getY()
+			local carrierx, carriery = getCarrierXY()
+			if carrierx ~= nil then
+				-- get the distance from the carrier to the nearest target
+				-- then half that and use that as the target
+				local dist = cf.getDistance(carrierx, carriery, enemyx, enemyy)
+				local bearing = cf.getBearing(carrierx, carriery, enemyx, enemyy)
+				local targetx, targety = cf.addVectorToPoint(carrierx, carriery, bearing, dist / 2)
+
+				obj.targetx = targetx
+				obj.targety = targety
+			else
+				--! idk
+			end
+		else
+			--! idk
 		end
 	else
 		-- target closest player

@@ -85,7 +85,7 @@ function ScaleVector(x,y,fctor)
 	return x * fctor, y * fctor
 	-- should create a vector module one day
 end
-function AddVectorToPoint(x,y,headingdegrees,distance)
+function addVectorToPoint(x,y,headingdegrees,distance)
 	-- x/y = a point in space
 	-- heading is the angle in degrees where 0 = NORTH
 	-- distance = distance
