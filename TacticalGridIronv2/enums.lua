@@ -35,6 +35,7 @@ function enums.load()
     enum.playcallManOnMan = 2
 
     enum.soundGo = 1
+    enum.soundWhistle = 2
 
 end
 return enums

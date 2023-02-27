@@ -875,6 +875,7 @@ local function checkForStateChange(dt)
             if PHYS_PLAYERS[i].hasBall then
                 if PHYS_PLAYERS[i].fallen then
                     -- the runner is down/fallen
+					fun.playAudio(enum.soundWhistle, false, true)
                     GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
                     downNumber = downNumber + 1
                     deadBallTimer = 3       -- three second pause before resetting

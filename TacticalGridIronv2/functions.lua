@@ -3,6 +3,7 @@ functions = {}
 function functions.loadAudio()
 
     AUDIO[enum.soundGo] = love.audio.newSource("assets/audio/go.wav", "static")
+    AUDIO[enum.soundWhistle] = love.audio.newSource("assets/audio/whistle.wav", "static")
 
 end
 
