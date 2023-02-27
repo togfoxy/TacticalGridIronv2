@@ -532,7 +532,14 @@ local function setInPlayTargetRun(obj, index)
 				local targetx, targety = cf.addVectorToPoint(carrierx, carriery, bearing, dist / 2)
 
 				obj.targetx = targetx
-				obj.targety = targety
+
+				-- if target is 'forward' then move forward. If it's behind, then just shuffle sideways
+				local objy = obj.body:getY()
+				if targety < objy then
+					obj.targety = targety
+				else
+					-- nothing
+				end
 			else
 				--! idk
 			end
