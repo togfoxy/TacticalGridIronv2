@@ -610,8 +610,8 @@ end
 
 local function moveAllPlayers(dt)
 
-    local fltForceAdjustment = 0.5	-- tweak this to get fluid motion
-    local fltMaxVAdjustment = 1		-- tweak this to get fluid motion
+    local fltForceAdjustment = 20	-- tweak this to get fluid motion
+    local fltMaxVAdjustment = 0.25	-- tweak this to get fluid motion
 
     if GAME_STATE ~= enum.gamestateDeadBall then
 
@@ -684,9 +684,15 @@ local function moveAllPlayers(dt)
         			if intendedxforce > PHYS_PLAYERS[i].maxF then
         				intendedxforce = PHYS_PLAYERS[i].maxF
         			end
+					if intendedxforce < (PHYS_PLAYERS[i].maxF * -1) then
+						intendedxforce = PHYS_PLAYERS[i].maxF * -1
+					end
         			if intendedyforce > PHYS_PLAYERS[i].maxF then
         				intendedyforce = PHYS_PLAYERS[i].maxF
         			end
+					if intendedyforce < (PHYS_PLAYERS[i].maxF * -1) then
+						intendedyforce = PHYS_PLAYERS[i].maxF * -1
+					end
 
                     -- if fallen down then no force
                     --! probably want to fill out the ELSE statements here
@@ -699,10 +705,17 @@ local function moveAllPlayers(dt)
                     --! something about safeties moving at half speed
 
                     -- now apply dtime to intended force and then apply a game speed factor that works
-        			intendedxforce = intendedxforce * fltForceAdjustment
-        			intendedyforce = intendedyforce * fltForceAdjustment
+        			intendedxforce = intendedxforce * fltForceAdjustment * dt
+        			intendedyforce = intendedyforce * fltForceAdjustment * dt
         			-- now we can apply force
         			PHYS_PLAYERS[i].body:applyForce(intendedxforce,intendedyforce)
+
+					-- debugging
+					-- if i == 1 then
+					-- 	print("Physics data for QB:")
+					-- 	print(fltForceAdjustment, fltMaxVAdjustment, PHYS_PLAYERS[i].maxF, PHYS_PLAYERS[i].maxV, playervelx, playervely, intendedxforce, intendedyforce)
+					-- 	print("***")
+					-- end
                 end
             else
             end
@@ -745,6 +758,18 @@ local function drawPlayers()
             love.graphics.setColor(1,1,1,1)
             love.graphics.print(PHYS_PLAYERS[i].positionletters, drawx, drawy)
         end
+
+		-- if i == 1 then	-- special QB debugging
+		-- 	local drawx = objx - 30
+		-- 	local drawy = objy - 15
+		-- 	local playervelx, playervely = PHYS_PLAYERS[1].body:getLinearVelocity()		-- this is the players velocity vector
+		-- 	playervelx = cf.round(playervelx, 1)
+		-- 	playervely = cf.round(playervely, 1)
+		-- 	love.graphics.setColor(1,1,1,1)
+		-- 	love.graphics.print(playervelx, drawx, drawy)
+		-- 	love.graphics.print(playervely, drawx, drawy + 7)
+		-- end
+
     end
 
     -- draw the QB target
@@ -840,7 +865,9 @@ local function checkForStateChange(dt)
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
         end
-        print("all sensors are now turned on")
+
+		fun.playAudio(enum.soundGo, false, true)
+        -- print("all sensors are now turned on")
     elseif GAME_STATE == enum.gamestateInPlay then
         -- check for a number of conditions
 

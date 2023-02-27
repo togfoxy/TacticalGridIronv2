@@ -1,5 +1,21 @@
 functions = {}
 
+function functions.loadAudio()
+
+    AUDIO[enum.soundGo] = love.audio.newSource("assets/audio/go.wav", "static")
+
+end
+
+function functions.playAudio(audionumber, isMusic, isSound)
+    if isMusic and MUSIC_TOGGLE then
+        AUDIO[audionumber]:play()
+    end
+    if isSound and SOUND_TOGGLE then
+        AUDIO[audionumber]:play()
+    end
+    -- print("playing music/sound #" .. audionumber)
+end
+
 local function deleteAllTables()
 
     local fbdb = sqlite3.open(DB_FILE)
