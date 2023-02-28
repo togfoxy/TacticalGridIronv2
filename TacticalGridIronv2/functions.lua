@@ -7,6 +7,12 @@ function functions.loadAudio()
 
 end
 
+function functions.loadImages()
+    IMAGE[enum.imageFootball] = love.graphics.newImage("assets/images/football.png")
+
+
+end
+
 function functions.playAudio(audionumber, isMusic, isSound)
     if isMusic and MUSIC_TOGGLE then
         AUDIO[audionumber]:play()

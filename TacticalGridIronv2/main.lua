@@ -124,6 +124,7 @@ function love.load()
 	world = love.physics.newWorld(0, 0, true)
 
 	fun.loadAudio()
+	fun.loadImages()
 end
 
 function love.resize(w, h)

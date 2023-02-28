@@ -787,6 +787,12 @@ local function drawPlayers()
         end
         love.graphics.circle("fill", objx, objy, objradius)
 
+		-- draw ball
+		if PHYS_PLAYERS[i].hasBall then
+			love.graphics.setColor(1,0,0,1)
+			love.graphics.draw(IMAGE[enum.imageFootball], objx, objy - 15, 0, 0.25, 0.25, 0, 0)
+		end
+
         -- draw fallen
         if PHYS_PLAYERS[i].fallen then
             love.graphics.setColor(1,0,0,1)

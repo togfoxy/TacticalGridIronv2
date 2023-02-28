@@ -51,6 +51,8 @@ function constants.load()
     MUSIC_TOGGLE = true     --! will need to build these features later
     SOUND_TOGGLE = true
 
+    IMAGE = {}
+
     enums.load()
 end
 
