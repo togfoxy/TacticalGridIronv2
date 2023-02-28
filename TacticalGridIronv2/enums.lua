@@ -34,5 +34,10 @@ function enums.load()
     enum.playcallRun = 1
     enum.playcallManOnMan = 2
 
+    enum.soundGo = 1
+    enum.soundWhistle = 2
+
+    enum.imageFootball = 1
+
 end
 return enums

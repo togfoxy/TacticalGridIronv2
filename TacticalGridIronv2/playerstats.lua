@@ -6,8 +6,6 @@ function playerstats.getStatsFromDB(obj, index)
 
     obj.balance = love.math.random(85,90)       -- default value that is overridden below
 
-print(inspect(player))
-
     if index == 1 then  -- QB
         for k, player in pairs(PLAYERS) do
             if player.TEAMID == OFFENSIVE_TEAMID and player.POSITION == "QB" then

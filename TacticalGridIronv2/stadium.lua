@@ -154,6 +154,19 @@ local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
 	return myclosesttarget, myclosestdist
 end
 
+local function getCarrierXY()
+	-- searches for the carrier and then returns the x/y of that carrier
+	-- returns two values or nil, nil
+	for i = 1, NumberOfPlayers / 2 do
+		if PHYS_PLAYERS[i].hasBall then
+			local objx = PHYS_PLAYERS[i].body:getX()
+			local objy = PHYS_PLAYERS[i].body:getY()
+			return objx, objy
+		end
+	end
+	return nil, nil
+end
+
 function stadium.mousereleased(rx, ry)
     -- call from love.mousereleased()
     local clickedButtonID = buttons.getButtonID(rx, ry)
@@ -192,7 +205,7 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].gamestate = enum.gamestateForming
         PHYS_PLAYERS[i].hasBall = false
 
-        ps.setCustomStats(PHYS_PLAYERS[i], i)
+        ps.setCustomStats(PHYS_PLAYERS[i], i)		--! not sure if this is still needed
 		ps.getStatsFromDB(PHYS_PLAYERS[i], i)
     end
 end
@@ -488,7 +501,7 @@ local function setInPlayTargetRun(obj, index)
 		end
 	elseif index == 6 then		-- TE
 		local enemyindex, enemydist = determineClosestObject(index, "ILB", false)
-		if enemyindex == 0 then
+		if enemyindex == 0 then		-- 0 means the correct position type was not found
 			-- target closest player
 			local enemyindex, enemydist = determineClosestObject(index, "", false)
 			if enemyindex == 0 then
@@ -503,6 +516,35 @@ local function setInPlayTargetRun(obj, index)
 			-- bee line to the nearest defender
 			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
 			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+		end
+	elseif index == 7 or index == 8 or index == 9 or index == 10 or index == 11 then
+		-- target closest player
+		local enemyindex, enemydist = determineClosestObject(index, "", false)
+		if enemyindex ~= 0 then
+			local enemyx = PHYS_PLAYERS[enemyindex].body:getX()
+			local enemyy = PHYS_PLAYERS[enemyindex].body:getY()
+			local carrierx, carriery = getCarrierXY()
+			if carrierx ~= nil then
+				-- get the distance from the carrier to the nearest target
+				-- then half that and use that as the target
+				local dist = cf.getDistance(carrierx, carriery, enemyx, enemyy)
+				local bearing = cf.getBearing(carrierx, carriery, enemyx, enemyy)
+				local targetx, targety = cf.addVectorToPoint(carrierx, carriery, bearing, dist / 2)
+
+				obj.targetx = targetx
+
+				-- if target is 'forward' then move forward. If it's behind, then just shuffle sideways
+				local objy = obj.body:getY()
+				if targety < objy then
+					obj.targety = targety
+				else
+					-- nothing
+				end
+			else
+				--! idk
+			end
+		else
+			--! idk
 		end
 	else
 		-- target closest player
@@ -610,8 +652,8 @@ end
 
 local function moveAllPlayers(dt)
 
-    local fltForceAdjustment = 0.5	-- tweak this to get fluid motion
-    local fltMaxVAdjustment = 1		-- tweak this to get fluid motion
+    local fltForceAdjustment = 20	-- tweak this to get fluid motion
+    local fltMaxVAdjustment = 0.25	-- tweak this to get fluid motion
 
     if GAME_STATE ~= enum.gamestateDeadBall then
 
@@ -684,9 +726,15 @@ local function moveAllPlayers(dt)
         			if intendedxforce > PHYS_PLAYERS[i].maxF then
         				intendedxforce = PHYS_PLAYERS[i].maxF
         			end
+					if intendedxforce < (PHYS_PLAYERS[i].maxF * -1) then
+						intendedxforce = PHYS_PLAYERS[i].maxF * -1
+					end
         			if intendedyforce > PHYS_PLAYERS[i].maxF then
         				intendedyforce = PHYS_PLAYERS[i].maxF
         			end
+					if intendedyforce < (PHYS_PLAYERS[i].maxF * -1) then
+						intendedyforce = PHYS_PLAYERS[i].maxF * -1
+					end
 
                     -- if fallen down then no force
                     --! probably want to fill out the ELSE statements here
@@ -699,10 +747,17 @@ local function moveAllPlayers(dt)
                     --! something about safeties moving at half speed
 
                     -- now apply dtime to intended force and then apply a game speed factor that works
-        			intendedxforce = intendedxforce * fltForceAdjustment
-        			intendedyforce = intendedyforce * fltForceAdjustment
+        			intendedxforce = intendedxforce * fltForceAdjustment * dt
+        			intendedyforce = intendedyforce * fltForceAdjustment * dt
         			-- now we can apply force
         			PHYS_PLAYERS[i].body:applyForce(intendedxforce,intendedyforce)
+
+					-- debugging
+					-- if i == 1 then
+					-- 	print("Physics data for QB:")
+					-- 	print(fltForceAdjustment, fltMaxVAdjustment, PHYS_PLAYERS[i].maxF, PHYS_PLAYERS[i].maxV, playervelx, playervely, intendedxforce, intendedyforce)
+					-- 	print("***")
+					-- end
                 end
             else
             end
@@ -732,6 +787,12 @@ local function drawPlayers()
         end
         love.graphics.circle("fill", objx, objy, objradius)
 
+		-- draw ball
+		if PHYS_PLAYERS[i].hasBall then
+			love.graphics.setColor(1,0,0,1)
+			love.graphics.draw(IMAGE[enum.imageFootball], objx, objy - 15, 0, 0.25, 0.25, 0, 0)
+		end
+
         -- draw fallen
         if PHYS_PLAYERS[i].fallen then
             love.graphics.setColor(1,0,0,1)
@@ -745,6 +806,18 @@ local function drawPlayers()
             love.graphics.setColor(1,1,1,1)
             love.graphics.print(PHYS_PLAYERS[i].positionletters, drawx, drawy)
         end
+
+		-- if i == 1 then	-- special QB debugging
+		-- 	local drawx = objx - 30
+		-- 	local drawy = objy - 15
+		-- 	local playervelx, playervely = PHYS_PLAYERS[1].body:getLinearVelocity()		-- this is the players velocity vector
+		-- 	playervelx = cf.round(playervelx, 1)
+		-- 	playervely = cf.round(playervely, 1)
+		-- 	love.graphics.setColor(1,1,1,1)
+		-- 	love.graphics.print(playervelx, drawx, drawy)
+		-- 	love.graphics.print(playervely, drawx, drawy + 7)
+		-- end
+
     end
 
     -- draw the QB target
@@ -840,7 +913,9 @@ local function checkForStateChange(dt)
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
         end
-        print("all sensors are now turned on")
+
+		fun.playAudio(enum.soundGo, false, true)
+        -- print("all sensors are now turned on")
     elseif GAME_STATE == enum.gamestateInPlay then
         -- check for a number of conditions
 
@@ -848,6 +923,7 @@ local function checkForStateChange(dt)
             if PHYS_PLAYERS[i].hasBall then
                 if PHYS_PLAYERS[i].fallen then
                     -- the runner is down/fallen
+					fun.playAudio(enum.soundWhistle, false, true)
                     GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
                     downNumber = downNumber + 1
                     deadBallTimer = 3       -- three second pause before resetting
