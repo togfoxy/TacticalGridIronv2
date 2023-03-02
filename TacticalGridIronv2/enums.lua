@@ -33,6 +33,7 @@ function enums.load()
 
     enum.playcallRun = 1
     enum.playcallManOnMan = 2
+    enum.playcallThrow = 3
 
     enum.soundGo = 1
     enum.soundWhistle = 2
