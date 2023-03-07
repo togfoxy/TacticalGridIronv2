@@ -201,6 +201,8 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].fallen = false
         PHYS_PLAYERS[i].targetx = nil
         PHYS_PLAYERS[i].targety = nil
+		PHYS_PLAYERS[i].waypointx = nil
+		PHYS_PLAYERS[i].waypointy = nil
         PHYS_PLAYERS[i].targettimer = nil
         PHYS_PLAYERS[i].gamestate = enum.gamestateForming
         PHYS_PLAYERS[i].hasBall = false
@@ -210,9 +212,103 @@ local function createPhysicsPlayers()
     end
 end
 
+local function setFormingWaypoints(obj, index)
+    -- receives a single object and sets it's target
+
+	-- clear old waypoints
+	obj.waypointx = {}
+	obj.waypointy = {}
+	-- player 1 = QB
+    if index == 1 then
+		table.insert(obj.waypointx, CentreLineX)	-- centre line
+		table.insert(obj.waypointy, ScrimmageY + 8)
+	elseif index == 2 then		-- WR (left closest to centre)
+		table.insert(obj.waypointx, CentreLineX - 14)		-- left 'wing'
+		table.insert(obj.waypointy, ScrimmageY + 2)			-- just behind scrimmage
+	elseif index == 3 then				-- WR (right)
+		table.insert(obj.waypointx, CentreLineX + 18)
+		table.insert(obj.waypointy, ScrimmageY + 2)
+	elseif index == 4 then		-- WR (left on outside)
+		table.insert(obj.waypointx, CentreLineX - 18)	 -- left 'wing')
+		table.insert(obj.waypointy, ScrimmageY + 2)		-- just behind scrimmage
+	elseif index == 5 then 		-- RB
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY + 14)
+	elseif index == 6 then		-- TE (right side)
+		table.insert(obj.waypointx, CentreLineX + 13)
+		table.insert(obj.waypointy, ScrimmageY + 3)
+	elseif index == 7 then
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY)
+	elseif index == 8 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX - 4)
+		table.insert(obj.waypointy, ScrimmageY + 2)
+	elseif index == 9 then		-- right guard
+		table.insert(obj.waypointx, CentreLineX + 4)
+		table.insert(obj.waypointy, ScrimmageY + 2)
+	elseif index == 10 then		-- left tackle
+		table.insert(obj.waypointx, CentreLineX - 7)
+		table.insert(obj.waypointy, ScrimmageY + 3)
+	elseif index == 11 then		-- right tackle
+		table.insert(obj.waypointx, CentreLineX + 7)
+		table.insert(obj.waypointy, ScrimmageY + 3)
+	elseif index == 12 then		-- left tackle (left side of screen)
+		table.insert(obj.waypointx, CentreLineX - 2)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 13 then		-- right tackle
+		table.insert(obj.waypointx, CentreLineX + 2)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 14 then		-- left end
+		table.insert(obj.waypointx, CentreLineX - 6)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 15 then		-- right end
+		table.insert(obj.waypointx, CentreLineX + 6)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 16 then		-- inside LB
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY - 11)
+	elseif index == 17 then		-- left outside LB
+		table.insert(obj.waypointx, CentreLineX - 15)
+		table.insert(obj.waypointy, ScrimmageY - 10)
+	elseif index == 18 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX + 15)
+		table.insert(obj.waypointy, ScrimmageY - 10)
+	elseif index == 19 then		-- left CB
+		table.insert(obj.waypointx, CentreLineX - 18)
+		table.insert(obj.waypointy, ScrimmageY - 18)
+	elseif index == 20 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX + 18)
+		table.insert(obj.waypointy, ScrimmageY - 18)
+	elseif index == 21 then		-- left safety
+		table.insert(obj.waypointx, CentreLineX - 4)
+		table.insert(obj.waypointy, ScrimmageY - 17)
+	elseif index == 22 then		-- right safety
+		table.insert(obj.waypointx, CentreLineX + 4)
+		table.insert(obj.waypointy, ScrimmageY - 17)
+    end
+end
+
+local function setAllTargets(dt)
+    -- ensure every player has a destination to go to
+
+    local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
+    for i = 1, NumberOfPlayers do
+        if PHYS_PLAYERS[i].hasBall then runnerindex = i end
+
+        if GAME_STATE == enum.gamestateForming then
+            if PHYS_PLAYERS[i].targetx == nil then
+                -- setFormingTarget(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
+				setFormingWaypoints(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
+            end
+        elseif GAME_STATE == enum.gamestateInPlay then
+            setInPlayTarget(PHYS_PLAYERS[i], i, runnerindex, dt)
+        end
+    end
+end
+
 local function drawStadium()
 
-    if REFRESH_DB then
+    if REFRESH_DB then	-- this only happens once per game
         arr_seasonstatus = {}
         local fbdb = sqlite3.open(DB_FILE)
         local strQuery = "select teams.TEAMNAME, teams.RED, teams.GREEN, teams.BLUE, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
@@ -245,6 +341,7 @@ local function drawStadium()
 
         createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
         GAME_STATE = enum.gamestateForming
+		setAllTargets(dt)
         OFFENSIVE_TIME = 0
     end
 
@@ -338,32 +435,18 @@ local function endtheround(score)
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
 
-local function setFormingWaypoints(obj, index)
-    -- receives a single object and sets it's target
-
-	-- player 1 = QB
-    if index == 1 then
-		table.insert(obj.waypointx, CentreLineX)	-- centre line
-		table.insert(obj.waypointy, ScrimmageY + 8)
-    end
-end
-
 local function setFormingTarget(obj, index)
     -- receives a single object and sets it's target
-
     -- player 1 = QB
     if index == 1 then
     	obj.targetx = (CentreLineX)	 -- centre line
     	obj.targety = (ScrimmageY + 8)
     end
-
 	-- player 2 = WR (left closest to centre)
     if index == 2 then
         obj.targetx = (CentreLineX - 14)	 -- left 'wing'
         obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-
     end
-
 	-- player 3 = WR (right)
     if index == 3 then
         obj.targetx = (CentreLineX + 18)	 -- left 'wing'
@@ -659,23 +742,7 @@ local function setInPlayTarget(obj, index, runnerindex, dt)
     end
 end
 
-local function setAllTargets(dt)
-    -- ensure every player has a destination to go to
 
-    local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
-    for i = 1, NumberOfPlayers do
-        if PHYS_PLAYERS[i].hasBall then runnerindex = i end
-
-        if GAME_STATE == enum.gamestateForming then
-            if PHYS_PLAYERS[i].targetx == nil then
-                -- setFormingTarget(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
-				setFormingWaypoints(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
-            end
-        elseif GAME_STATE == enum.gamestateInPlay then
-            setInPlayTarget(PHYS_PLAYERS[i], i, runnerindex, dt)
-        end
-    end
-end
 
 local function vectorMovePlayer(obj, dt)
 	-- receives a player physical object and uses vector math to move it towards target
@@ -788,28 +855,38 @@ local function moveAllPlayers(dt)
 			local targetx = PHYS_PLAYERS[i].waypointx[1]
 			local targety = PHYS_PLAYERS[i].waypointy[1]
 
-            if not PHYS_PLAYERS[i].fallen then
+			if targetx == nil or targety == nil then
+				-- out of waypoints
+				--! do nothing for now
+				if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
+					PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
+					print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
+				end
+			else
+	            if not PHYS_PLAYERS[i].fallen then
 
-                -- get distance to target
-                local disttotarget = cf.getDistance(objx, objy, targetx, targety)
+	                -- get distance to target
+	                local disttotarget = cf.getDistance(objx, objy, targetx, targety)		-- actually waypoints
 
-                -- see if arrived
-                if disttotarget <=  0.1 then
-                    -- arrived
-                    if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
-                        PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
-					elseif PHYS_PLAYERS[i].gamestate == enum.gamestateInPlay then
-						-- in play and reached waypoint. Remove this waypoint.
-						table.remove(PHYS_PLAYERS[i].waypointx, 1)
-						table.remove(PHYS_PLAYERS[i].waypointy, 1)
-                    end
-                    --! put other game states here
-                else
-                    -- player not arrived
-					vectorMovePlayer(PHYS_PLAYERS[i], dt)
-                end
-            else
-            end
+	                -- see if arrived
+	                if disttotarget <=  0.1 then
+	                    -- arrived
+
+	                    if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
+	                        PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
+						elseif PHYS_PLAYERS[i].gamestate == enum.gamestateInPlay then
+							-- in play and reached waypoint. Remove this waypoint.
+							table.remove(PHYS_PLAYERS[i].waypointx, 1)
+							table.remove(PHYS_PLAYERS[i].waypointy, 1)
+	                    end
+	                    --! put other game states here
+	                else
+	                    -- player not arrived
+						vectorMovePlayer(PHYS_PLAYERS[i], dt)
+	                end
+	            else
+	            end
+			end
         end
     end
 end
@@ -985,8 +1062,6 @@ local function setWaypoints()
 
 			elseif playcall_offense == enum.playcallThrow then
 				setWaypointsThrow(PHYS_PLAYERS[i], i)
-
-
 			else
 				print(i, playcall_offense)
 				error("unexpected program flow.")
@@ -999,26 +1074,34 @@ end
 local function checkForStateChange(dt)
     -- looks for key events that will trigger a change in game state
     if GAME_STATE == enum.gamestateForming then
+
+		print("Game state = forming")
+
         -- check if everyone is formed up
         for i = 1, NumberOfPlayers do
+			print("Player gamestate for player " .. i .. " = " .. PHYS_PLAYERS[i].gamestate)
             if PHYS_PLAYERS[i].gamestate ~= enum.gamestateReadyForSnap then
                 -- no state change. Abort.
+				print("Player #" .. i .. " is not ready for snap yet.")
                 return
             end
         end
+
         -- if above loop didn't abort then all players are ready for snap. Change state
         GAME_STATE = enum.gamestateInPlay
         PHYS_PLAYERS[1].hasBall = true
         for i = 1, NumberOfPlayers do
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
-			setWaypoints()
+			setWaypoints()		-- sets waypoints for every player
         end
 
 		fun.playAudio(enum.soundGo, false, true)
         -- print("all sensors are now turned on")
     elseif GAME_STATE == enum.gamestateInPlay then
         -- check for a number of conditions
+
+		print("Game state = in play")
 
         for i = 1, NumberOfPlayers / 2 do
             if PHYS_PLAYERS[i].hasBall then
@@ -1083,6 +1166,8 @@ function stadium.update(dt)
 
 		playcall_offense = 3		--! make this smarter
 		playcall_defense = 2
+
+		GAME_STATE = enum.gamestateForming
     end
 
     if GAME_STATE == enum.gamestateInPlay then
