@@ -2,7 +2,7 @@ stadium = {}
 
 local NumberOfPlayers = 22
 local arr_seasonstatus, offensiveteamname, defensiveteamname, deadBallTimer
-local playcall_offense = 1 --!enum.playcallRun
+local playcall_offense = 3 --!enum.playcallThrow
 local playcall_defense = 2 --!enum.playcallManOnMan
 local downNumber = 1
 
@@ -201,6 +201,8 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].fallen = false
         PHYS_PLAYERS[i].targetx = nil
         PHYS_PLAYERS[i].targety = nil
+		PHYS_PLAYERS[i].waypointx = nil
+		PHYS_PLAYERS[i].waypointy = nil
         PHYS_PLAYERS[i].targettimer = nil
         PHYS_PLAYERS[i].gamestate = enum.gamestateForming
         PHYS_PLAYERS[i].hasBall = false
@@ -210,9 +212,103 @@ local function createPhysicsPlayers()
     end
 end
 
+local function setFormingWaypoints(obj, index)
+    -- receives a single object and sets it's target
+
+	-- clear old waypoints
+	obj.waypointx = {}
+	obj.waypointy = {}
+	-- player 1 = QB
+    if index == 1 then
+		table.insert(obj.waypointx, CentreLineX)	-- centre line
+		table.insert(obj.waypointy, ScrimmageY + 8)
+	elseif index == 2 then		-- WR (left closest to centre)
+		table.insert(obj.waypointx, CentreLineX - 14)		-- left 'wing'
+		table.insert(obj.waypointy, ScrimmageY + 2)			-- just behind scrimmage
+	elseif index == 3 then				-- WR (right)
+		table.insert(obj.waypointx, CentreLineX + 18)
+		table.insert(obj.waypointy, ScrimmageY + 2)
+	elseif index == 4 then		-- WR (left on outside)
+		table.insert(obj.waypointx, CentreLineX - 18)	 -- left 'wing')
+		table.insert(obj.waypointy, ScrimmageY + 2)		-- just behind scrimmage
+	elseif index == 5 then 		-- RB
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY + 14)
+	elseif index == 6 then		-- TE (right side)
+		table.insert(obj.waypointx, CentreLineX + 13)
+		table.insert(obj.waypointy, ScrimmageY + 3)
+	elseif index == 7 then
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY)
+	elseif index == 8 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX - 4)
+		table.insert(obj.waypointy, ScrimmageY + 2)
+	elseif index == 9 then		-- right guard
+		table.insert(obj.waypointx, CentreLineX + 4)
+		table.insert(obj.waypointy, ScrimmageY + 2)
+	elseif index == 10 then		-- left tackle
+		table.insert(obj.waypointx, CentreLineX - 7)
+		table.insert(obj.waypointy, ScrimmageY + 3)
+	elseif index == 11 then		-- right tackle
+		table.insert(obj.waypointx, CentreLineX + 7)
+		table.insert(obj.waypointy, ScrimmageY + 3)
+	elseif index == 12 then		-- left tackle (left side of screen)
+		table.insert(obj.waypointx, CentreLineX - 2)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 13 then		-- right tackle
+		table.insert(obj.waypointx, CentreLineX + 2)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 14 then		-- left end
+		table.insert(obj.waypointx, CentreLineX - 6)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 15 then		-- right end
+		table.insert(obj.waypointx, CentreLineX + 6)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 16 then		-- inside LB
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY - 11)
+	elseif index == 17 then		-- left outside LB
+		table.insert(obj.waypointx, CentreLineX - 15)
+		table.insert(obj.waypointy, ScrimmageY - 10)
+	elseif index == 18 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX + 15)
+		table.insert(obj.waypointy, ScrimmageY - 10)
+	elseif index == 19 then		-- left CB
+		table.insert(obj.waypointx, CentreLineX - 18)
+		table.insert(obj.waypointy, ScrimmageY - 18)
+	elseif index == 20 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX + 18)
+		table.insert(obj.waypointy, ScrimmageY - 18)
+	elseif index == 21 then		-- left safety
+		table.insert(obj.waypointx, CentreLineX - 4)
+		table.insert(obj.waypointy, ScrimmageY - 17)
+	elseif index == 22 then		-- right safety
+		table.insert(obj.waypointx, CentreLineX + 4)
+		table.insert(obj.waypointy, ScrimmageY - 17)
+    end
+end
+
+local function setAllTargets(dt)
+    -- ensure every player has a destination to go to
+
+    local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
+    for i = 1, NumberOfPlayers do
+        if PHYS_PLAYERS[i].hasBall then runnerindex = i end
+
+        if GAME_STATE == enum.gamestateForming then
+            if PHYS_PLAYERS[i].targetx == nil then
+                -- setFormingTarget(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
+				setFormingWaypoints(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
+            end
+        elseif GAME_STATE == enum.gamestateInPlay then
+            setInPlayTarget(PHYS_PLAYERS[i], i, runnerindex, dt)
+        end
+    end
+end
+
 local function drawStadium()
 
-    if REFRESH_DB then
+    if REFRESH_DB then	-- this only happens once per game
         arr_seasonstatus = {}
         local fbdb = sqlite3.open(DB_FILE)
         local strQuery = "select teams.TEAMNAME, teams.RED, teams.GREEN, teams.BLUE, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
@@ -245,6 +341,7 @@ local function drawStadium()
 
         createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
         GAME_STATE = enum.gamestateForming
+		setAllTargets(dt)
         OFFENSIVE_TIME = 0
     end
 
@@ -340,22 +437,16 @@ end
 
 local function setFormingTarget(obj, index)
     -- receives a single object and sets it's target
-    -- obj.targetx = love.math.random(LeftLineX, RightLineX)
-    -- obj.targety = love.math.random(TopGoalY, BottomGoalY)
-
     -- player 1 = QB
     if index == 1 then
     	obj.targetx = (CentreLineX)	 -- centre line
     	obj.targety = (ScrimmageY + 8)
     end
-
 	-- player 2 = WR (left closest to centre)
     if index == 2 then
         obj.targetx = (CentreLineX - 14)	 -- left 'wing'
         obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-
     end
-
 	-- player 3 = WR (right)
     if index == 3 then
         obj.targetx = (CentreLineX + 18)	 -- left 'wing'
@@ -480,7 +571,7 @@ local function setFormingTarget(obj, index)
 end
 
 local function setInPlayTargetRun(obj, index)
-	-- the targets for obj[index] players to rush the goal
+	-- the targets for obj[index] to rush the goal
 	if index == 1 then
 		obj.targety = TopPostY
 	elseif index == 2 or index == 3 or index == 4 then	-- WR
@@ -560,6 +651,24 @@ local function setInPlayTargetRun(obj, index)
 	end
 end
 
+local function setinPlayTargetThrow(obj, index)
+	-- obj is the physical player
+	-- index is a value from 1 -> 22
+
+	local objx = PHYS_PLAYERS[index].body:getX()
+	local objy = PHYS_PLAYERS[index].body:getY()
+
+	if index == 2 then		-- one of the WRs
+		local target = {}
+		-- move forward 10 metres
+		table.insert(obj.waypointx, objx)
+		table.insert(obj.waypointy, objy - 10)
+		-- move to the centre of the field
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, objy - 10)
+	end
+end
+
 local function setInPlayTargetManOnMan(obj, carrierindex)
 	-- sets the defense to target the carrier
 	--! this is not the correct behavior for man on man
@@ -633,134 +742,151 @@ local function setInPlayTarget(obj, index, runnerindex, dt)
     end
 end
 
-local function setAllTargets(dt)
-    -- ensure every player has a destination to go to
 
-    local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
-    for i = 1, NumberOfPlayers do
-        if PHYS_PLAYERS[i].hasBall then runnerindex = i end
 
-        if GAME_STATE == enum.gamestateForming then
-            if PHYS_PLAYERS[i].targetx == nil then
-                setFormingTarget(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
-            end
-        elseif GAME_STATE == enum.gamestateInPlay then
-            setInPlayTarget(PHYS_PLAYERS[i], i, runnerindex, dt)
-        end
-    end
+local function vectorMovePlayer(obj, dt)
+	-- receives a player physical object and uses vector math to move it towards target
+	-- determine actual velocity vs intended velocity based on target
+
+	local fltForceAdjustment = 20	-- tweak this to get fluid motion
+	local fltMaxVAdjustment = 0.25	-- tweak this to get fluid motion
+
+
+	local playervelx, playervely = obj.body:getLinearVelocity()		-- this is the players velocity vector
+
+	local objx = obj.body:getX()
+	local objy = obj.body:getY()
+
+	local targetx = obj.waypointx[1]
+	local targety = obj.waypointy[1]
+
+	-- determine vector to target
+	local vectorxtotarget = targetx - objx
+	local vectorytotarget = targety - objy
+
+	-- if the game is in play, then make sure obj doesn't stop short of target
+	if GAME_STATE == enum.gamestateInPlay then
+		vectorxtotarget = vectorxtotarget * 10
+		vectorytotarget = vectorytotarget * 10
+	end
+
+	-- determine the aceleration vector that needs to be applied to the velocity vector to reach the target.
+	-- target vector - player velocity vector
+	local acelxvector,acelyvector = cf.subtractVectors(vectorxtotarget, vectorytotarget,playervelx,playervely)
+
+	-- so we now have mass and aceleration. Time to determine Force.
+	-- F = m * a
+	-- Fx = m * Xa
+	-- Fy = m * Ya
+	local intendedxforce = obj.body:getMass() * acelxvector
+	local intendedyforce = obj.body:getMass() * acelyvector
+
+	-- if target is in front of player and at maxV then discontinue the application of force (intendedforce = 0)
+	-- can't cut aceleration because that is the braking force and we don't want to disallow that
+	if cf.dotVectors(playervelx, playervely,vectorxtotarget,vectorytotarget) > 0 then	-- > 0 means target is in front of player
+		-- if player is exceeding maxV then cancel force
+		if (playervelx > obj.maxV * fltMaxVAdjustment) or (playervelx < (obj.maxV * -1 * fltMaxVAdjustment)) then
+			-- don't apply any force until vel drops down
+			intendedxforce = 0
+		end
+		-- repeat for y axis vector
+		if (playervely > obj.maxV) or (playervely < (obj.maxV * -1)) then
+			-- don't apply any force
+			intendedyforce = 0
+		end
+	end
+
+	-- if i == 1 and GAME_STATE == enum.gamestateForming and intendedxforce == 0 then error() end
+
+	-- if player intended force is great than the limits for that player then dial that intended force back
+	if intendedxforce > obj.maxF then
+		intendedxforce = obj.maxF
+	end
+	if intendedxforce < (obj.maxF * -1) then
+		intendedxforce = obj.maxF * -1
+	end
+	if intendedyforce > obj.maxF then
+		intendedyforce = obj.maxF
+	end
+	if intendedyforce < (obj.maxF * -1) then
+		intendedyforce = obj.maxF * -1
+	end
+
+	-- if fallen down then no force
+	--! probably want to fill out the ELSE statements here
+	if obj.fallen == true then
+		if GAME_STATE == enum.gamestateForming then
+			obj.fallen = false
+		end
+	end
+
+	--! something about safeties moving at half speed
+
+	-- now apply dtime to intended force and then apply a game speed factor that works
+	intendedxforce = intendedxforce * fltForceAdjustment * dt
+	intendedyforce = intendedyforce * fltForceAdjustment * dt
+	-- now we can apply force
+	obj.body:applyForce(intendedxforce,intendedyforce)
+
+	-- debugging
+	-- if i == 1 then
+	-- 	print("Physics data for QB:")
+	-- 	print(fltForceAdjustment, fltMaxVAdjustment, obj.maxF, obj.maxV, playervelx, playervely, intendedxforce, intendedyforce)
+	-- 	print("***")
+	-- end
 end
 
 local function moveAllPlayers(dt)
-
+	--! check to see if all these variables are used/called
     local fltForceAdjustment = 20	-- tweak this to get fluid motion
     local fltMaxVAdjustment = 0.25	-- tweak this to get fluid motion
 
     if GAME_STATE ~= enum.gamestateDeadBall then
 
-        setAllTargets(dt)
+        -- setAllTargets(dt)
 
         for i = 1, NumberOfPlayers do
             local objx = PHYS_PLAYERS[i].body:getX()
             local objy = PHYS_PLAYERS[i].body:getY()
 
-            local targetx = PHYS_PLAYERS[i].targetx
-            local targety = PHYS_PLAYERS[i].targety
+            -- local targetx = PHYS_PLAYERS[i].targetx
+            -- local targety = PHYS_PLAYERS[i].targety
 
-            if not PHYS_PLAYERS[i].fallen then
+			local targetx = PHYS_PLAYERS[i].waypointx[1]
+			local targety = PHYS_PLAYERS[i].waypointy[1]
 
-                -- get distance to target
-                local disttotarget = cf.getDistance(objx, objy, targetx, targety)
+			if targetx == nil or targety == nil then
+				-- out of waypoints
+				--! do nothing for now
+				if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
+					PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
+					print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
+				end
+			else
+	            if not PHYS_PLAYERS[i].fallen then
 
-                -- see if arrived
-                if disttotarget <=  0.1 then
-                    -- arrived
-                    if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
-                        PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
-                    end
-                    --! put other game states here
-                else
-                    -- player not arrived
+	                -- get distance to target
+	                local disttotarget = cf.getDistance(objx, objy, targetx, targety)		-- actually waypoints
 
-                    -- determine actual velocity vs intended velocity based on target
-                    local playervelx, playervely = PHYS_PLAYERS[i].body:getLinearVelocity()		-- this is the players velocity vector
+	                -- see if arrived
+	                if disttotarget <=  0.1 then
+	                    -- arrived
 
-                    -- determine vector to target
-        			local vectorxtotarget = targetx - objx
-        			local vectorytotarget = targety - objy
-
-                    -- if the game is in play, then make sure obj doesn't stop short of target
-                    if GAME_STATE == enum.gamestateInPlay then
-                        vectorxtotarget = vectorxtotarget * 10
-                        vectorytotarget = vectorytotarget * 10
-                    end
-
-                    -- determine the aceleration vector that needs to be applied to the velocity vector to reach the target.
-        			-- target vector - player velocity vector
-        			local acelxvector,acelyvector = cf.subtractVectors(vectorxtotarget, vectorytotarget,playervelx,playervely)
-
-                    -- so we now have mass and aceleration. Time to determine Force.
-        			-- F = m * a
-        			-- Fx = m * Xa
-        			-- Fy = m * Ya
-        			local intendedxforce = PHYS_PLAYERS[i].body:getMass() * acelxvector
-        			local intendedyforce = PHYS_PLAYERS[i].body:getMass() * acelyvector
-
-                    -- if target is in front of player and at maxV then discontinue the application of force (intendedforce = 0)
-        			-- can't cut aceleration because that is the braking force and we don't want to disallow that
-        			if cf.dotVectors(playervelx, playervely,vectorxtotarget,vectorytotarget) > 0 then	-- > 0 means target is in front of player
-        				-- if player is exceeding maxV then cancel force
-        				if (playervelx > PHYS_PLAYERS[i].maxV * fltMaxVAdjustment) or (playervelx < (PHYS_PLAYERS[i].maxV * -1 * fltMaxVAdjustment)) then
-        					-- don't apply any force until vel drops down
-        					intendedxforce = 0
-        				end
-                        -- repeat for y axis vector
-        				if (playervely > PHYS_PLAYERS[i].maxV) or (playervely < (PHYS_PLAYERS[i].maxV * -1)) then
-        					-- don't apply any force
-        					intendedyforce = 0
-        				end
-        			end
-
-                    -- if i == 1 and GAME_STATE == enum.gamestateForming and intendedxforce == 0 then error() end
-
-                    -- if player intended force is great than the limits for that player then dial that intended force back
-        			if intendedxforce > PHYS_PLAYERS[i].maxF then
-        				intendedxforce = PHYS_PLAYERS[i].maxF
-        			end
-					if intendedxforce < (PHYS_PLAYERS[i].maxF * -1) then
-						intendedxforce = PHYS_PLAYERS[i].maxF * -1
-					end
-        			if intendedyforce > PHYS_PLAYERS[i].maxF then
-        				intendedyforce = PHYS_PLAYERS[i].maxF
-        			end
-					if intendedyforce < (PHYS_PLAYERS[i].maxF * -1) then
-						intendedyforce = PHYS_PLAYERS[i].maxF * -1
-					end
-
-                    -- if fallen down then no force
-                    --! probably want to fill out the ELSE statements here
-                    if PHYS_PLAYERS[i].fallen == true then
-                        if GAME_STATE == enum.gamestateForming then
-                            PHYS_PLAYERS[i].fallen = false
-                        end
-                    end
-
-                    --! something about safeties moving at half speed
-
-                    -- now apply dtime to intended force and then apply a game speed factor that works
-        			intendedxforce = intendedxforce * fltForceAdjustment * dt
-        			intendedyforce = intendedyforce * fltForceAdjustment * dt
-        			-- now we can apply force
-        			PHYS_PLAYERS[i].body:applyForce(intendedxforce,intendedyforce)
-
-					-- debugging
-					-- if i == 1 then
-					-- 	print("Physics data for QB:")
-					-- 	print(fltForceAdjustment, fltMaxVAdjustment, PHYS_PLAYERS[i].maxF, PHYS_PLAYERS[i].maxV, playervelx, playervely, intendedxforce, intendedyforce)
-					-- 	print("***")
-					-- end
-                end
-            else
-            end
+	                    if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
+	                        PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
+						elseif PHYS_PLAYERS[i].gamestate == enum.gamestateInPlay then
+							-- in play and reached waypoint. Remove this waypoint.
+							table.remove(PHYS_PLAYERS[i].waypointx, 1)
+							table.remove(PHYS_PLAYERS[i].waypointy, 1)
+	                    end
+	                    --! put other game states here
+	                else
+	                    -- player not arrived
+						vectorMovePlayer(PHYS_PLAYERS[i], dt)
+	                end
+	            else
+	            end
+			end
         end
     end
 end
@@ -896,28 +1022,86 @@ local function resetFirstDown(y)
     downNumber = 1
 end
 
+local function setWaypointsThrow(obj, index)
+	-- sets waypoints for obj (physics object) for the throw play call
+	-- index = number 1 -> 11. Is needed to split the 3 WR's
+	-- waypoints are a string of x,y co-ordinates
+	-- wapoints are absolute values and not relative to any point (except the origin!)
+
+	local wpx, wpy
+	local objx = obj.body:getX()
+	local objy = obj.body:getY()
+
+	if index == 1 then		-- QB
+		-- move back 7 meters
+		table.insert(obj.waypointx, objx)
+		table.insert(obj.waypointy, objy + 7)
+
+		-- move left or right 10 meters
+		if love.math.random(1,2) == 1 then
+			-- move left
+			table.insert(obj.waypointx, objx - 10)
+			table.insert(obj.waypointy, objy + 7)
+		else
+			table.insert(obj.waypointx, objx + 10)
+			table.insert(obj.waypointy, objy + 7)
+		end
+	end
+end
+
+local function setWaypoints()
+	-- assumes there is a state change to GAME_STATE = enum.gamestateInPlay
+	-- need to set waypoints for each player
+
+	for i = 1, NumberOfPlayers do
+		if i <= NumberOfPlayers / 2 then
+			if playcall_offense == enum.playcallRun then
+				--!
+			-- elseif
+				--!
+
+			elseif playcall_offense == enum.playcallThrow then
+				setWaypointsThrow(PHYS_PLAYERS[i], i)
+			else
+				print(i, playcall_offense)
+				error("unexpected program flow.")
+			end
+		else
+		end
+	end
+end
+
 local function checkForStateChange(dt)
     -- looks for key events that will trigger a change in game state
     if GAME_STATE == enum.gamestateForming then
+
+		print("Game state = forming")
+
         -- check if everyone is formed up
         for i = 1, NumberOfPlayers do
+			print("Player gamestate for player " .. i .. " = " .. PHYS_PLAYERS[i].gamestate)
             if PHYS_PLAYERS[i].gamestate ~= enum.gamestateReadyForSnap then
                 -- no state change. Abort.
+				print("Player #" .. i .. " is not ready for snap yet.")
                 return
             end
         end
+
         -- if above loop didn't abort then all players are ready for snap. Change state
         GAME_STATE = enum.gamestateInPlay
         PHYS_PLAYERS[1].hasBall = true
         for i = 1, NumberOfPlayers do
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
+			setWaypoints()		-- sets waypoints for every player
         end
 
 		fun.playAudio(enum.soundGo, false, true)
         -- print("all sensors are now turned on")
     elseif GAME_STATE == enum.gamestateInPlay then
         -- check for a number of conditions
+
+		print("Game state = in play")
 
         for i = 1, NumberOfPlayers / 2 do
             if PHYS_PLAYERS[i].hasBall then
@@ -979,9 +1163,13 @@ function stadium.update(dt)
     if REFRESH_DB then
         -- update happens before draw so this bit needs to be placed here to avoid a nil value error
         OFFENSIVE_TIME = 0
+
+		playcall_offense = 3		--! make this smarter
+		playcall_defense = 2
+
+		GAME_STATE = enum.gamestateForming
     end
 
-    --! fake the ending of the scene
     if GAME_STATE == enum.gamestateInPlay then
         OFFENSIVE_TIME = OFFENSIVE_TIME + dt
     end

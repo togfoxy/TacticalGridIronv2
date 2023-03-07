@@ -26,6 +26,8 @@ function playerstats.setCustomStats(obj, index)
     -- index is the number within the array (1 -> 22) and is used to know what position the object is in
 
     obj.balance = love.math.random(85,90)       -- default value that is overridden below
+    obj.waypointx = {}
+    obj.waypointy = {}
 
     -- obj.balance = 50
 
