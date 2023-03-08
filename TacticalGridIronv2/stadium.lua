@@ -288,8 +288,38 @@ local function setFormingWaypoints(obj, index)
     end
 end
 
-local function setAllTargets(dt)
+local function setInPlayWaypoints(obj, index, runnerindex, dt)
+    -- determine the target for the single obj
+    -- runnerindex might be nil on some calls but is okay because it's only used by players 12+
+	-- obj = the physical obj
+	-- index = index
+	-- runner index = the carrier with the ball
+
+    if obj.targettimer ~= nil then obj.targettimer = obj.targettimer - dt end
+
+    if obj.targettimer == nil or obj.targettimer <= 0 then
+        -- set new target
+        obj.targettimer = 0     -- only change targets every x seconds
+
+		if index <= 11 then
+			if playcall_offense == enum.playcallRun then
+				setInPlayTargetRun(obj, index)		-- sets target for a single index
+			else
+				--! add more plays here
+			end
+		else
+			if playcall_defense == enum.playcallManOnMan then
+				setInPlayTargetManOnMan(obj, runnerindex)
+			else
+				--! add more plays here
+			end
+		end
+    end
+end
+
+local function setAllWaypoints(dt)
     -- ensure every player has a destination to go to
+	-- is called as required - usually after a change in state
 
     local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
     for i = 1, NumberOfPlayers do
@@ -297,11 +327,10 @@ local function setAllTargets(dt)
 
         if GAME_STATE == enum.gamestateForming then
             if PHYS_PLAYERS[i].targetx == nil then
-                -- setFormingTarget(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
 				setFormingWaypoints(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
             end
         elseif GAME_STATE == enum.gamestateInPlay then
-            setInPlayTarget(PHYS_PLAYERS[i], i, runnerindex, dt)
+			setInPlayWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
         end
     end
 end
@@ -341,7 +370,7 @@ local function drawStadium()
 
         createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
         GAME_STATE = enum.gamestateForming
-		setAllTargets(dt)
+		setAllWaypoints(dt)
         OFFENSIVE_TIME = 0
     end
 
@@ -433,141 +462,6 @@ local function endtheround(score)
     FirstDownMarkerY = ScrimmageY - 10
 
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
-end
-
-local function setFormingTarget(obj, index)
-    -- receives a single object and sets it's target
-    -- player 1 = QB
-    if index == 1 then
-    	obj.targetx = (CentreLineX)	 -- centre line
-    	obj.targety = (ScrimmageY + 8)
-    end
-	-- player 2 = WR (left closest to centre)
-    if index == 2 then
-        obj.targetx = (CentreLineX - 14)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-    end
-	-- player 3 = WR (right)
-    if index == 3 then
-        obj.targetx = (CentreLineX + 18)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-    end
-
-	-- player 4 = WR (left on outside)
-    if index == 4 then
-        obj.targetx = (CentreLineX - 18)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-    end
-
-	-- player 5 = RB
-    if index == 5 then
-        obj.targetx = (CentreLineX)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 14)	-- just behind QB
-    end
-
-	-- player 6 = TE (right side)
-    if index == 6 then
-        obj.targetx = (CentreLineX + 13)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 3)
-    end
-
-	-- player 7 = Centre
-    if index == 7 then
-        obj.targetx = (CentreLineX)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-    end
-
-	-- player 8 = left guard
-    if index == 8 then
-        obj.targetx = (CentreLineX - 4)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-    end
-
-	-- player 9 = right guard
-    if index == 9 then
-        obj.targetx = (CentreLineX + 4)	 -- left 'wing'
-        obj.targety = (ScrimmageY +2)		-- just behind scrimmage
-    end
-
-	-- player 10 = left tackle
-    if index == 10 then
-        obj.targetx = (CentreLineX - 7)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 3)		-- just behind scrimmage
-    end
-
-	-- player 11 = right tackle
-    if index == 11 then
-        obj.targetx = (CentreLineX + 7)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 3)		-- just behind scrimmage
-    end
-
-    -- now for the visitors
-
-	-- player 12 = Left tackle (left side of screen)
-    if index == 12 then
-        obj.targetx = (CentreLineX -2)	 -- centre line
-        obj.targety = (ScrimmageY - 2)
-    end
-
-	-- player 13 = Right tackle
-    if index == 13 then
-        obj.targetx = (CentreLineX +2)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
-    end
-
-	-- player 14 = Left end
-    if index == 14 then
-        obj.targetx = (CentreLineX - 6)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
-    end
-
-	-- player 15 = Right end
-    if index == 15 then
-        obj.targetx = (CentreLineX + 6)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
-    end
-
-	-- player 16 = Inside LB
-    if index == 16 then
-        obj.targetx = (CentreLineX)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 11)	-- just behind scrimmage
-    end
-
-	-- player 17 = Left Outside LB
-    if index == 17 then
-        obj.targetx = (CentreLineX - 15)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 10)
-    end
-
-	-- player 18 = Right Outside LB
-    if index == 18 then
-        obj.targetx = (CentreLineX +15)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 10)
-    end
-
-	-- player 19 = Left CB
-    if index == 19 then
-        obj.targetx = (CentreLineX -18)	 -- left 'wing'
-        obj.targety = (ScrimmageY -18)
-    end
-
-	-- player 20 = right CB
-    if index == 20 then
-        obj.targetx = (CentreLineX + 18)	 -- left 'wing'
-        obj.targety = (ScrimmageY -18)
-    end
-
-	-- player 21 = left safety
-    if index == 21 then
-        obj.targetx = (CentreLineX - 4)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 17)
-    end
-
-	-- player 22 = right safety
-    if index == 22 then
-        obj.targetx = (CentreLineX + 4)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 17)
-    end
 end
 
 local function setInPlayTargetRun(obj, index)
@@ -713,37 +607,6 @@ local function setInPlayTargetManOnMan(obj, carrierindex)
 	end
 end
 
-local function setInPlayTarget(obj, index, runnerindex, dt)
-    -- determine the target for the single obj
-    -- runnerindex might be nil on some calls but is okay because it's only used by players 12+
-	-- obj = the physical obj
-	-- index = index
-	-- runner index = the carrier with the ball
-
-    if obj.targettimer ~= nil then obj.targettimer = obj.targettimer - dt end
-
-    if obj.targettimer == nil or obj.targettimer <= 0 then
-        -- set new target
-        obj.targettimer = 0     -- only change targets every x seconds
-
-		if index <= 11 then
-			if playcall_offense == enum.playcallRun then
-				setInPlayTargetRun(obj, index)		-- sets target for a single index
-			else
-				--! add more plays here
-			end
-		else
-			if playcall_defense == enum.playcallManOnMan then
-				setInPlayTargetManOnMan(obj, runnerindex)
-			else
-				--! add more plays here
-			end
-		end
-    end
-end
-
-
-
 local function vectorMovePlayer(obj, dt)
 	-- receives a player physical object and uses vector math to move it towards target
 	-- determine actual velocity vs intended velocity based on target
@@ -842,8 +705,6 @@ local function moveAllPlayers(dt)
     local fltMaxVAdjustment = 0.25	-- tweak this to get fluid motion
 
     if GAME_STATE ~= enum.gamestateDeadBall then
-
-        -- setAllTargets(dt)
 
         for i = 1, NumberOfPlayers do
             local objx = PHYS_PLAYERS[i].body:getX()
@@ -1049,27 +910,7 @@ local function setWaypointsThrow(obj, index)
 	end
 end
 
-local function setWaypoints()
-	-- assumes there is a state change to GAME_STATE = enum.gamestateInPlay
-	-- need to set waypoints for each player
 
-	for i = 1, NumberOfPlayers do
-		if i <= NumberOfPlayers / 2 then
-			if playcall_offense == enum.playcallRun then
-				--!
-			-- elseif
-				--!
-
-			elseif playcall_offense == enum.playcallThrow then
-				setWaypointsThrow(PHYS_PLAYERS[i], i)
-			else
-				print(i, playcall_offense)
-				error("unexpected program flow.")
-			end
-		else
-		end
-	end
-end
 
 local function checkForStateChange(dt)
     -- looks for key events that will trigger a change in game state
@@ -1093,7 +934,7 @@ local function checkForStateChange(dt)
         for i = 1, NumberOfPlayers do
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
-			setWaypoints()		-- sets waypoints for every player
+			setAllWaypoints(dt)
         end
 
 		fun.playAudio(enum.soundGo, false, true)
