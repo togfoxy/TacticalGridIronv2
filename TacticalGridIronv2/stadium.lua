@@ -107,6 +107,14 @@ function stadium.wheelmoved(x, y)
 	print("Zoom factor = " .. ZOOMFACTOR)
 end
 
+function stadium.mousereleased(rx, ry)
+    -- call from love.mousereleased()
+    local clickedButtonID = buttons.getButtonID(rx, ry)
+    if clickedButtonID == enum.buttonStadiumQuit then
+        love.event.quit()
+    end
+end
+
 local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
 	-- receives the player index in question and the target type string (eg "WR") and finds the closest enemy player of that type
 	-- enemytype can be an empty string ("") which will search for ANY type
@@ -167,14 +175,6 @@ local function getCarrierXY()
 	return nil, nil
 end
 
-function stadium.mousereleased(rx, ry)
-    -- call from love.mousereleased()
-    local clickedButtonID = buttons.getButtonID(rx, ry)
-    if clickedButtonID == enum.buttonStadiumQuit then
-        love.event.quit()
-    end
-end
-
 local function createPhysicsPlayers()
     -- called once during drawStadium()
 
@@ -210,6 +210,131 @@ local function createPhysicsPlayers()
         ps.setCustomStats(PHYS_PLAYERS[i], i)		--! not sure if this is still needed
 		ps.getStatsFromDB(PHYS_PLAYERS[i], i)
     end
+end
+
+local function setInPlayTargetRun(obj, index)
+	-- the targets for obj[index] to rush the goal
+	if index == 1 then
+		obj.targety = TopPostY
+	elseif index == 2 or index == 3 or index == 4 then	-- WR
+		local enemyindex, enemydist = determineClosestObject(index, "CB", false)
+		if enemyindex == 0 then
+			local enemyindex, enemydist = determineClosestObject(index, "", false)
+			if enemyindex == 0 then
+				-- no target (what?!)
+				obj.targety = TopPostY
+			else
+				-- bee line to the nearest defender
+				obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+				obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+			end
+		else
+			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+		end
+	elseif index == 6 then		-- TE
+		local enemyindex, enemydist = determineClosestObject(index, "ILB", false)
+		if enemyindex == 0 then		-- 0 means the correct position type was not found
+			-- target closest player
+			local enemyindex, enemydist = determineClosestObject(index, "", false)
+			if enemyindex == 0 then
+				-- no target (what?!)
+				obj.targety = TopPostY
+			else
+				-- bee line to the nearest defender
+				obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+				obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+			end
+		else
+			-- bee line to the nearest defender
+			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+		end
+	elseif index == 7 or index == 8 or index == 9 or index == 10 or index == 11 then
+		-- target closest player
+		local enemyindex, enemydist = determineClosestObject(index, "", false)
+		if enemyindex ~= 0 then
+			local enemyx = PHYS_PLAYERS[enemyindex].body:getX()
+			local enemyy = PHYS_PLAYERS[enemyindex].body:getY()
+			local carrierx, carriery = getCarrierXY()
+			if carrierx ~= nil then
+				-- get the distance from the carrier to the nearest target
+				-- then half that and use that as the target
+				local dist = cf.getDistance(carrierx, carriery, enemyx, enemyy)
+				local bearing = cf.getBearing(carrierx, carriery, enemyx, enemyy)
+				local targetx, targety = cf.addVectorToPoint(carrierx, carriery, bearing, dist / 2)
+
+				obj.targetx = targetx
+
+				-- if target is 'forward' then move forward. If it's behind, then just shuffle sideways
+				local objy = obj.body:getY()
+				if targety < objy then
+					obj.targety = targety
+				else
+					-- nothing
+				end
+			else
+				--! idk
+			end
+		else
+			--! idk
+		end
+	else
+		-- target closest player
+		local enemyindex, enemydist = determineClosestObject(index, "", false)
+		if enemyindex == 0 then
+			-- no target (what?!)
+			obj.targety = TopPostY
+		else
+			-- bee line to the nearest defender
+			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
+			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
+		end
+	end
+end
+
+local function setInPlayTargetManOnMan(obj, carrierindex)
+	-- sets the defense to target the carrier
+	--! this is not the correct behavior for man on man
+
+	-- default to carrier and then overwrite below
+	obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
+	obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
+
+	local thisindex = obj.fixture:getUserData()
+
+	if obj.positionletters == "DT" or obj.positionletters == "LE" or obj.positionletters == "RE" then
+		-- rush the carrier
+		obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
+		obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
+
+	elseif obj.positionletters == "CB" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		end
+	elseif obj.positionletters == "ILB" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "RB", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		end
+	elseif obj.positionletters == "S" then
+		-- target TE first and then WR
+		local targetindex, targetdist = determineClosestObject(thisindex, "TE", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			-- if no TE then target WR
+			local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
+			if targetindex ~= 0 then
+				obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+				obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			end
+		end
+	end
 end
 
 local function setFormingWaypoints(obj, index)
@@ -302,12 +427,14 @@ local function setInPlayWaypoints(obj, index, runnerindex, dt)
         obj.targettimer = 0     -- only change targets every x seconds
 
 		if index <= 11 then
+			-- process offense team
 			if playcall_offense == enum.playcallRun then
 				setInPlayTargetRun(obj, index)		-- sets target for a single index
 			else
 				--! add more plays here
 			end
 		else
+			-- process defense team
 			if playcall_defense == enum.playcallManOnMan then
 				setInPlayTargetManOnMan(obj, runnerindex)
 			else
@@ -435,7 +562,6 @@ local function drawStadium()
 
 	-- print some key player stats
 	love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 100)
-
 end
 
 local function endtheround(score)
@@ -464,87 +590,6 @@ local function endtheround(score)
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
 
-local function setInPlayTargetRun(obj, index)
-	-- the targets for obj[index] to rush the goal
-	if index == 1 then
-		obj.targety = TopPostY
-	elseif index == 2 or index == 3 or index == 4 then	-- WR
-		local enemyindex, enemydist = determineClosestObject(index, "CB", false)
-		if enemyindex == 0 then
-			local enemyindex, enemydist = determineClosestObject(index, "", false)
-			if enemyindex == 0 then
-				-- no target (what?!)
-				obj.targety = TopPostY
-			else
-				-- bee line to the nearest defender
-				obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
-				obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
-			end
-		else
-			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
-			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
-		end
-	elseif index == 6 then		-- TE
-		local enemyindex, enemydist = determineClosestObject(index, "ILB", false)
-		if enemyindex == 0 then		-- 0 means the correct position type was not found
-			-- target closest player
-			local enemyindex, enemydist = determineClosestObject(index, "", false)
-			if enemyindex == 0 then
-				-- no target (what?!)
-				obj.targety = TopPostY
-			else
-				-- bee line to the nearest defender
-				obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
-				obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
-			end
-		else
-			-- bee line to the nearest defender
-			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
-			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
-		end
-	elseif index == 7 or index == 8 or index == 9 or index == 10 or index == 11 then
-		-- target closest player
-		local enemyindex, enemydist = determineClosestObject(index, "", false)
-		if enemyindex ~= 0 then
-			local enemyx = PHYS_PLAYERS[enemyindex].body:getX()
-			local enemyy = PHYS_PLAYERS[enemyindex].body:getY()
-			local carrierx, carriery = getCarrierXY()
-			if carrierx ~= nil then
-				-- get the distance from the carrier to the nearest target
-				-- then half that and use that as the target
-				local dist = cf.getDistance(carrierx, carriery, enemyx, enemyy)
-				local bearing = cf.getBearing(carrierx, carriery, enemyx, enemyy)
-				local targetx, targety = cf.addVectorToPoint(carrierx, carriery, bearing, dist / 2)
-
-				obj.targetx = targetx
-
-				-- if target is 'forward' then move forward. If it's behind, then just shuffle sideways
-				local objy = obj.body:getY()
-				if targety < objy then
-					obj.targety = targety
-				else
-					-- nothing
-				end
-			else
-				--! idk
-			end
-		else
-			--! idk
-		end
-	else
-		-- target closest player
-		local enemyindex, enemydist = determineClosestObject(index, "", false)
-		if enemyindex == 0 then
-			-- no target (what?!)
-			obj.targety = TopPostY
-		else
-			-- bee line to the nearest defender
-			obj.targetx = PHYS_PLAYERS[enemyindex].body:getX()
-			obj.targety = PHYS_PLAYERS[enemyindex].body:getY()
-		end
-	end
-end
-
 local function setinPlayTargetThrow(obj, index)
 	-- obj is the physical player
 	-- index is a value from 1 -> 22
@@ -560,50 +605,6 @@ local function setinPlayTargetThrow(obj, index)
 		-- move to the centre of the field
 		table.insert(obj.waypointx, CentreLineX)
 		table.insert(obj.waypointy, objy - 10)
-	end
-end
-
-local function setInPlayTargetManOnMan(obj, carrierindex)
-	-- sets the defense to target the carrier
-	--! this is not the correct behavior for man on man
-
-	-- default to carrier and then overwrite below
-	obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
-	obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
-
-	local thisindex = obj.fixture:getUserData()
-
-	if obj.positionletters == "DT" or obj.positionletters == "LE" or obj.positionletters == "RE" then
-		-- rush the carrier
-		obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
-		obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
-
-	elseif obj.positionletters == "CB" then
-		local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
-		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
-		end
-	elseif obj.positionletters == "ILB" then
-		local targetindex, targetdist = determineClosestObject(thisindex, "RB", false)
-		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
-		end
-	elseif obj.positionletters == "S" then
-		-- target TE first and then WR
-		local targetindex, targetdist = determineClosestObject(thisindex, "TE", false)
-		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
-		else
-			-- if no TE then target WR
-			local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
-			if targetindex ~= 0 then
-				obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-				obj.targety = PHYS_PLAYERS[targetindex].body:getY()
-			end
-		end
 	end
 end
 
@@ -816,19 +817,6 @@ local function drawPlayers()
     end
 end
 
-function stadium.draw()
-    -- call this from love.draw()
-
-	cam:attach()		--! will need to put cam in the right place later on
-
-    drawStadium()
-    drawPlayers()
-
-    buttons.drawButtons()
-
-	cam:detach()
-end
-
 local function beginContact(a, b, coll)
 
     if GAME_STATE == enum.gamestateInPlay then
@@ -882,35 +870,6 @@ local function resetFirstDown(y)
     if FirstDownMarkerY < TopGoalY then FirstDownMarkerY = TopGoalY end
     downNumber = 1
 end
-
-local function setWaypointsThrow(obj, index)
-	-- sets waypoints for obj (physics object) for the throw play call
-	-- index = number 1 -> 11. Is needed to split the 3 WR's
-	-- waypoints are a string of x,y co-ordinates
-	-- wapoints are absolute values and not relative to any point (except the origin!)
-
-	local wpx, wpy
-	local objx = obj.body:getX()
-	local objy = obj.body:getY()
-
-	if index == 1 then		-- QB
-		-- move back 7 meters
-		table.insert(obj.waypointx, objx)
-		table.insert(obj.waypointy, objy + 7)
-
-		-- move left or right 10 meters
-		if love.math.random(1,2) == 1 then
-			-- move left
-			table.insert(obj.waypointx, objx - 10)
-			table.insert(obj.waypointy, objy + 7)
-		else
-			table.insert(obj.waypointx, objx + 10)
-			table.insert(obj.waypointy, objy + 7)
-		end
-	end
-end
-
-
 
 local function checkForStateChange(dt)
     -- looks for key events that will trigger a change in game state
@@ -998,6 +957,19 @@ local function checkForStateChange(dt)
     end
 end
 
+function stadium.draw()
+    -- call this from love.draw()
+
+	cam:attach()		--! will need to put cam in the right place later on
+
+    drawStadium()
+    drawPlayers()
+
+    buttons.drawButtons()
+
+	cam:detach()
+end
+
 function stadium.update(dt)
     -- called from love.update()
 
@@ -1064,3 +1036,30 @@ function stadium.loadButtons()
 end
 
 return stadium
+
+-- local function setWaypointsThrow(obj, index)
+-- 	-- sets waypoints for obj (physics object) for the throw play call
+-- 	-- index = number 1 -> 11. Is needed to split the 3 WR's
+-- 	-- waypoints are a string of x,y co-ordinates
+-- 	-- wapoints are absolute values and not relative to any point (except the origin!)
+--
+-- 	local wpx, wpy
+-- 	local objx = obj.body:getX()
+-- 	local objy = obj.body:getY()
+--
+-- 	if index == 1 then		-- QB
+-- 		-- move back 7 meters
+-- 		table.insert(obj.waypointx, objx)
+-- 		table.insert(obj.waypointy, objy + 7)
+--
+-- 		-- move left or right 10 meters
+-- 		if love.math.random(1,2) == 1 then
+-- 			-- move left
+-- 			table.insert(obj.waypointx, objx - 10)
+-- 			table.insert(obj.waypointy, objy + 7)
+-- 		else
+-- 			table.insert(obj.waypointx, objx + 10)
+-- 			table.insert(obj.waypointy, objy + 7)
+-- 		end
+-- 	end
+-- end
