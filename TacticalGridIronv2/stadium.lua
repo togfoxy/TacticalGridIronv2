@@ -413,6 +413,51 @@ local function setFormingWaypoints(obj, index)
     end
 end
 
+local function setInPlayWapointsThrow(obj, index)
+	-- clear old waypoints
+	obj.waypointx = {}
+	obj.waypointy = {}
+	-- player 1 = QB
+    if index == 1 then
+		table.insert(obj.waypointx, CentreLineX)	-- centre line
+		table.insert(obj.waypointy, ScrimmageY + 11)
+	elseif index == 2 then		-- WR (left closest to centre)
+		table.insert(obj.waypointx, CentreLineX - 14)		-- left 'wing'
+		table.insert(obj.waypointy, ScrimmageY - 12)
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY - 12)
+	elseif index == 3 then				-- WR (right)
+		table.insert(obj.waypointx, CentreLineX + 18)
+		table.insert(obj.waypointy, ScrimmageY - 17)
+	elseif index == 4 then		-- WR (left on outside)
+		table.insert(obj.waypointx, CentreLineX - 18)	 -- left 'wing')
+		table.insert(obj.waypointy, ScrimmageY - 17)		-- just behind scrimmage
+	elseif index == 5 then 		-- RB
+		table.insert(obj.waypointx, CentreLineX - 5)
+		table.insert(obj.waypointy, ScrimmageY + 10)
+	elseif index == 6 then		-- TE (right side)
+		table.insert(obj.waypointx, CentreLineX + 13)
+		table.insert(obj.waypointy, ScrimmageY - 8)
+		table.insert(obj.waypointx, CentreLineX + 5)
+		table.insert(obj.waypointy, ScrimmageY - 18)
+	elseif index == 7 then		-- centre
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY - 5)
+	elseif index == 8 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX - 4)
+		table.insert(obj.waypointy, ScrimmageY - 3)
+	elseif index == 9 then		-- right guard
+		table.insert(obj.waypointx, CentreLineX + 4)
+		table.insert(obj.waypointy, ScrimmageY - 3)
+	elseif index == 10 then		-- left tackle
+		table.insert(obj.waypointx, CentreLineX - 7)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 11 then		-- right tackle
+		table.insert(obj.waypointx, CentreLineX + 7)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	end
+end
+
 local function setInPlayWaypoints(obj, index, runnerindex, dt)
     -- determine the target for the single obj
     -- runnerindex might be nil on some calls but is okay because it's only used by players 12+
@@ -430,6 +475,8 @@ local function setInPlayWaypoints(obj, index, runnerindex, dt)
 			-- process offense team
 			if playcall_offense == enum.playcallRun then
 				setInPlayTargetRun(obj, index)		-- sets target for a single index
+			elseif playcall_offense == enum.playcallThrow then
+				setInPlayWapointsThrow(obj, index)
 			else
 				--! add more plays here
 			end
