@@ -107,6 +107,14 @@ function stadium.wheelmoved(x, y)
 	print("Zoom factor = " .. ZOOMFACTOR)
 end
 
+function stadium.mousereleased(rx, ry)
+    -- call from love.mousereleased()
+    local clickedButtonID = buttons.getButtonID(rx, ry)
+    if clickedButtonID == enum.buttonStadiumQuit then
+        love.event.quit()
+    end
+end
+
 local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
 	-- receives the player index in question and the target type string (eg "WR") and finds the closest enemy player of that type
 	-- enemytype can be an empty string ("") which will search for ANY type
@@ -167,14 +175,6 @@ local function getCarrierXY()
 	return nil, nil
 end
 
-function stadium.mousereleased(rx, ry)
-    -- call from love.mousereleased()
-    local clickedButtonID = buttons.getButtonID(rx, ry)
-    if clickedButtonID == enum.buttonStadiumQuit then
-        love.event.quit()
-    end
-end
-
 local function createPhysicsPlayers()
     -- called once during drawStadium()
 
@@ -209,364 +209,6 @@ local function createPhysicsPlayers()
 
         ps.setCustomStats(PHYS_PLAYERS[i], i)		--! not sure if this is still needed
 		ps.getStatsFromDB(PHYS_PLAYERS[i], i)
-    end
-end
-
-local function setFormingWaypoints(obj, index)
-    -- receives a single object and sets it's target
-
-	-- clear old waypoints
-	obj.waypointx = {}
-	obj.waypointy = {}
-	-- player 1 = QB
-    if index == 1 then
-		table.insert(obj.waypointx, CentreLineX)	-- centre line
-		table.insert(obj.waypointy, ScrimmageY + 8)
-	elseif index == 2 then		-- WR (left closest to centre)
-		table.insert(obj.waypointx, CentreLineX - 14)		-- left 'wing'
-		table.insert(obj.waypointy, ScrimmageY + 2)			-- just behind scrimmage
-	elseif index == 3 then				-- WR (right)
-		table.insert(obj.waypointx, CentreLineX + 18)
-		table.insert(obj.waypointy, ScrimmageY + 2)
-	elseif index == 4 then		-- WR (left on outside)
-		table.insert(obj.waypointx, CentreLineX - 18)	 -- left 'wing')
-		table.insert(obj.waypointy, ScrimmageY + 2)		-- just behind scrimmage
-	elseif index == 5 then 		-- RB
-		table.insert(obj.waypointx, CentreLineX)
-		table.insert(obj.waypointy, ScrimmageY + 14)
-	elseif index == 6 then		-- TE (right side)
-		table.insert(obj.waypointx, CentreLineX + 13)
-		table.insert(obj.waypointy, ScrimmageY + 3)
-	elseif index == 7 then
-		table.insert(obj.waypointx, CentreLineX)
-		table.insert(obj.waypointy, ScrimmageY)
-	elseif index == 8 then		-- left guard
-		table.insert(obj.waypointx, CentreLineX - 4)
-		table.insert(obj.waypointy, ScrimmageY + 2)
-	elseif index == 9 then		-- right guard
-		table.insert(obj.waypointx, CentreLineX + 4)
-		table.insert(obj.waypointy, ScrimmageY + 2)
-	elseif index == 10 then		-- left tackle
-		table.insert(obj.waypointx, CentreLineX - 7)
-		table.insert(obj.waypointy, ScrimmageY + 3)
-	elseif index == 11 then		-- right tackle
-		table.insert(obj.waypointx, CentreLineX + 7)
-		table.insert(obj.waypointy, ScrimmageY + 3)
-	elseif index == 12 then		-- left tackle (left side of screen)
-		table.insert(obj.waypointx, CentreLineX - 2)
-		table.insert(obj.waypointy, ScrimmageY - 2)
-	elseif index == 13 then		-- right tackle
-		table.insert(obj.waypointx, CentreLineX + 2)
-		table.insert(obj.waypointy, ScrimmageY - 2)
-	elseif index == 14 then		-- left end
-		table.insert(obj.waypointx, CentreLineX - 6)
-		table.insert(obj.waypointy, ScrimmageY - 2)
-	elseif index == 15 then		-- right end
-		table.insert(obj.waypointx, CentreLineX + 6)
-		table.insert(obj.waypointy, ScrimmageY - 2)
-	elseif index == 16 then		-- inside LB
-		table.insert(obj.waypointx, CentreLineX)
-		table.insert(obj.waypointy, ScrimmageY - 11)
-	elseif index == 17 then		-- left outside LB
-		table.insert(obj.waypointx, CentreLineX - 15)
-		table.insert(obj.waypointy, ScrimmageY - 10)
-	elseif index == 18 then		-- left guard
-		table.insert(obj.waypointx, CentreLineX + 15)
-		table.insert(obj.waypointy, ScrimmageY - 10)
-	elseif index == 19 then		-- left CB
-		table.insert(obj.waypointx, CentreLineX - 18)
-		table.insert(obj.waypointy, ScrimmageY - 18)
-	elseif index == 20 then		-- left guard
-		table.insert(obj.waypointx, CentreLineX + 18)
-		table.insert(obj.waypointy, ScrimmageY - 18)
-	elseif index == 21 then		-- left safety
-		table.insert(obj.waypointx, CentreLineX - 4)
-		table.insert(obj.waypointy, ScrimmageY - 17)
-	elseif index == 22 then		-- right safety
-		table.insert(obj.waypointx, CentreLineX + 4)
-		table.insert(obj.waypointy, ScrimmageY - 17)
-    end
-end
-
-local function setAllTargets(dt)
-    -- ensure every player has a destination to go to
-
-    local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
-    for i = 1, NumberOfPlayers do
-        if PHYS_PLAYERS[i].hasBall then runnerindex = i end
-
-        if GAME_STATE == enum.gamestateForming then
-            if PHYS_PLAYERS[i].targetx == nil then
-                -- setFormingTarget(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
-				setFormingWaypoints(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
-            end
-        elseif GAME_STATE == enum.gamestateInPlay then
-            setInPlayTarget(PHYS_PLAYERS[i], i, runnerindex, dt)
-        end
-    end
-end
-
-local function drawStadium()
-
-    if REFRESH_DB then	-- this only happens once per game
-        arr_seasonstatus = {}
-        local fbdb = sqlite3.open(DB_FILE)
-        local strQuery = "select teams.TEAMNAME, teams.RED, teams.GREEN, teams.BLUE, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
-        for row in fbdb:nrows(strQuery) do
-            local mytable = {}
-            mytable.TEAMNAME = row.TEAMNAME
-            mytable.TEAMID = row.TEAMID
-            mytable.OFFENCESCORE = row.OFFENCESCORE
-            table.insert(arr_seasonstatus, mytable)
-
-            if row.TEAMID == OFFENSIVE_TEAMID then
-                offensiveteamname = row.TEAMNAME
-                OFF_RED = row.RED
-                OFF_GREEN = row.GREEN
-                OFF_BLUE = row.BLUE
-
-            end
-            if row.TEAMID == DEFENSIVE_TEAMID then
-                defensiveteamname = row.TEAMNAME
-                DEF_RED = row.RED
-                DEF_GREEN = row.GREEN
-                DEF_BLUE = row.BLUE
-            end
-        end
-        REFRESH_DB = false
-        fbdb:close()
-
-        assert(OFF_RED ~= nil, strQuery)
-        assert(DEF_RED ~= nil, strQuery)
-
-        createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
-        GAME_STATE = enum.gamestateForming
-		setAllTargets(dt)
-        OFFENSIVE_TIME = 0
-    end
-
-    -- top goal
-    love.graphics.setColor(153/255, 153/255, 255/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
-
-    -- bottom goal
-    love.graphics.setColor(255/255, 153/255, 51/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight + FieldHeight) * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
-
-    -- field
-    love.graphics.setColor(69/255, 172/255, 79/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)
-
-    -- yard lines
-    for i = 0,20 do
-        if cf.isEven(i) then
-            love.graphics.setColor(1,1,1,1)
-        else
-            love.graphics.setColor(1,1,1,0.5)
-        end
-		love.graphics.line(LeftLineX * SCALE, (TopGoalY + (i * 5))  * SCALE, RightLineX * SCALE, (TopGoalY + (i * 5))  * SCALE)
-	end
-
-    -- left and right ticks
-    love.graphics.setColor(1,1,1,1)
-    for i = 1, 99 do
-        -- draw left tick mark
-        love.graphics.line((LeftLineX + 1)  * SCALE, (TopGoalY + i)  * SCALE, (LeftLineX + 2) * SCALE, (TopGoalY + i) * SCALE)
-
-        -- draw left and right hash marks (inbound lines)
-        love.graphics.line((LeftLineX + 22) * SCALE, (TopGoalY + i) * SCALE, (LeftLineX + 23) * SCALE, (TopGoalY + i) * SCALE)
-        love.graphics.line((RightLineX - 23) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 22) * SCALE, (TopGoalY + i) * SCALE)
-
-        -- draw right tick lines
-        love.graphics.line((RightLineX -2) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 1) * SCALE, (TopGoalY + i) * SCALE)
-    end
-
-    --draw sidelines
-    love.graphics.setColor(1,1,1,1)
-    love.graphics.rectangle("line", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, (GoalHeight + FieldHeight + GoalHeight) * SCALE)
-
-    -- draw stadium
-
-    -- draw scrimmage
-	love.graphics.setColor(93/255, 138/255, 169/255,1)
-	love.graphics.setLineWidth(5)
-	love.graphics.line(LeftLineX * SCALE, ScrimmageY * SCALE, RightLineX * SCALE, ScrimmageY * SCALE)
-	love.graphics.setLineWidth(1)	-- return width back to default
-
-    -- draw first down marker
-	love.graphics.setColor(255/255, 255/255, 51/255,1)
-	love.graphics.setLineWidth(5)
-	love.graphics.line(LeftLineX * SCALE, FirstDownMarkerY * SCALE, RightLineX * SCALE, FirstDownMarkerY * SCALE)
-	love.graphics.setLineWidth(1)	-- return width back to default
-
-    -- print the two teams
-    love.graphics.setColor(1,1,1,1)
-    love.graphics.print(offensiveteamname, 50, 50)       -- this needs to be the team name and not the ID
-    love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
-
-	-- print some key player stats
-	love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 100)
-
-end
-
-local function endtheround(score)
-    -- end the game
-    OFFENSIVE_SCORE = score
-    OFFENSIVE_TIME = cf.round(OFFENSIVE_TIME, 4)
-
-    local fbdb = sqlite3.open(DB_FILE)
-    local strQuery
-    strQuery = "Update SEASON set OFFENCESCORE = " .. score .. ", OFFENCETIME = " .. OFFENSIVE_TIME .. " where TEAMID = " .. OFFENSIVE_TEAMID
-    local dberror = fbdb:exec(strQuery)
-    fbdb:close()
-
-    -- move to the next scene
-    REFRESH_DB = true
-
-    -- need to reset all sorts of player status here
-    for i = 1, NumberOfPlayers do
-        PHYS_PLAYERS[i].body:destroy()
-    end
-    GAME_STATE = nil
-    downNumber = 1
-    ScrimmageY = BottomGoalY - 25
-    FirstDownMarkerY = ScrimmageY - 10
-
-    cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
-end
-
-local function setFormingTarget(obj, index)
-    -- receives a single object and sets it's target
-    -- player 1 = QB
-    if index == 1 then
-    	obj.targetx = (CentreLineX)	 -- centre line
-    	obj.targety = (ScrimmageY + 8)
-    end
-	-- player 2 = WR (left closest to centre)
-    if index == 2 then
-        obj.targetx = (CentreLineX - 14)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-    end
-	-- player 3 = WR (right)
-    if index == 3 then
-        obj.targetx = (CentreLineX + 18)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-    end
-
-	-- player 4 = WR (left on outside)
-    if index == 4 then
-        obj.targetx = (CentreLineX - 18)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-    end
-
-	-- player 5 = RB
-    if index == 5 then
-        obj.targetx = (CentreLineX)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 14)	-- just behind QB
-    end
-
-	-- player 6 = TE (right side)
-    if index == 6 then
-        obj.targetx = (CentreLineX + 13)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 3)
-    end
-
-	-- player 7 = Centre
-    if index == 7 then
-        obj.targetx = (CentreLineX)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-    end
-
-	-- player 8 = left guard
-    if index == 8 then
-        obj.targetx = (CentreLineX - 4)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 2)		-- just behind scrimmage
-    end
-
-	-- player 9 = right guard
-    if index == 9 then
-        obj.targetx = (CentreLineX + 4)	 -- left 'wing'
-        obj.targety = (ScrimmageY +2)		-- just behind scrimmage
-    end
-
-	-- player 10 = left tackle
-    if index == 10 then
-        obj.targetx = (CentreLineX - 7)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 3)		-- just behind scrimmage
-    end
-
-	-- player 11 = right tackle
-    if index == 11 then
-        obj.targetx = (CentreLineX + 7)	 -- left 'wing'
-        obj.targety = (ScrimmageY + 3)		-- just behind scrimmage
-    end
-
-    -- now for the visitors
-
-	-- player 12 = Left tackle (left side of screen)
-    if index == 12 then
-        obj.targetx = (CentreLineX -2)	 -- centre line
-        obj.targety = (ScrimmageY - 2)
-    end
-
-	-- player 13 = Right tackle
-    if index == 13 then
-        obj.targetx = (CentreLineX +2)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
-    end
-
-	-- player 14 = Left end
-    if index == 14 then
-        obj.targetx = (CentreLineX - 6)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
-    end
-
-	-- player 15 = Right end
-    if index == 15 then
-        obj.targetx = (CentreLineX + 6)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 2)		-- just behind scrimmage
-    end
-
-	-- player 16 = Inside LB
-    if index == 16 then
-        obj.targetx = (CentreLineX)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 11)	-- just behind scrimmage
-    end
-
-	-- player 17 = Left Outside LB
-    if index == 17 then
-        obj.targetx = (CentreLineX - 15)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 10)
-    end
-
-	-- player 18 = Right Outside LB
-    if index == 18 then
-        obj.targetx = (CentreLineX +15)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 10)
-    end
-
-	-- player 19 = Left CB
-    if index == 19 then
-        obj.targetx = (CentreLineX -18)	 -- left 'wing'
-        obj.targety = (ScrimmageY -18)
-    end
-
-	-- player 20 = right CB
-    if index == 20 then
-        obj.targetx = (CentreLineX + 18)	 -- left 'wing'
-        obj.targety = (ScrimmageY -18)
-    end
-
-	-- player 21 = left safety
-    if index == 21 then
-        obj.targetx = (CentreLineX - 4)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 17)
-    end
-
-	-- player 22 = right safety
-    if index == 22 then
-        obj.targetx = (CentreLineX + 4)	 -- left 'wing'
-        obj.targety = (ScrimmageY - 17)
     end
 end
 
@@ -651,24 +293,6 @@ local function setInPlayTargetRun(obj, index)
 	end
 end
 
-local function setinPlayTargetThrow(obj, index)
-	-- obj is the physical player
-	-- index is a value from 1 -> 22
-
-	local objx = PHYS_PLAYERS[index].body:getX()
-	local objy = PHYS_PLAYERS[index].body:getY()
-
-	if index == 2 then		-- one of the WRs
-		local target = {}
-		-- move forward 10 metres
-		table.insert(obj.waypointx, objx)
-		table.insert(obj.waypointy, objy - 10)
-		-- move to the centre of the field
-		table.insert(obj.waypointx, CentreLineX)
-		table.insert(obj.waypointy, objy - 10)
-	end
-end
-
 local function setInPlayTargetManOnMan(obj, carrierindex)
 	-- sets the defense to target the carrier
 	--! this is not the correct behavior for man on man
@@ -713,7 +337,128 @@ local function setInPlayTargetManOnMan(obj, carrierindex)
 	end
 end
 
-local function setInPlayTarget(obj, index, runnerindex, dt)
+local function setFormingWaypoints(obj, index)
+    -- receives a single object and sets it's target
+
+	-- clear old waypoints
+	obj.waypointx = {}
+	obj.waypointy = {}
+	-- player 1 = QB
+    if index == 1 then
+		table.insert(obj.waypointx, CentreLineX)	-- centre line
+		table.insert(obj.waypointy, ScrimmageY + 8)
+	elseif index == 2 then		-- WR (left closest to centre)
+		table.insert(obj.waypointx, CentreLineX - 14)		-- left 'wing'
+		table.insert(obj.waypointy, ScrimmageY + 2)			-- just behind scrimmage
+	elseif index == 3 then				-- WR (right)
+		table.insert(obj.waypointx, CentreLineX + 18)
+		table.insert(obj.waypointy, ScrimmageY + 2)
+	elseif index == 4 then		-- WR (left on outside)
+		table.insert(obj.waypointx, CentreLineX - 18)	 -- left 'wing')
+		table.insert(obj.waypointy, ScrimmageY + 2)		-- just behind scrimmage
+	elseif index == 5 then 		-- RB
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY + 14)
+	elseif index == 6 then		-- TE (right side)
+		table.insert(obj.waypointx, CentreLineX + 13)
+		table.insert(obj.waypointy, ScrimmageY + 3)
+	elseif index == 7 then
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY)
+	elseif index == 8 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX - 4)
+		table.insert(obj.waypointy, ScrimmageY + 2)
+	elseif index == 9 then		-- right guard
+		table.insert(obj.waypointx, CentreLineX + 4)
+		table.insert(obj.waypointy, ScrimmageY + 2)
+	elseif index == 10 then		-- left tackle
+		table.insert(obj.waypointx, CentreLineX - 7)
+		table.insert(obj.waypointy, ScrimmageY + 3)
+	elseif index == 11 then		-- right tackle
+		table.insert(obj.waypointx, CentreLineX + 7)
+		table.insert(obj.waypointy, ScrimmageY + 3)
+	elseif index == 12 then		-- left tackle (left side of screen)
+		table.insert(obj.waypointx, CentreLineX - 2)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 13 then		-- right tackle
+		table.insert(obj.waypointx, CentreLineX + 2)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 14 then		-- left end
+		table.insert(obj.waypointx, CentreLineX - 6)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 15 then		-- right end
+		table.insert(obj.waypointx, CentreLineX + 6)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 16 then		-- inside LB
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY - 11)
+	elseif index == 17 then		-- left outside LB
+		table.insert(obj.waypointx, CentreLineX - 15)
+		table.insert(obj.waypointy, ScrimmageY - 10)
+	elseif index == 18 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX + 15)
+		table.insert(obj.waypointy, ScrimmageY - 10)
+	elseif index == 19 then		-- left CB
+		table.insert(obj.waypointx, CentreLineX - 18)
+		table.insert(obj.waypointy, ScrimmageY - 18)
+	elseif index == 20 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX + 18)
+		table.insert(obj.waypointy, ScrimmageY - 18)
+	elseif index == 21 then		-- left safety
+		table.insert(obj.waypointx, CentreLineX - 4)
+		table.insert(obj.waypointy, ScrimmageY - 17)
+	elseif index == 22 then		-- right safety
+		table.insert(obj.waypointx, CentreLineX + 4)
+		table.insert(obj.waypointy, ScrimmageY - 17)
+    end
+end
+
+local function setInPlayWapointsThrow(obj, index)
+	-- clear old waypoints
+	obj.waypointx = {}
+	obj.waypointy = {}
+	-- player 1 = QB
+    if index == 1 then
+		table.insert(obj.waypointx, CentreLineX)	-- centre line
+		table.insert(obj.waypointy, ScrimmageY + 11)
+	elseif index == 2 then		-- WR (left closest to centre)
+		table.insert(obj.waypointx, CentreLineX - 14)		-- left 'wing'
+		table.insert(obj.waypointy, ScrimmageY - 12)
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY - 12)
+	elseif index == 3 then				-- WR (right)
+		table.insert(obj.waypointx, CentreLineX + 18)
+		table.insert(obj.waypointy, ScrimmageY - 17)
+	elseif index == 4 then		-- WR (left on outside)
+		table.insert(obj.waypointx, CentreLineX - 18)	 -- left 'wing')
+		table.insert(obj.waypointy, ScrimmageY - 17)		-- just behind scrimmage
+	elseif index == 5 then 		-- RB
+		table.insert(obj.waypointx, CentreLineX - 5)
+		table.insert(obj.waypointy, ScrimmageY + 10)
+	elseif index == 6 then		-- TE (right side)
+		table.insert(obj.waypointx, CentreLineX + 13)
+		table.insert(obj.waypointy, ScrimmageY - 8)
+		table.insert(obj.waypointx, CentreLineX + 5)
+		table.insert(obj.waypointy, ScrimmageY - 18)
+	elseif index == 7 then		-- centre
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY - 5)
+	elseif index == 8 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX - 4)
+		table.insert(obj.waypointy, ScrimmageY - 3)
+	elseif index == 9 then		-- right guard
+		table.insert(obj.waypointx, CentreLineX + 4)
+		table.insert(obj.waypointy, ScrimmageY - 3)
+	elseif index == 10 then		-- left tackle
+		table.insert(obj.waypointx, CentreLineX - 7)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 11 then		-- right tackle
+		table.insert(obj.waypointx, CentreLineX + 7)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	end
+end
+
+local function setInPlayWaypoints(obj, index, runnerindex, dt)
     -- determine the target for the single obj
     -- runnerindex might be nil on some calls but is okay because it's only used by players 12+
 	-- obj = the physical obj
@@ -727,12 +472,16 @@ local function setInPlayTarget(obj, index, runnerindex, dt)
         obj.targettimer = 0     -- only change targets every x seconds
 
 		if index <= 11 then
+			-- process offense team
 			if playcall_offense == enum.playcallRun then
 				setInPlayTargetRun(obj, index)		-- sets target for a single index
+			elseif playcall_offense == enum.playcallThrow then
+				setInPlayWapointsThrow(obj, index)
 			else
 				--! add more plays here
 			end
 		else
+			-- process defense team
 			if playcall_defense == enum.playcallManOnMan then
 				setInPlayTargetManOnMan(obj, runnerindex)
 			else
@@ -742,7 +491,169 @@ local function setInPlayTarget(obj, index, runnerindex, dt)
     end
 end
 
+local function setAllWaypoints(dt)
+    -- ensure every player has a destination to go to
+	-- is called as required - usually after a change in state
 
+    local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
+    for i = 1, NumberOfPlayers do
+        if PHYS_PLAYERS[i].hasBall then runnerindex = i end
+
+        if GAME_STATE == enum.gamestateForming then
+            if PHYS_PLAYERS[i].targetx == nil then
+				setFormingWaypoints(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
+            end
+        elseif GAME_STATE == enum.gamestateInPlay then
+			setInPlayWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
+        end
+    end
+end
+
+local function drawStadium()
+
+    if REFRESH_DB then	-- this only happens once per game
+        arr_seasonstatus = {}
+        local fbdb = sqlite3.open(DB_FILE)
+        local strQuery = "select teams.TEAMNAME, teams.RED, teams.GREEN, teams.BLUE, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
+        for row in fbdb:nrows(strQuery) do
+            local mytable = {}
+            mytable.TEAMNAME = row.TEAMNAME
+            mytable.TEAMID = row.TEAMID
+            mytable.OFFENCESCORE = row.OFFENCESCORE
+            table.insert(arr_seasonstatus, mytable)
+
+            if row.TEAMID == OFFENSIVE_TEAMID then
+                offensiveteamname = row.TEAMNAME
+                OFF_RED = row.RED
+                OFF_GREEN = row.GREEN
+                OFF_BLUE = row.BLUE
+
+            end
+            if row.TEAMID == DEFENSIVE_TEAMID then
+                defensiveteamname = row.TEAMNAME
+                DEF_RED = row.RED
+                DEF_GREEN = row.GREEN
+                DEF_BLUE = row.BLUE
+            end
+        end
+        REFRESH_DB = false
+        fbdb:close()
+
+        assert(OFF_RED ~= nil, strQuery)
+        assert(DEF_RED ~= nil, strQuery)
+
+        createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
+        GAME_STATE = enum.gamestateForming
+		setAllWaypoints(dt)
+        OFFENSIVE_TIME = 0
+    end
+
+    -- top goal
+    love.graphics.setColor(153/255, 153/255, 255/255)
+    love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
+
+    -- bottom goal
+    love.graphics.setColor(255/255, 153/255, 51/255)
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight + FieldHeight) * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
+
+    -- field
+    love.graphics.setColor(69/255, 172/255, 79/255)
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)
+
+    -- yard lines
+    for i = 0,20 do
+        if cf.isEven(i) then
+            love.graphics.setColor(1,1,1,1)
+        else
+            love.graphics.setColor(1,1,1,0.5)
+        end
+		love.graphics.line(LeftLineX * SCALE, (TopGoalY + (i * 5))  * SCALE, RightLineX * SCALE, (TopGoalY + (i * 5))  * SCALE)
+	end
+
+    -- left and right ticks
+    love.graphics.setColor(1,1,1,1)
+    for i = 1, 99 do
+        -- draw left tick mark
+        love.graphics.line((LeftLineX + 1)  * SCALE, (TopGoalY + i)  * SCALE, (LeftLineX + 2) * SCALE, (TopGoalY + i) * SCALE)
+
+        -- draw left and right hash marks (inbound lines)
+        love.graphics.line((LeftLineX + 22) * SCALE, (TopGoalY + i) * SCALE, (LeftLineX + 23) * SCALE, (TopGoalY + i) * SCALE)
+        love.graphics.line((RightLineX - 23) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 22) * SCALE, (TopGoalY + i) * SCALE)
+
+        -- draw right tick lines
+        love.graphics.line((RightLineX -2) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 1) * SCALE, (TopGoalY + i) * SCALE)
+    end
+
+    --draw sidelines
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.rectangle("line", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, (GoalHeight + FieldHeight + GoalHeight) * SCALE)
+
+    -- draw stadium
+
+    -- draw scrimmage
+	love.graphics.setColor(93/255, 138/255, 169/255,1)
+	love.graphics.setLineWidth(5)
+	love.graphics.line(LeftLineX * SCALE, ScrimmageY * SCALE, RightLineX * SCALE, ScrimmageY * SCALE)
+	love.graphics.setLineWidth(1)	-- return width back to default
+
+    -- draw first down marker
+	love.graphics.setColor(255/255, 255/255, 51/255,1)
+	love.graphics.setLineWidth(5)
+	love.graphics.line(LeftLineX * SCALE, FirstDownMarkerY * SCALE, RightLineX * SCALE, FirstDownMarkerY * SCALE)
+	love.graphics.setLineWidth(1)	-- return width back to default
+
+    -- print the two teams
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.print(offensiveteamname, 50, 50)       -- this needs to be the team name and not the ID
+    love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
+
+	-- print some key player stats
+	love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 100)
+end
+
+local function endtheround(score)
+    -- end the game
+    OFFENSIVE_SCORE = score
+    OFFENSIVE_TIME = cf.round(OFFENSIVE_TIME, 4)
+
+    local fbdb = sqlite3.open(DB_FILE)
+    local strQuery
+    strQuery = "Update SEASON set OFFENCESCORE = " .. score .. ", OFFENCETIME = " .. OFFENSIVE_TIME .. " where TEAMID = " .. OFFENSIVE_TEAMID
+    local dberror = fbdb:exec(strQuery)
+    fbdb:close()
+
+    -- move to the next scene
+    REFRESH_DB = true
+
+    -- need to reset all sorts of player status here
+    for i = 1, NumberOfPlayers do
+        PHYS_PLAYERS[i].body:destroy()
+    end
+    GAME_STATE = nil
+    downNumber = 1
+    ScrimmageY = BottomGoalY - 25
+    FirstDownMarkerY = ScrimmageY - 10
+
+    cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
+end
+
+local function setinPlayTargetThrow(obj, index)
+	-- obj is the physical player
+	-- index is a value from 1 -> 22
+
+	local objx = PHYS_PLAYERS[index].body:getX()
+	local objy = PHYS_PLAYERS[index].body:getY()
+
+	if index == 2 then		-- one of the WRs
+		local target = {}
+		-- move forward 10 metres
+		table.insert(obj.waypointx, objx)
+		table.insert(obj.waypointy, objy - 10)
+		-- move to the centre of the field
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, objy - 10)
+	end
+end
 
 local function vectorMovePlayer(obj, dt)
 	-- receives a player physical object and uses vector math to move it towards target
@@ -842,8 +753,6 @@ local function moveAllPlayers(dt)
     local fltMaxVAdjustment = 0.25	-- tweak this to get fluid motion
 
     if GAME_STATE ~= enum.gamestateDeadBall then
-
-        -- setAllTargets(dt)
 
         for i = 1, NumberOfPlayers do
             local objx = PHYS_PLAYERS[i].body:getX()
@@ -955,19 +864,6 @@ local function drawPlayers()
     end
 end
 
-function stadium.draw()
-    -- call this from love.draw()
-
-	cam:attach()		--! will need to put cam in the right place later on
-
-    drawStadium()
-    drawPlayers()
-
-    buttons.drawButtons()
-
-	cam:detach()
-end
-
 local function beginContact(a, b, coll)
 
     if GAME_STATE == enum.gamestateInPlay then
@@ -1022,55 +918,6 @@ local function resetFirstDown(y)
     downNumber = 1
 end
 
-local function setWaypointsThrow(obj, index)
-	-- sets waypoints for obj (physics object) for the throw play call
-	-- index = number 1 -> 11. Is needed to split the 3 WR's
-	-- waypoints are a string of x,y co-ordinates
-	-- wapoints are absolute values and not relative to any point (except the origin!)
-
-	local wpx, wpy
-	local objx = obj.body:getX()
-	local objy = obj.body:getY()
-
-	if index == 1 then		-- QB
-		-- move back 7 meters
-		table.insert(obj.waypointx, objx)
-		table.insert(obj.waypointy, objy + 7)
-
-		-- move left or right 10 meters
-		if love.math.random(1,2) == 1 then
-			-- move left
-			table.insert(obj.waypointx, objx - 10)
-			table.insert(obj.waypointy, objy + 7)
-		else
-			table.insert(obj.waypointx, objx + 10)
-			table.insert(obj.waypointy, objy + 7)
-		end
-	end
-end
-
-local function setWaypoints()
-	-- assumes there is a state change to GAME_STATE = enum.gamestateInPlay
-	-- need to set waypoints for each player
-
-	for i = 1, NumberOfPlayers do
-		if i <= NumberOfPlayers / 2 then
-			if playcall_offense == enum.playcallRun then
-				--!
-			-- elseif
-				--!
-
-			elseif playcall_offense == enum.playcallThrow then
-				setWaypointsThrow(PHYS_PLAYERS[i], i)
-			else
-				print(i, playcall_offense)
-				error("unexpected program flow.")
-			end
-		else
-		end
-	end
-end
-
 local function checkForStateChange(dt)
     -- looks for key events that will trigger a change in game state
     if GAME_STATE == enum.gamestateForming then
@@ -1093,7 +940,7 @@ local function checkForStateChange(dt)
         for i = 1, NumberOfPlayers do
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
-			setWaypoints()		-- sets waypoints for every player
+			setAllWaypoints(dt)
         end
 
 		fun.playAudio(enum.soundGo, false, true)
@@ -1155,6 +1002,19 @@ local function checkForStateChange(dt)
             resetFallenPlayers()
         end
     end
+end
+
+function stadium.draw()
+    -- call this from love.draw()
+
+	cam:attach()		--! will need to put cam in the right place later on
+
+    drawStadium()
+    drawPlayers()
+
+    buttons.drawButtons()
+
+	cam:detach()
 end
 
 function stadium.update(dt)
@@ -1223,3 +1083,30 @@ function stadium.loadButtons()
 end
 
 return stadium
+
+-- local function setWaypointsThrow(obj, index)
+-- 	-- sets waypoints for obj (physics object) for the throw play call
+-- 	-- index = number 1 -> 11. Is needed to split the 3 WR's
+-- 	-- waypoints are a string of x,y co-ordinates
+-- 	-- wapoints are absolute values and not relative to any point (except the origin!)
+--
+-- 	local wpx, wpy
+-- 	local objx = obj.body:getX()
+-- 	local objy = obj.body:getY()
+--
+-- 	if index == 1 then		-- QB
+-- 		-- move back 7 meters
+-- 		table.insert(obj.waypointx, objx)
+-- 		table.insert(obj.waypointy, objy + 7)
+--
+-- 		-- move left or right 10 meters
+-- 		if love.math.random(1,2) == 1 then
+-- 			-- move left
+-- 			table.insert(obj.waypointx, objx - 10)
+-- 			table.insert(obj.waypointy, objy + 7)
+-- 		else
+-- 			table.insert(obj.waypointx, objx + 10)
+-- 			table.insert(obj.waypointy, objy + 7)
+-- 		end
+-- 	end
+-- end
