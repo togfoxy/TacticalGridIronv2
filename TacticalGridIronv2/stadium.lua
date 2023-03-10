@@ -5,6 +5,7 @@ local arr_seasonstatus, offensiveteamname, defensiveteamname, deadBallTimer
 local playcall_offense = 3 --!enum.playcallThrow
 local playcall_defense = 2 --!enum.playcallManOnMan
 local downNumber = 1
+local football = {}			-- contains the x/y of the football
 
 local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
 
@@ -754,7 +755,11 @@ local function moveAllPlayers(dt)
 
     if GAME_STATE ~= enum.gamestateDeadBall then
 
+		local ballcarrier		-- declared here and used way down the bottom
+
         for i = 1, NumberOfPlayers do
+			if PHYS_PLAYERS[i].hasBall then ballcarrier = i end		-- set here and used way down the bottom
+
             local objx = PHYS_PLAYERS[i].body:getX()
             local objy = PHYS_PLAYERS[i].body:getY()
 
@@ -767,9 +772,30 @@ local function moveAllPlayers(dt)
 			if targetx == nil or targety == nil then
 				-- out of waypoints
 				--! do nothing for now
-				if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
-					PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
-					print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
+
+				if i == 1 and playcall_offense == enum.playcallThrow then	-- QB has run out of waypoints
+					-- try to throw ball
+
+					-- pick a random player on same side that is not fallen down
+					local balltarget = nil
+					repeat
+						local rndnum = love.math.random(2, 11)
+						if PHYS_PLAYERS[rndnum].fallen then
+							rndnum = nil
+						else
+							balltarget = rndnum
+						end
+					until balltarget ~= nil			--! need to ensure this isn't and endless loop
+
+
+
+
+
+				else
+					if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
+						PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
+						-- print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
+					end
 				end
 			else
 	            if not PHYS_PLAYERS[i].fallen then
@@ -797,6 +823,13 @@ local function moveAllPlayers(dt)
 	            end
 			end
         end
+
+		if GAME_STATE == enum.gamestateInPlay then
+			-- set the ball x/y
+			-- ballcarrier is set in the loop above
+			football.x = PHYS_PLAYERS[ballcarrier].body:getX()
+			football.y = PHYS_PLAYERS[ballcarrier].body:getY()
+		end
     end
 end
 
@@ -823,10 +856,11 @@ local function drawPlayers()
         love.graphics.circle("fill", objx, objy, objradius)
 
 		-- draw ball
-		if PHYS_PLAYERS[i].hasBall then
+		if GAME_STATE == enum.gamestateInPlay then
 			love.graphics.setColor(1,0,0,1)
-			love.graphics.draw(IMAGE[enum.imageFootball], objx, objy - 15, 0, 0.25, 0.25, 0, 0)
+			love.graphics.draw(IMAGE[enum.imageFootball], football.x * SCALE, (football.y * SCALE) - 15, 0, 0.25, 0.25, 0, 0)
 		end
+
 
         -- draw fallen
         if PHYS_PLAYERS[i].fallen then
@@ -922,14 +956,14 @@ local function checkForStateChange(dt)
     -- looks for key events that will trigger a change in game state
     if GAME_STATE == enum.gamestateForming then
 
-		print("Game state = forming")
+		-- print("Game state = forming")
 
         -- check if everyone is formed up
         for i = 1, NumberOfPlayers do
 			print("Player gamestate for player " .. i .. " = " .. PHYS_PLAYERS[i].gamestate)
             if PHYS_PLAYERS[i].gamestate ~= enum.gamestateReadyForSnap then
                 -- no state change. Abort.
-				print("Player #" .. i .. " is not ready for snap yet.")
+				-- print("Player #" .. i .. " is not ready for snap yet.")
                 return
             end
         end
@@ -937,6 +971,8 @@ local function checkForStateChange(dt)
         -- if above loop didn't abort then all players are ready for snap. Change state
         GAME_STATE = enum.gamestateInPlay
         PHYS_PLAYERS[1].hasBall = true
+		football.x = PHYS_PLAYERS[1].body:getX()
+		football.y = PHYS_PLAYERS[1].body:getY()
         for i = 1, NumberOfPlayers do
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
@@ -947,8 +983,6 @@ local function checkForStateChange(dt)
         -- print("all sensors are now turned on")
     elseif GAME_STATE == enum.gamestateInPlay then
         -- check for a number of conditions
-
-		print("Game state = in play")
 
         for i = 1, NumberOfPlayers / 2 do
             if PHYS_PLAYERS[i].hasBall then
@@ -1083,30 +1117,3 @@ function stadium.loadButtons()
 end
 
 return stadium
-
--- local function setWaypointsThrow(obj, index)
--- 	-- sets waypoints for obj (physics object) for the throw play call
--- 	-- index = number 1 -> 11. Is needed to split the 3 WR's
--- 	-- waypoints are a string of x,y co-ordinates
--- 	-- wapoints are absolute values and not relative to any point (except the origin!)
---
--- 	local wpx, wpy
--- 	local objx = obj.body:getX()
--- 	local objy = obj.body:getY()
---
--- 	if index == 1 then		-- QB
--- 		-- move back 7 meters
--- 		table.insert(obj.waypointx, objx)
--- 		table.insert(obj.waypointy, objy + 7)
---
--- 		-- move left or right 10 meters
--- 		if love.math.random(1,2) == 1 then
--- 			-- move left
--- 			table.insert(obj.waypointx, objx - 10)
--- 			table.insert(obj.waypointy, objy + 7)
--- 		else
--- 			table.insert(obj.waypointx, objx + 10)
--- 			table.insert(obj.waypointy, objy + 7)
--- 		end
--- 	end
--- end
