@@ -6,6 +6,9 @@ local playcall_offense = 3 --!enum.playcallThrow
 local playcall_defense = 2 --!enum.playcallManOnMan
 local downNumber = 1
 local football = {}			-- contains the x/y of the football
+football.waypointx = {}
+football.waypointy = {}
+
 
 local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
 
@@ -638,24 +641,6 @@ local function endtheround(score)
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
 
-local function setinPlayTargetThrow(obj, index)
-	-- obj is the physical player
-	-- index is a value from 1 -> 22
-
-	local objx = PHYS_PLAYERS[index].body:getX()
-	local objy = PHYS_PLAYERS[index].body:getY()
-
-	if index == 2 then		-- one of the WRs
-		local target = {}
-		-- move forward 10 metres
-		table.insert(obj.waypointx, objx)
-		table.insert(obj.waypointy, objy - 10)
-		-- move to the centre of the field
-		table.insert(obj.waypointx, CentreLineX)
-		table.insert(obj.waypointy, objy - 10)
-	end
-end
-
 local function vectorMovePlayer(obj, dt)
 	-- receives a player physical object and uses vector math to move it towards target
 	-- determine actual velocity vs intended velocity based on target
@@ -774,23 +759,26 @@ local function moveAllPlayers(dt)
 				--! do nothing for now
 
 				if i == 1 and playcall_offense == enum.playcallThrow then	-- QB has run out of waypoints
-					-- try to throw ball
+					if football.waypointx[1] == nil then
+						-- try to throw ball
 
-					-- pick a random player on same side that is not fallen down
-					local balltarget = nil
-					repeat
-						local rndnum = love.math.random(2, 11)
-						if PHYS_PLAYERS[rndnum].fallen then
-							rndnum = nil
-						else
-							balltarget = rndnum
-						end
-					until balltarget ~= nil			--! need to ensure this isn't and endless loop
+						-- pick a random player on same side that is not fallen down
+						local balltarget = nil
+						repeat
+							local rndnum = love.math.random(2, 11)
+							if PHYS_PLAYERS[rndnum].fallen then
+								rndnum = nil
+							else
+								balltarget = rndnum
+							end
+						until balltarget ~= nil			--! need to ensure this isn't and endless loop
+						football.waypointx[1] = PHYS_PLAYERS[balltarget].body:getX()
+						football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
 
-
-
-
-
+						print("QB is at ".. PHYS_PLAYERS[1].body:getX() .. ", " .. PHYS_PLAYERS[1].body:getY())
+						print("Target is player #" .. balltarget)
+						print("Target is at ".. PHYS_PLAYERS[balltarget].body:getX() .. ", " .. PHYS_PLAYERS[balltarget].body:getY())
+					end
 				else
 					if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
 						PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
@@ -833,6 +821,86 @@ local function moveAllPlayers(dt)
     end
 end
 
+local function moveFootball(dt)
+	local throwspeed = 20		-- 20 metres / second  (adjusted by dt)
+
+	if football.waypointx[1] ~= nil then
+		-- there is a waypoint. Move the ball towards it.
+
+		print("Footballx is " .. football.x)
+		print("Football targetx is " .. football.waypointx[1])
+		print("Max dist possible is " .. throwspeed * dt)
+
+		-- understand the vector for ball to target.
+		local vectorx = football.waypointx[1] - football.x
+		local vectory = football.waypointy[1] - football.y
+
+		-- get length of this vector
+		local disttotarget = cf.getDistance(0, 0, vectorx, vectory)
+
+		print("Dist to target is " .. disttotarget)
+
+		-- see if whole distance can be travelled in this time step
+		if disttotarget <= (throwspeed * dt) then
+			-- whole distance is travelled during this time step
+			football.x = football.waypointx[1]
+			football.y = football.waypointy[1]
+
+			-- clear the waypoint for the ball
+			football.waypointx = {}
+			football.waypointy = {}
+
+			--! check if ball is out of bounds
+
+			-- set the new carrier
+			-- find closest player
+			local closestdistance = 1000
+			local closestplayer = 0
+
+			for i = 2,22 do	-- Loop is 2,22 because the QB is not a valid receiver
+				-- check distance between this player and the ball
+				-- ignore anyone fallen down
+				if not PHYS_PLAYERS[i].fallendown then
+					local mydistance = cf.getDistance(football.x,football.y, PHYS_PLAYERS[i].body:getX(), PHYS_PLAYERS[i].body:getY())
+					if mydistance < closestdistance then
+						-- we have a new candidate
+						closestdistance = mydistance
+						closestplayer = i
+					end
+				end
+			end
+			PHYS_PLAYERS[closestplayer].hasBall = true	--! factor in player too far away and fumble ball
+
+			if closestdistance > 11 then
+				-- turn over
+			else
+				-- offense caught the ball
+			end
+		else
+			-- ball won't reach target this time step
+			-- determine new x/y
+			-- get the % of distance moved along vector (ratio) and then determine a new vector of that ratio
+			-- add that smaller vector to the football x/y
+			local distancemoved = throwspeed * dt		-- ball will move this much along x and y, depending on angle
+			local ratio = distancemoved / disttotarget		-- this is a percentage
+			local distancex, distancey = cf.scaleVector(vectorx, vectory, ratio)
+
+			--! this shouldn't be necessary
+			distancex = cf.round(distancex)
+			distancey = cf.round(distancey)
+
+			-- add the distance travelled to football x/y
+			football.x = football.x + distancex
+			football.y = football.y + distancey
+
+			print("Adding this value to Y: " .. distancey)
+		end
+	else
+		print("Football has no target")
+	end
+
+end
+
 local function drawPlayers()
 
     for i = 1, NumberOfPlayers do
@@ -860,7 +928,6 @@ local function drawPlayers()
 			love.graphics.setColor(1,0,0,1)
 			love.graphics.draw(IMAGE[enum.imageFootball], football.x * SCALE, (football.y * SCALE) - 15, 0, 0.25, 0.25, 0, 0)
 		end
-
 
         -- draw fallen
         if PHYS_PLAYERS[i].fallen then
@@ -960,7 +1027,7 @@ local function checkForStateChange(dt)
 
         -- check if everyone is formed up
         for i = 1, NumberOfPlayers do
-			print("Player gamestate for player " .. i .. " = " .. PHYS_PLAYERS[i].gamestate)
+			-- print("Player gamestate for player " .. i .. " = " .. PHYS_PLAYERS[i].gamestate)
             if PHYS_PLAYERS[i].gamestate ~= enum.gamestateReadyForSnap then
                 -- no state change. Abort.
 				-- print("Player #" .. i .. " is not ready for snap yet.")
@@ -973,6 +1040,9 @@ local function checkForStateChange(dt)
         PHYS_PLAYERS[1].hasBall = true
 		football.x = PHYS_PLAYERS[1].body:getX()
 		football.y = PHYS_PLAYERS[1].body:getY()
+		football.waypointx = {}	-- there is only nil or one waypoint but made an array for coding consistency
+		football.waypointy = {}
+
         for i = 1, NumberOfPlayers do
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
@@ -1071,6 +1141,7 @@ function stadium.update(dt)
     if not REFRESH_DB then
         -- update gets called before draw so do NOT try to move players before they are initialised and drawn.
         moveAllPlayers(dt)
+		moveFootball(dt)
         checkForStateChange(dt)
     end
 
