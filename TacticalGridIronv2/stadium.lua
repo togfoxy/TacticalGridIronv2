@@ -513,6 +513,36 @@ local function setAllWaypoints(dt)
     end
 end
 
+local function setInPlayReceiverRunning()
+	-- called when a receiver has caught the ball and their is a crazy dash for the TD
+
+	local ballcarrierx, ballcarriery = getCarrierXY()
+
+	for i = 1, NumberOfPlayers do
+		PHYS_PLAYERS[i].waypointx = {}
+		PHYS_PLAYERS[i].waypointy = {}
+
+		if ballcarrierx ~= nil then			-- this will be nil if the ball is airborne
+
+			if i <= 11 then
+				if PHYS_PLAYERS[i].hasBall then
+					-- this is the runner - run for TD
+					PHYS_PLAYERS[i].waypointx[1] = PHYS_PLAYERS[i].body:getX()
+					PHYS_PLAYERS[i].waypointy[1] = TopPostY
+				else
+					-- not the runner - move to protect the runner
+					PHYS_PLAYERS[i].waypointx[1] = ballcarrierx
+					PHYS_PLAYERS[i].waypointy[1] = ballcarriery - 10
+				end
+			else
+				-- get defense to intercept the runner
+				PHYS_PLAYERS[i].waypointx[1] = ballcarrierx
+				PHYS_PLAYERS[i].waypointy[1] = ballcarriery - 5
+			end
+		end
+	end
+end
+
 local function drawStadium()
 
     if REFRESH_DB then	-- this only happens once per game
@@ -738,27 +768,27 @@ local function moveAllPlayers(dt)
     local fltForceAdjustment = 20	-- tweak this to get fluid motion
     local fltMaxVAdjustment = 0.25	-- tweak this to get fluid motion
 
+
     if GAME_STATE ~= enum.gamestateDeadBall then
+		-- ball is not dead
 
 		local ballcarrier		-- declared here and used way down the bottom
 
+		-- determine what to do for all 22 players
         for i = 1, NumberOfPlayers do
 			if PHYS_PLAYERS[i].hasBall then ballcarrier = i end		-- set here and used way down the bottom
 
             local objx = PHYS_PLAYERS[i].body:getX()
             local objy = PHYS_PLAYERS[i].body:getY()
-
-            -- local targetx = PHYS_PLAYERS[i].targetx
-            -- local targety = PHYS_PLAYERS[i].targety
-
 			local targetx = PHYS_PLAYERS[i].waypointx[1]
 			local targety = PHYS_PLAYERS[i].waypointy[1]
 
+			-- see if player has waypoints
 			if targetx == nil or targety == nil then
 				-- out of waypoints
-				--! do nothing for now
 
-				if i == 1 and playcall_offense == enum.playcallThrow then	-- QB has run out of waypoints
+				-- if index = QB and QB has the ball and play = throw and ball has no waypoints then ...
+				if i == 1 and ballcarrier == 1 and playcall_offense == enum.playcallThrow then	-- QB has run out of waypoints
 					if football.waypointx[1] == nil then
 						-- try to throw ball
 
@@ -774,16 +804,22 @@ local function moveAllPlayers(dt)
 						until balltarget ~= nil			--! need to ensure this isn't and endless loop
 						football.waypointx[1] = PHYS_PLAYERS[balltarget].body:getX()
 						football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
+						PHYS_PLAYERS[1].hasBall = false
 
 						print("QB is at ".. PHYS_PLAYERS[1].body:getX() .. ", " .. PHYS_PLAYERS[1].body:getY())
 						print("Target is player #" .. balltarget)
 						print("Target is at ".. PHYS_PLAYERS[balltarget].body:getX() .. ", " .. PHYS_PLAYERS[balltarget].body:getY())
 					end
-				else
-					if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
-						PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
-						-- print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
-					end
+				end
+
+				if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
+					PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
+					-- print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
+				end
+
+				if GAME_STATE == enum.gamestateInPlay and not PHYS_PLAYERS[1].hasBall then
+					-- set waypoints to the ball carrier
+					setInPlayReceiverRunning()
 				end
 			else
 	            if not PHYS_PLAYERS[i].fallen then
@@ -815,14 +851,17 @@ local function moveAllPlayers(dt)
 		if GAME_STATE == enum.gamestateInPlay then
 			-- set the ball x/y
 			-- ballcarrier is set in the loop above
-			football.x = PHYS_PLAYERS[ballcarrier].body:getX()
-			football.y = PHYS_PLAYERS[ballcarrier].body:getY()
+			if football.waypointx[1] == nil then
+				-- no waypoints set for football. That means it is being held
+				football.x = PHYS_PLAYERS[ballcarrier].body:getX()
+				football.y = PHYS_PLAYERS[ballcarrier].body:getY()
+			end
 		end
     end
 end
 
 local function moveFootball(dt)
-	local throwspeed = 20		-- 20 metres / second  (adjusted by dt)
+	local throwspeed = 20		-- 20 metres / second  (adjusted by dt)		--! speed should be adjusted by player ability
 
 	if football.waypointx[1] ~= nil then
 		-- there is a waypoint. Move the ball towards it.
@@ -873,8 +912,11 @@ local function moveFootball(dt)
 
 			if closestdistance > 11 then
 				-- turn over
+				endTheDown()
 			else
 				-- offense caught the ball
+				-- reset all waypoints for everyone
+				setInPlayReceiverRunning()		-- resets all waypoints for all players
 			end
 		else
 			-- ball won't reach target this time step
@@ -884,10 +926,6 @@ local function moveFootball(dt)
 			local distancemoved = throwspeed * dt		-- ball will move this much along x and y, depending on angle
 			local ratio = distancemoved / disttotarget		-- this is a percentage
 			local distancex, distancey = cf.scaleVector(vectorx, vectory, ratio)
-
-			--! this shouldn't be necessary
-			distancex = cf.round(distancex)
-			distancey = cf.round(distancey)
 
 			-- add the distance travelled to football x/y
 			football.x = football.x + distancex
@@ -1011,18 +1049,25 @@ local function resetFallenPlayers()
     end
 end
 
-local function resetFirstDown(y)
+local function resetFirstDown()
     -- a first down is detected
-    -- y = the y value of the new line of scrimmage
+	-- uses global variables
     FirstDownMarkerY = ScrimmageY - 10
     if FirstDownMarkerY < TopGoalY then FirstDownMarkerY = TopGoalY end
     downNumber = 1
 end
 
-local function checkForStateChange(dt)
-    -- looks for key events that will trigger a change in game state
-    if GAME_STATE == enum.gamestateForming then
+local function endTheDown()
+	fun.playAudio(enum.soundWhistle, false, true)
+	GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
+	downNumber = downNumber + 1
+	deadBallTimer = 3       -- three second pause before resetting
+end
 
+local function checkForStateChange(dt)
+	-- looks for key events that will trigger a change in game state
+
+    if GAME_STATE == enum.gamestateForming then
 		-- print("Game state = forming")
 
         -- check if everyone is formed up
@@ -1058,25 +1103,20 @@ local function checkForStateChange(dt)
             if PHYS_PLAYERS[i].hasBall then
                 if PHYS_PLAYERS[i].fallen then
                     -- the runner is down/fallen
-					fun.playAudio(enum.soundWhistle, false, true)
-                    GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
-                    downNumber = downNumber + 1
-                    deadBallTimer = 3       -- three second pause before resetting
+					endTheDown()
                     ScrimmageY = PHYS_PLAYERS[i].body:getY()
                     if ScrimmageY <= FirstDownMarkerY then
-                        resetFirstDown(ScrimmageY)
+                        resetFirstDown()
                     end
                 end
 
                 -- runner is outside the field
                 local objx = PHYS_PLAYERS[i].body:getX()
                 if objx < LeftLineX or objx > RightLineX then
-                    GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
-                    downNumber = downNumber + 1
-                    deadBallTimer = 3       -- three second pause before resetting
+					endTheDown()
                     ScrimmageY = PHYS_PLAYERS[i].body:getY()
                     if ScrimmageY <= FirstDownMarkerY then
-                        resetFirstDown(ScrimmageY)
+                        resetFirstDown()
                     end
                 end
 
@@ -1104,6 +1144,7 @@ local function checkForStateChange(dt)
             -- reset for next down
             GAME_STATE = enum.gamestateForming
             resetFallenPlayers()
+			setAllWaypoints(dt)
         end
     end
 end
