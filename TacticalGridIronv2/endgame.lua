@@ -130,12 +130,12 @@ function endgame.draw()
     -- print team name and score
     love.graphics.print(offensiveteamname, 100, 100)
     love.graphics.print(OFFENSIVE_SCORE, 100, 200)
+    love.graphics.print(cf.round(OFFENSIVE_TIME, 2), 100, 250)
 
     -- print team name and score
     love.graphics.print(defensiveteamname, 750, 100)
-    if OPPONENTS_SCORE ~= nil then
-        love.graphics.print(OPPONENTS_SCORE, 750, 200)
-    end
+    if OPPONENTS_SCORE ~= nil then love.graphics.print(OPPONENTS_SCORE, 750, 200) end       --! 750 needs to be screenwidth - something
+    if OPPONENTS_TIME ~= nil then love.graphics.print(cf.round(OPPONENTS_TIME, 2), 750, 250) end
 
     buttons.drawButtons()
 end

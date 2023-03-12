@@ -11,6 +11,7 @@ football.waypointy = {}
 
 
 local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
+local DEFENSIVE_TIME, DEFENSIVE_SCORE
 
 -- field dimensions
 local FieldWidth = 49	-- how wide (yards/metres) is the field? 48.8 mtrs wide
@@ -565,6 +566,8 @@ local function drawStadium()
             end
             if row.TEAMID == DEFENSIVE_TEAMID then
                 defensiveteamname = row.TEAMNAME
+				DEFENSIVE_SCORE = row.OFFENCESCORE		-- the offense score becomes the defense score when defending
+				DEFENSIVE_TIME = row.OFFENCETIME
                 DEF_RED = row.RED
                 DEF_GREEN = row.GREEN
                 DEF_BLUE = row.BLUE
@@ -639,10 +642,14 @@ local function drawStadium()
     -- print the two teams
     love.graphics.setColor(1,1,1,1)
     love.graphics.print(offensiveteamname, 50, 50)       -- this needs to be the team name and not the ID
-    love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
+	love.graphics.print("Time used: " .. cf.round(OFFENSIVE_TIME, 2), 50, 100)
+	love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 150)
 
-	-- print some key player stats
-	love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 100)
+	-- defense score board
+	love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
+	if DEFENSIVE_SCORE ~= nil then love.graphics.print(DEFENSIVE_SCORE, SCREEN_WIDTH - 250, 100) end	-- will be nil if team not played yet
+	if DEFENSIVE_TIME ~= nil then love.graphics.print(cf.round(DEFENSIVE_TIME, 2), SCREEN_WIDTH - 250, 150) end
+
 end
 
 local function endtheround(score)
@@ -806,9 +813,9 @@ local function moveAllPlayers(dt)
 						football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
 						PHYS_PLAYERS[1].hasBall = false
 
-						print("QB is at ".. PHYS_PLAYERS[1].body:getX() .. ", " .. PHYS_PLAYERS[1].body:getY())
-						print("Target is player #" .. balltarget)
-						print("Target is at ".. PHYS_PLAYERS[balltarget].body:getX() .. ", " .. PHYS_PLAYERS[balltarget].body:getY())
+						-- print("QB is at ".. PHYS_PLAYERS[1].body:getX() .. ", " .. PHYS_PLAYERS[1].body:getY())
+						-- print("Target is player #" .. balltarget)
+						-- print("Target is at ".. PHYS_PLAYERS[balltarget].body:getX() .. ", " .. PHYS_PLAYERS[balltarget].body:getY())
 					end
 				end
 
@@ -866,9 +873,9 @@ local function moveFootball(dt)
 	if football.waypointx[1] ~= nil then
 		-- there is a waypoint. Move the ball towards it.
 
-		print("Footballx is " .. football.x)
-		print("Football targetx is " .. football.waypointx[1])
-		print("Max dist possible is " .. throwspeed * dt)
+		-- print("Footballx is " .. football.x)
+		-- print("Football targetx is " .. football.waypointx[1])
+		-- print("Max dist possible is " .. throwspeed * dt)
 
 		-- understand the vector for ball to target.
 		local vectorx = football.waypointx[1] - football.x
@@ -877,7 +884,7 @@ local function moveFootball(dt)
 		-- get length of this vector
 		local disttotarget = cf.getDistance(0, 0, vectorx, vectory)
 
-		print("Dist to target is " .. disttotarget)
+		-- print("Dist to target is " .. disttotarget)
 
 		-- see if whole distance can be travelled in this time step
 		if disttotarget <= (throwspeed * dt) then
@@ -910,7 +917,7 @@ local function moveFootball(dt)
 			end
 			PHYS_PLAYERS[closestplayer].hasBall = true	--! factor in player too far away and fumble ball
 
-			if closestdistance > 11 then
+			if closestplayer > 11 then
 				-- turn over
 				endTheDown()
 			else
@@ -931,7 +938,7 @@ local function moveFootball(dt)
 			football.x = football.x + distancex
 			football.y = football.y + distancey
 
-			print("Adding this value to Y: " .. distancey)
+			-- print("Adding this value to Y: " .. distancey)
 		end
 	else
 		-- print("Football has no target")
