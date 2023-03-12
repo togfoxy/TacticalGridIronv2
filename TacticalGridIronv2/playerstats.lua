@@ -1,31 +1,85 @@
 playerstats = {}
 
 function playerstats.getStatsFromDB(obj, index)
+    -- loads player stats from database
+    -- called when the physical object is created
     -- obj = physical object
     -- index = 1 -> NumberOfPlayers
 
-    obj.balance = love.math.random(85,90)       -- default value that is overridden below
-
-    if index == 1 then  -- QB
-        for k, player in pairs(PLAYERS) do
-            if player.TEAMID == OFFENSIVE_TEAMID and player.POSITION == "QB" then
-                obj.positionletters = "QB"
-                obj.body:setMass(player.MASS)	-- kilograms
-                obj.maxpossibleV = player.MAXPOSSIBLEV					-- max velocity possible for this position
-                obj.maxV = player.MAXV		-- max velocity possible for this player (this persons limitations)
-                obj.maxF = player.MAXF					-- maximum force (how much force to apply to make them move)
-                obj.throwaccuracy = player.THROWACCURACY	-- this distance ball lands from intended target
-                obj.catchskill = player.CATCHSKILL			-- % chance of catching ball
-            end
-        end
+    if index <= 11 then
+        playerteam = OFFENSIVE_TEAMID
+    else
+        playerteam = DEFENSIVE_TEAMID
     end
+
+    local strQuery
+
+    if index == 1 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'QB'"
+    elseif index == 2 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'WR1'"
+    elseif index == 3 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'WR2'"
+    elseif index == 4 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'WR3'"
+    elseif index == 5 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'RB'"
+    elseif index == 6 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'TE'"
+    elseif index == 7 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'C'"
+    elseif index == 8 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'LG'"
+    elseif index == 9 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'RG'"
+    elseif index == 10 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'LT'"
+    elseif index == 11 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'RT'"
+    -- opposing team
+    elseif index == 12 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'DT1'"
+    elseif index == 13 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'DT2'"
+    elseif index == 14 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'LE'"
+    elseif index == 15 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'RE'"
+    elseif index == 16 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'ILB'"
+    elseif index == 17 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'OLB1'"
+    elseif index == 18 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'OLB2'"
+    elseif index == 19 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'CB1'"
+    elseif index == 20 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'CB2'"
+    elseif index == 21 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'S1'"
+    elseif index == 22 then
+        strQuery = "select * from PLAYERS where TEAMID = " .. playerteam .. " and POSITION = 'S2'"
+    end
+
+    local fbdb = sqlite3.open(DB_FILE)
+    for row in fbdb:nrows(strQuery) do
+        obj.positionletters = row.POSITION
+        obj.body:setMass(row.MASS)	-- kilograms
+        obj.maxpossibleV = row.MAXPOSSIBLEV					-- max velocity possible for this position
+        obj.maxV = row.MAXV		-- max velocity possible for this player (this persons limitations)
+        obj.maxF = row.MAXF							-- maximum force (how much force to apply to make them move)
+        obj.balance = row.BALANCE
+        obj.throwaccuracy = row.THROWACCURACY	-- this distance ball lands from intended target
+        obj.catchskill = row.CATCHSKILL
+    end
+    fbdb:close()
 end
 
 function playerstats.setCustomStats(obj, index)
     -- sets up the stats for this single object.
     -- index is the number within the array (1 -> 22) and is used to know what position the object is in
 
-    obj.balance = love.math.random(85,90)       -- default value that is overridden below
+    obj.balance = love.math.random(75,85)       -- default value that is overridden below
     obj.waypointx = {}
     obj.waypointy = {}
 

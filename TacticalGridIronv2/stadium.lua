@@ -1,6 +1,6 @@
 stadium = {}
 
-local NumberOfPlayers = 22
+local NumberOfPlayers = 22	-- total. 11 + 11
 local arr_seasonstatus, offensiveteamname, defensiveteamname, deadBallTimer
 local playcall_offense = 3 --!enum.playcallThrow
 local playcall_defense = 2 --!enum.playcallManOnMan
@@ -212,9 +212,14 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].gamestate = enum.gamestateForming
         PHYS_PLAYERS[i].hasBall = false
 
-        ps.setCustomStats(PHYS_PLAYERS[i], i)		--! not sure if this is still needed
-		ps.getStatsFromDB(PHYS_PLAYERS[i], i)
+        -- ps.setCustomStats(PHYS_PLAYERS[i], i)		--! this needs to be removed when loading from DB
+		ps.getStatsFromDB(PHYS_PLAYERS[i], i)		-- load stats from DB for this single player
     end
+
+	print(inspect(PHYS_PLAYERS))
+
+	error()
+
 end
 
 local function setInPlayTargetRun(obj, index)
@@ -544,113 +549,7 @@ local function setInPlayReceiverRunning()
 	end
 end
 
-local function drawStadium()
 
-    if REFRESH_DB then	-- this only happens once per game
-        arr_seasonstatus = {}
-        local fbdb = sqlite3.open(DB_FILE)
-        local strQuery = "select teams.TEAMNAME, teams.RED, teams.GREEN, teams.BLUE, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
-        for row in fbdb:nrows(strQuery) do
-            local mytable = {}
-            mytable.TEAMNAME = row.TEAMNAME
-            mytable.TEAMID = row.TEAMID
-            mytable.OFFENCESCORE = row.OFFENCESCORE
-            table.insert(arr_seasonstatus, mytable)
-
-            if row.TEAMID == OFFENSIVE_TEAMID then
-                offensiveteamname = row.TEAMNAME
-                OFF_RED = row.RED
-                OFF_GREEN = row.GREEN
-                OFF_BLUE = row.BLUE
-
-            end
-            if row.TEAMID == DEFENSIVE_TEAMID then
-                defensiveteamname = row.TEAMNAME
-				DEFENSIVE_SCORE = row.OFFENCESCORE		-- the offense score becomes the defense score when defending
-				DEFENSIVE_TIME = row.OFFENCETIME
-                DEF_RED = row.RED
-                DEF_GREEN = row.GREEN
-                DEF_BLUE = row.BLUE
-            end
-        end
-        REFRESH_DB = false
-        fbdb:close()
-
-        assert(OFF_RED ~= nil, strQuery)
-        assert(DEF_RED ~= nil, strQuery)
-
-        createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
-        GAME_STATE = enum.gamestateForming
-		setAllWaypoints(dt)
-        OFFENSIVE_TIME = 0
-    end
-
-    -- top goal
-    love.graphics.setColor(153/255, 153/255, 255/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
-
-    -- bottom goal
-    love.graphics.setColor(255/255, 153/255, 51/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight + FieldHeight) * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
-
-    -- field
-    love.graphics.setColor(69/255, 172/255, 79/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)
-
-    -- yard lines
-    for i = 0,20 do
-        if cf.isEven(i) then
-            love.graphics.setColor(1,1,1,1)
-        else
-            love.graphics.setColor(1,1,1,0.5)
-        end
-		love.graphics.line(LeftLineX * SCALE, (TopGoalY + (i * 5))  * SCALE, RightLineX * SCALE, (TopGoalY + (i * 5))  * SCALE)
-	end
-
-    -- left and right ticks
-    love.graphics.setColor(1,1,1,1)
-    for i = 1, 99 do
-        -- draw left tick mark
-        love.graphics.line((LeftLineX + 1)  * SCALE, (TopGoalY + i)  * SCALE, (LeftLineX + 2) * SCALE, (TopGoalY + i) * SCALE)
-
-        -- draw left and right hash marks (inbound lines)
-        love.graphics.line((LeftLineX + 22) * SCALE, (TopGoalY + i) * SCALE, (LeftLineX + 23) * SCALE, (TopGoalY + i) * SCALE)
-        love.graphics.line((RightLineX - 23) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 22) * SCALE, (TopGoalY + i) * SCALE)
-
-        -- draw right tick lines
-        love.graphics.line((RightLineX -2) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 1) * SCALE, (TopGoalY + i) * SCALE)
-    end
-
-    --draw sidelines
-    love.graphics.setColor(1,1,1,1)
-    love.graphics.rectangle("line", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, (GoalHeight + FieldHeight + GoalHeight) * SCALE)
-
-    -- draw stadium
-
-    -- draw scrimmage
-	love.graphics.setColor(93/255, 138/255, 169/255,1)
-	love.graphics.setLineWidth(5)
-	love.graphics.line(LeftLineX * SCALE, ScrimmageY * SCALE, RightLineX * SCALE, ScrimmageY * SCALE)
-	love.graphics.setLineWidth(1)	-- return width back to default
-
-    -- draw first down marker
-	love.graphics.setColor(255/255, 255/255, 51/255,1)
-	love.graphics.setLineWidth(5)
-	love.graphics.line(LeftLineX * SCALE, FirstDownMarkerY * SCALE, RightLineX * SCALE, FirstDownMarkerY * SCALE)
-	love.graphics.setLineWidth(1)	-- return width back to default
-
-    -- print the two teams
-    love.graphics.setColor(1,1,1,1)
-    love.graphics.print(offensiveteamname, 50, 50)       -- this needs to be the team name and not the ID
-	love.graphics.print("Time used: " .. cf.round(OFFENSIVE_TIME, 2), 50, 100)
-	love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 150)
-
-	-- defense score board
-	love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
-	if DEFENSIVE_SCORE ~= nil then love.graphics.print(DEFENSIVE_SCORE, SCREEN_WIDTH - 250, 100) end	-- will be nil if team not played yet
-	if DEFENSIVE_TIME ~= nil then love.graphics.print(cf.round(DEFENSIVE_TIME, 2), SCREEN_WIDTH - 250, 150) end
-
-end
 
 local function endtheround(score)
     -- end the game
@@ -802,13 +701,13 @@ local function moveAllPlayers(dt)
 						-- pick a random player on same side that is not fallen down
 						local balltarget = nil
 						repeat
-							local rndnum = love.math.random(2, 11)
+							local rndnum = love.math.random(2, 6)	-- these are the only valid receivers
 							if PHYS_PLAYERS[rndnum].fallen then
 								rndnum = nil
 							else
 								balltarget = rndnum
 							end
-						until balltarget ~= nil			--! need to ensure this isn't and endless loop
+						until balltarget ~= nil		--! need to ensure this isn't and endless loop
 						football.waypointx[1] = PHYS_PLAYERS[balltarget].body:getX()
 						football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
 						PHYS_PLAYERS[1].hasBall = false
@@ -946,6 +845,104 @@ local function moveFootball(dt)
 
 end
 
+local function drawStadium()
+
+    if REFRESH_DB then	-- this only happens once per game
+        arr_seasonstatus = {}
+        local fbdb = sqlite3.open(DB_FILE)
+        local strQuery = "select teams.TEAMNAME, teams.RED, teams.GREEN, teams.BLUE, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
+        for row in fbdb:nrows(strQuery) do
+            local mytable = {}
+            mytable.TEAMNAME = row.TEAMNAME
+            mytable.TEAMID = row.TEAMID
+            mytable.OFFENCESCORE = row.OFFENCESCORE
+            table.insert(arr_seasonstatus, mytable)
+
+            if row.TEAMID == OFFENSIVE_TEAMID then
+                offensiveteamname = row.TEAMNAME
+                OFF_RED = row.RED
+                OFF_GREEN = row.GREEN
+                OFF_BLUE = row.BLUE
+
+            end
+            if row.TEAMID == DEFENSIVE_TEAMID then
+                defensiveteamname = row.TEAMNAME
+				DEFENSIVE_SCORE = row.OFFENCESCORE		-- the offense score becomes the defense score when defending
+				DEFENSIVE_TIME = row.OFFENCETIME
+                DEF_RED = row.RED
+                DEF_GREEN = row.GREEN
+                DEF_BLUE = row.BLUE
+            end
+        end
+        REFRESH_DB = false
+        fbdb:close()
+
+        assert(OFF_RED ~= nil, strQuery)
+        assert(DEF_RED ~= nil, strQuery)
+
+        createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
+        GAME_STATE = enum.gamestateForming
+		setAllWaypoints(dt)
+        OFFENSIVE_TIME = 0
+    end
+
+    -- top goal
+    love.graphics.setColor(153/255, 153/255, 255/255)
+    love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
+
+    -- bottom goal
+    love.graphics.setColor(255/255, 153/255, 51/255)
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight + FieldHeight) * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
+
+    -- field
+    love.graphics.setColor(69/255, 172/255, 79/255)
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)
+
+    -- yard lines
+    for i = 0,20 do
+        if cf.isEven(i) then
+            love.graphics.setColor(1,1,1,1)
+        else
+            love.graphics.setColor(1,1,1,0.5)
+        end
+		love.graphics.line(LeftLineX * SCALE, (TopGoalY + (i * 5))  * SCALE, RightLineX * SCALE, (TopGoalY + (i * 5))  * SCALE)
+	end
+
+    -- left and right ticks
+    love.graphics.setColor(1,1,1,1)
+    for i = 1, 99 do
+        -- draw left tick mark
+        love.graphics.line((LeftLineX + 1)  * SCALE, (TopGoalY + i)  * SCALE, (LeftLineX + 2) * SCALE, (TopGoalY + i) * SCALE)
+
+        -- draw left and right hash marks (inbound lines)
+        love.graphics.line((LeftLineX + 22) * SCALE, (TopGoalY + i) * SCALE, (LeftLineX + 23) * SCALE, (TopGoalY + i) * SCALE)
+        love.graphics.line((RightLineX - 23) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 22) * SCALE, (TopGoalY + i) * SCALE)
+
+        -- draw right tick lines
+        love.graphics.line((RightLineX -2) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 1) * SCALE, (TopGoalY + i) * SCALE)
+    end
+
+    --draw sidelines
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.rectangle("line", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, (GoalHeight + FieldHeight + GoalHeight) * SCALE)
+
+    -- draw stadium
+
+    -- draw scrimmage
+	love.graphics.setColor(93/255, 138/255, 169/255,1)
+	love.graphics.setLineWidth(5)
+	love.graphics.line(LeftLineX * SCALE, ScrimmageY * SCALE, RightLineX * SCALE, ScrimmageY * SCALE)
+	love.graphics.setLineWidth(1)	-- return width back to default
+
+    -- draw first down marker
+	love.graphics.setColor(255/255, 255/255, 51/255,1)
+	love.graphics.setLineWidth(5)
+	love.graphics.line(LeftLineX * SCALE, FirstDownMarkerY * SCALE, RightLineX * SCALE, FirstDownMarkerY * SCALE)
+	love.graphics.setLineWidth(1)	-- return width back to default
+
+
+end
+
 local function drawPlayers()
 
     for i = 1, NumberOfPlayers do
@@ -1010,8 +1007,25 @@ local function drawPlayers()
     end
 end
 
-local function beginContact(a, b, coll)
+local function drawScoreboard()
+	-- draws the team scores etc. Happens when camera is detached
+	-- print the two teams
+	love.graphics.setColor(1,1,1,1)
+	love.graphics.print(offensiveteamname, 50, 50)       -- this needs to be the team name and not the ID
+	love.graphics.print("Time used: " .. cf.round(OFFENSIVE_TIME, 2), 50, 100)
+	love.graphics.print("Down #: " .. downNumber, 50, 125)
+	love.graphics.print("Yards to go: " .. ScrimmageY - FirstDownMarkerY, 50, 150)
 
+
+	-- love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 150)
+
+	-- defense score board
+	love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
+	if DEFENSIVE_SCORE ~= nil then love.graphics.print(DEFENSIVE_SCORE, SCREEN_WIDTH - 250, 100) end	-- will be nil if team not played yet
+	if DEFENSIVE_TIME ~= nil then love.graphics.print(cf.round(DEFENSIVE_TIME, 2), SCREEN_WIDTH - 250, 150) end
+end
+
+local function beginContact(a, b, coll)
     if GAME_STATE == enum.gamestateInPlay then
         local aindex = a:getUserData()
         local bindex = b:getUserData()
@@ -1026,6 +1040,8 @@ local function beginContact(a, b, coll)
 			else
 	            abalance = PHYS_PLAYERS[aindex].balance
 	            bbalance = PHYS_PLAYERS[bindex].balance
+
+				print("Balance stats are " .. abalance .. " and " .. bbalance)
 
 	            if love.math.random(0, 100) > abalance then
 	                PHYS_PLAYERS[aindex].fallen = true
@@ -1167,6 +1183,8 @@ function stadium.draw()
     buttons.drawButtons()
 
 	cam:detach()
+
+	drawScoreboard()
 end
 
 function stadium.update(dt)

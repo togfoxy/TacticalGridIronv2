@@ -149,7 +149,7 @@ function endgame.loadButtons()
     -- button for continue
     local mybutton = {}
     local buttonsequence = 1            -- sequence on the screen
-    mybutton.x = SCREEN_WIDTH * 2/3
+    mybutton.x = SCREEN_WIDTH * 1/2
     mybutton.y = SCREEN_HEIGHT / numofsectors * buttonsequence
     mybutton.width = 125
     mybutton.height = 25
