@@ -69,12 +69,17 @@ function seasonstatus.draw()
         fbdb:close()
     end
 
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.draw(IMAGE[enum.imageBrackets], 0, 0)
+
+    love.graphics.setFont(FONT[enum.fontCorporate])
+
     local index = 1
     local x, y
     for i = 1, #arr_seasonstatus do     -- this is a module level table that is scoped to this scene/screen
         if index <= 8 then
             x = 100
-            y = 0 + (100 * index)
+            y = -50 + (125 * index)
         elseif index > 8 and index <= 12 then
             x = 400
             y = 50 + (20 * index)
@@ -90,6 +95,8 @@ function seasonstatus.draw()
         end
         index = index + 1
     end
+
+    love.graphics.setFont(FONT[enum.fontDefault])
     buttons.drawButtons()
 end
 

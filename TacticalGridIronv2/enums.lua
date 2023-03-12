@@ -39,6 +39,13 @@ function enums.load()
     enum.soundWhistle = 2
 
     enum.imageFootball = 1
+    enum.imageBrackets = 2
+
+    enum.fontDefault = 1
+    enum.fontMedium = 2
+    enum.fontLarge = 3
+    enum.fontCorporate = 4
+
 
 end
 return enums
