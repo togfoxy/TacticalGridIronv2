@@ -934,7 +934,7 @@ local function moveFootball(dt)
 			print("Adding this value to Y: " .. distancey)
 		end
 	else
-		print("Football has no target")
+		-- print("Football has no target")
 	end
 
 end
