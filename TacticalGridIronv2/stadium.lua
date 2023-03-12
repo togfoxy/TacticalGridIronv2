@@ -190,7 +190,7 @@ local function createPhysicsPlayers()
         if i <= (NumberOfPlayers / 2) then      -- attacker
             rndy = love.math.random(HalfwayY, BottomGoalY)
         else
-            rndy = love.math.random(TopGoalY, HalfwayY)
+            rndy = love.math.random(TopGoalY + 30, HalfwayY)
         end
 
         PHYS_PLAYERS[i] = {}
@@ -214,12 +214,9 @@ local function createPhysicsPlayers()
 
         -- ps.setCustomStats(PHYS_PLAYERS[i], i)		--! this needs to be removed when loading from DB
 		ps.getStatsFromDB(PHYS_PLAYERS[i], i)		-- load stats from DB for this single player
+
+
     end
-
-	print(inspect(PHYS_PLAYERS))
-
-	error()
-
 end
 
 local function setInPlayTargetRun(obj, index)
@@ -307,19 +304,27 @@ local function setInPlayTargetManOnMan(obj, carrierindex)
 	-- sets the defense to target the carrier
 	--! this is not the correct behavior for man on man
 
+	print("setting man on man targets for position " .. obj.positionletters)
+
 	-- default to carrier and then overwrite below
 	obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
 	obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
 
 	local thisindex = obj.fixture:getUserData()
 
-	if obj.positionletters == "DT" or obj.positionletters == "LE" or obj.positionletters == "RE" then
+	if obj.positionletters == "DT1" or obj.positionletters == "DT2" or obj.positionletters == "LE" or obj.positionletters == "RE" then
 		-- rush the carrier
 		obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
 		obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
 
-	elseif obj.positionletters == "CB" then
-		local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
+	elseif obj.positionletters == "CB1" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "WR3", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		end
+	elseif obj.positionletters == "CB2" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "WR2", false)
 		if targetindex ~= 0 then
 			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
 			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
@@ -330,15 +335,41 @@ local function setInPlayTargetManOnMan(obj, carrierindex)
 			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
 			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
 		end
-	elseif obj.positionletters == "S" then
-		-- target TE first and then WR
+	elseif obj.positionletters == "OLB1" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "WR1", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		end
+	elseif obj.positionletters == "OLB2" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "TE", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		end
+	elseif obj.positionletters == "S1" then
+		-- target WR1 first and then WR3
+		local targetindex, targetdist = determineClosestObject(thisindex, "WR1", false)
+		if targetindex ~= 0 then
+			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			-- if no WR1 then target WR3
+			local targetindex, targetdist = determineClosestObject(thisindex, "WR3", false)
+			if targetindex ~= 0 then
+				obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
+				obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			end
+		end
+	elseif obj.positionletters == "S2" then
+		-- target TE first and then WR2
 		local targetindex, targetdist = determineClosestObject(thisindex, "TE", false)
 		if targetindex ~= 0 then
 			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
 			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
 		else
-			-- if no TE then target WR
-			local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
+			-- if no WR1 then target WR2
+			local targetindex, targetdist = determineClosestObject(thisindex, "WR2", false)
 			if targetindex ~= 0 then
 				obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
 				obj.targety = PHYS_PLAYERS[targetindex].body:getY()
@@ -517,6 +548,7 @@ local function setAllWaypoints(dt)
 			setInPlayWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
         end
     end
+	print("Target for player #12 is " .. PHYS_PLAYERS[12].waypointx[1])
 end
 
 local function setInPlayReceiverRunning()
@@ -548,8 +580,6 @@ local function setInPlayReceiverRunning()
 		end
 	end
 end
-
-
 
 local function endtheround(score)
     -- end the game
@@ -688,6 +718,10 @@ local function moveAllPlayers(dt)
             local objy = PHYS_PLAYERS[i].body:getY()
 			local targetx = PHYS_PLAYERS[i].waypointx[1]
 			local targety = PHYS_PLAYERS[i].waypointy[1]
+
+			if i == 12 then
+				print("Targetx for player #12 is " .. targetx)
+			end
 
 			-- see if player has waypoints
 			if targetx == nil or targety == nil then
@@ -926,7 +960,7 @@ local function drawStadium()
     love.graphics.setColor(1,1,1,1)
     love.graphics.rectangle("line", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, (GoalHeight + FieldHeight + GoalHeight) * SCALE)
 
-    -- draw stadium
+    --! draw stadium seats
 
     -- draw scrimmage
 	love.graphics.setColor(93/255, 138/255, 169/255,1)
@@ -939,8 +973,6 @@ local function drawStadium()
 	love.graphics.setLineWidth(5)
 	love.graphics.line(LeftLineX * SCALE, FirstDownMarkerY * SCALE, RightLineX * SCALE, FirstDownMarkerY * SCALE)
 	love.graphics.setLineWidth(1)	-- return width back to default
-
-
 end
 
 local function drawPlayers()
@@ -1114,8 +1146,8 @@ local function checkForStateChange(dt)
         for i = 1, NumberOfPlayers do
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
-			setAllWaypoints(dt)
-        end
+	    end
+		setAllWaypoints(dt)		-- sets all waypoints for all players
 
 		fun.playAudio(enum.soundGo, false, true)
         -- print("all sensors are now turned on")
