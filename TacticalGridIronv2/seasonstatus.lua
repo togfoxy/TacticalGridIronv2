@@ -79,13 +79,13 @@ function seasonstatus.draw()
     for i = 1, #arr_seasonstatus do     -- this is a module level table that is scoped to this scene/screen
         if index <= 8 then
             x = 100
-            y = -50 + (125 * index)
+            y = -50 + (130 * index)
         elseif index > 8 and index <= 12 then
-            x = 400
-            y = 50 + (20 * index)
+            x = 500
+            y = 130 + (265 * (index - 9))
         elseif index > 12 then
-            x = 600
-            y = 200 + (20 * index)
+            x = 1000
+            y = 275 + (525 * (index - 13))
         end
 
         love.graphics.setColor(1,1,1,1)
@@ -109,8 +109,8 @@ function seasonstatus.loadButtons()
     -- button for exit
     local mybutton = {}
     local buttonsequence = 2            -- sequence on the screen
-    mybutton.x = SCREEN_WIDTH / 2
-    mybutton.y = SCREEN_HEIGHT / numofsectors * buttonsequence
+    mybutton.x = 1300
+    mybutton.y = 950
     mybutton.width = 125
     mybutton.height = 25
     mybutton.bgcolour = {169/255,169/255,169/255,1}
@@ -137,8 +137,8 @@ function seasonstatus.loadButtons()
     -- button for next game
     local mybutton = {}
     local buttonsequence = 1            -- sequence on the screen
-    mybutton.x = SCREEN_WIDTH / 2
-    mybutton.y = SCREEN_HEIGHT / numofsectors * buttonsequence
+    mybutton.x = 1000
+    mybutton.y = 950
     mybutton.width = 125
     mybutton.height = 25
     mybutton.bgcolour = {169/255,169/255,169/255,1}

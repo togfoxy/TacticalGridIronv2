@@ -201,7 +201,7 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].fixture = love.physics.newFixture(PHYS_PLAYERS[i].body, PHYS_PLAYERS[i].shape, 1)   -- Attach fixture to body and give it a density of 1.
         PHYS_PLAYERS[i].fixture:setRestitution(0.25)        -- bounce/rebound
         PHYS_PLAYERS[i].fixture:setSensor(true)	    -- start without collisions
-        PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to itself
+        PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to its own index
 
         PHYS_PLAYERS[i].fallen = false
         PHYS_PLAYERS[i].targetx = nil
@@ -306,75 +306,90 @@ local function setInPlayTargetManOnMan(obj, carrierindex)
 
 	print("setting man on man targets for position " .. obj.positionletters)
 
-	-- default to carrier and then overwrite below
-	obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
-	obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
+	obj.waypointx = {}
+	obj.waypointy = {}
 
-	local thisindex = obj.fixture:getUserData()
+	local thisindex = obj.fixture:getUserData()		-- a value from 12 -> 22
 
 	if obj.positionletters == "DT1" or obj.positionletters == "DT2" or obj.positionletters == "LE" or obj.positionletters == "RE" then
 		-- rush the carrier
-		obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
-		obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
+		obj.waypointx[1] = PHYS_PLAYERS[carrierindex].body:getX()
+		obj.waypointy[1] = PHYS_PLAYERS[carrierindex].body:getY()
 
 	elseif obj.positionletters == "CB1" then
 		local targetindex, targetdist = determineClosestObject(thisindex, "WR3", false)
 		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			error()
 		end
 	elseif obj.positionletters == "CB2" then
 		local targetindex, targetdist = determineClosestObject(thisindex, "WR2", false)
 		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			error()
 		end
 	elseif obj.positionletters == "ILB" then
 		local targetindex, targetdist = determineClosestObject(thisindex, "RB", false)
 		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			error()
 		end
 	elseif obj.positionletters == "OLB1" then
 		local targetindex, targetdist = determineClosestObject(thisindex, "WR1", false)
 		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			error()
 		end
 	elseif obj.positionletters == "OLB2" then
 		local targetindex, targetdist = determineClosestObject(thisindex, "TE", false)
 		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			error()
 		end
 	elseif obj.positionletters == "S1" then
 		-- target WR1 first and then WR3
 		local targetindex, targetdist = determineClosestObject(thisindex, "WR1", false)
 		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
 		else
 			-- if no WR1 then target WR3
 			local targetindex, targetdist = determineClosestObject(thisindex, "WR3", false)
 			if targetindex ~= 0 then
-				obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-				obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+				obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+				obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+			else
+				error()
 			end
 		end
 	elseif obj.positionletters == "S2" then
 		-- target TE first and then WR2
 		local targetindex, targetdist = determineClosestObject(thisindex, "TE", false)
 		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
 		else
 			-- if no WR1 then target WR2
 			local targetindex, targetdist = determineClosestObject(thisindex, "WR2", false)
 			if targetindex ~= 0 then
-				obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-				obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+				obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+				obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+			else
+				error()
 			end
 		end
+	else
+		error()		-- this should never happen
 	end
 end
 
@@ -527,6 +542,7 @@ local function setInPlayWaypoints(obj, index, runnerindex, dt)
 				setInPlayTargetManOnMan(obj, runnerindex)
 			else
 				--! add more plays here
+				error()
 			end
 		end
     end
@@ -548,7 +564,7 @@ local function setAllWaypoints(dt)
 			setInPlayWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
         end
     end
-	print("Target for player #12 is " .. PHYS_PLAYERS[12].waypointx[1])
+	-- print("Target for player #12 is " .. PHYS_PLAYERS[12].waypointx[1])
 end
 
 local function setInPlayReceiverRunning()
@@ -719,10 +735,6 @@ local function moveAllPlayers(dt)
 			local targetx = PHYS_PLAYERS[i].waypointx[1]
 			local targety = PHYS_PLAYERS[i].waypointy[1]
 
-			if i == 12 then
-				print("Targetx for player #12 is " .. targetx)
-			end
-
 			-- see if player has waypoints
 			if targetx == nil or targety == nil then
 				-- out of waypoints
@@ -746,10 +758,15 @@ local function moveAllPlayers(dt)
 						football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
 						PHYS_PLAYERS[1].hasBall = false
 
-						-- print("QB is at ".. PHYS_PLAYERS[1].body:getX() .. ", " .. PHYS_PLAYERS[1].body:getY())
-						-- print("Target is player #" .. balltarget)
-						-- print("Target is at ".. PHYS_PLAYERS[balltarget].body:getX() .. ", " .. PHYS_PLAYERS[balltarget].body:getY())
+						print("QB has thrown the ball")
+
+
+					else
+						error()
 					end
+				else
+					-- player has no waypoints. Probably because ball is thrown. Let code fall
+					-- down below to setInPlayReceiverRunning()
 				end
 
 				if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
@@ -762,6 +779,7 @@ local function moveAllPlayers(dt)
 					setInPlayReceiverRunning()
 				end
 			else
+				-- this player has a target. Move towards it if not fallen
 	            if not PHYS_PLAYERS[i].fallen then
 
 	                -- get distance to target
@@ -777,6 +795,7 @@ local function moveAllPlayers(dt)
 							-- in play and reached waypoint. Remove this waypoint.
 							table.remove(PHYS_PLAYERS[i].waypointx, 1)
 							table.remove(PHYS_PLAYERS[i].waypointy, 1)
+							print("Removing waypoint for player #" .. i)
 	                    end
 	                    --! put other game states here
 	                else
@@ -798,6 +817,13 @@ local function moveAllPlayers(dt)
 			end
 		end
     end
+end
+
+local function endTheDown()
+	fun.playAudio(enum.soundWhistle, false, true)
+
+	downNumber = downNumber + 1
+	deadBallTimer = 3       -- three second pause before resetting
 end
 
 local function moveFootball(dt)
@@ -853,6 +879,7 @@ local function moveFootball(dt)
 			if closestplayer > 11 then
 				-- turn over
 				endTheDown()
+				GAME_STATE = enum.gamestateDeadBall
 			else
 				-- offense caught the ball
 				-- reset all waypoints for everyone
@@ -1046,7 +1073,7 @@ local function drawScoreboard()
 	love.graphics.print(offensiveteamname, 50, 50)       -- this needs to be the team name and not the ID
 	love.graphics.print("Time used: " .. cf.round(OFFENSIVE_TIME, 2), 50, 100)
 	love.graphics.print("Down #: " .. downNumber, 50, 125)
-	love.graphics.print("Yards to go: " .. ScrimmageY - FirstDownMarkerY, 50, 150)
+	love.graphics.print("Yards to go: " .. cf.round(ScrimmageY - FirstDownMarkerY, 0), 50, 150)
 
 
 	-- love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 150)
@@ -1112,13 +1139,6 @@ local function resetFirstDown()
     downNumber = 1
 end
 
-local function endTheDown()
-	fun.playAudio(enum.soundWhistle, false, true)
-	GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
-	downNumber = downNumber + 1
-	deadBallTimer = 3       -- three second pause before resetting
-end
-
 local function checkForStateChange(dt)
 	-- looks for key events that will trigger a change in game state
 
@@ -1149,6 +1169,11 @@ local function checkForStateChange(dt)
 	    end
 		setAllWaypoints(dt)		-- sets all waypoints for all players
 
+		for i = 12, 22 do
+			print("Targetx for player " .. i .. " is " .. PHYS_PLAYERS[i].waypointx[1])
+
+		end
+
 		fun.playAudio(enum.soundGo, false, true)
         -- print("all sensors are now turned on")
     elseif GAME_STATE == enum.gamestateInPlay then
@@ -1163,6 +1188,7 @@ local function checkForStateChange(dt)
                     if ScrimmageY <= FirstDownMarkerY then
                         resetFirstDown()
                     end
+					GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
                 end
 
                 -- runner is outside the field
@@ -1173,6 +1199,7 @@ local function checkForStateChange(dt)
                     if ScrimmageY <= FirstDownMarkerY then
                         resetFirstDown()
                     end
+					GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
                 end
 
                 -- runner is across the goal
@@ -1183,11 +1210,7 @@ local function checkForStateChange(dt)
                     endtheround(6)
                 end
 
-                -- turnover on downs
-                if downNumber > 4 then
-                    GAME_STATE = enum.gamestateGameOver
-                    endtheround(0)
-                end
+
             end
 
             --! ball is dropped
@@ -1202,6 +1225,14 @@ local function checkForStateChange(dt)
 			setAllWaypoints(dt)
         end
     end
+
+	-- turnover on downs
+	if downNumber > 4 then
+		GAME_STATE = enum.gamestateGameOver
+		endtheround(0)
+	end
+
+
 end
 
 function stadium.draw()
