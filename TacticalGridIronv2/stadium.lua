@@ -1,12 +1,17 @@
 stadium = {}
 
-local NumberOfPlayers = 22
+local NumberOfPlayers = 22	-- total. 11 + 11
 local arr_seasonstatus, offensiveteamname, defensiveteamname, deadBallTimer
 local playcall_offense = 3 --!enum.playcallThrow
 local playcall_defense = 2 --!enum.playcallManOnMan
 local downNumber = 1
+local football = {}			-- contains the x/y of the football
+football.waypointx = {}
+football.waypointy = {}
+
 
 local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
+local DEFENSIVE_TIME, DEFENSIVE_SCORE
 
 -- field dimensions
 local FieldWidth = 49	-- how wide (yards/metres) is the field? 48.8 mtrs wide
@@ -185,7 +190,7 @@ local function createPhysicsPlayers()
         if i <= (NumberOfPlayers / 2) then      -- attacker
             rndy = love.math.random(HalfwayY, BottomGoalY)
         else
-            rndy = love.math.random(TopGoalY, HalfwayY)
+            rndy = love.math.random(TopGoalY + 30, HalfwayY)
         end
 
         PHYS_PLAYERS[i] = {}
@@ -196,7 +201,7 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].fixture = love.physics.newFixture(PHYS_PLAYERS[i].body, PHYS_PLAYERS[i].shape, 1)   -- Attach fixture to body and give it a density of 1.
         PHYS_PLAYERS[i].fixture:setRestitution(0.25)        -- bounce/rebound
         PHYS_PLAYERS[i].fixture:setSensor(true)	    -- start without collisions
-        PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to itself
+        PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to its own index
 
         PHYS_PLAYERS[i].fallen = false
         PHYS_PLAYERS[i].targetx = nil
@@ -207,8 +212,10 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].gamestate = enum.gamestateForming
         PHYS_PLAYERS[i].hasBall = false
 
-        ps.setCustomStats(PHYS_PLAYERS[i], i)		--! not sure if this is still needed
-		ps.getStatsFromDB(PHYS_PLAYERS[i], i)
+        -- ps.setCustomStats(PHYS_PLAYERS[i], i)		--! this needs to be removed when loading from DB
+		ps.getStatsFromDB(PHYS_PLAYERS[i], i)		-- load stats from DB for this single player
+
+
     end
 end
 
@@ -297,43 +304,92 @@ local function setInPlayTargetManOnMan(obj, carrierindex)
 	-- sets the defense to target the carrier
 	--! this is not the correct behavior for man on man
 
-	-- default to carrier and then overwrite below
-	obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
-	obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
+	print("setting man on man targets for position " .. obj.positionletters)
 
-	local thisindex = obj.fixture:getUserData()
+	obj.waypointx = {}
+	obj.waypointy = {}
 
-	if obj.positionletters == "DT" or obj.positionletters == "LE" or obj.positionletters == "RE" then
+	local thisindex = obj.fixture:getUserData()		-- a value from 12 -> 22
+
+	if obj.positionletters == "DT1" or obj.positionletters == "DT2" or obj.positionletters == "LE" or obj.positionletters == "RE" then
 		-- rush the carrier
-		obj.targetx = PHYS_PLAYERS[carrierindex].body:getX()
-		obj.targety = PHYS_PLAYERS[carrierindex].body:getY()
+		obj.waypointx[1] = PHYS_PLAYERS[carrierindex].body:getX()
+		obj.waypointy[1] = PHYS_PLAYERS[carrierindex].body:getY()
 
-	elseif obj.positionletters == "CB" then
-		local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
+	elseif obj.positionletters == "CB1" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "WR3", false)
 		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			error()
+		end
+	elseif obj.positionletters == "CB2" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "WR2", false)
+		if targetindex ~= 0 then
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			error()
 		end
 	elseif obj.positionletters == "ILB" then
 		local targetindex, targetdist = determineClosestObject(thisindex, "RB", false)
 		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			error()
 		end
-	elseif obj.positionletters == "S" then
-		-- target TE first and then WR
+	elseif obj.positionletters == "OLB1" then
+		local targetindex, targetdist = determineClosestObject(thisindex, "WR1", false)
+		if targetindex ~= 0 then
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			error()
+		end
+	elseif obj.positionletters == "OLB2" then
 		local targetindex, targetdist = determineClosestObject(thisindex, "TE", false)
 		if targetindex ~= 0 then
-			obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-			obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
 		else
-			-- if no TE then target WR
-			local targetindex, targetdist = determineClosestObject(thisindex, "WR", false)
+			error()
+		end
+	elseif obj.positionletters == "S1" then
+		-- target WR1 first and then WR3
+		local targetindex, targetdist = determineClosestObject(thisindex, "WR1", false)
+		if targetindex ~= 0 then
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			-- if no WR1 then target WR3
+			local targetindex, targetdist = determineClosestObject(thisindex, "WR3", false)
 			if targetindex ~= 0 then
-				obj.targetx = PHYS_PLAYERS[targetindex].body:getX()
-				obj.targety = PHYS_PLAYERS[targetindex].body:getY()
+				obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+				obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+			else
+				error()
 			end
 		end
+	elseif obj.positionletters == "S2" then
+		-- target TE first and then WR2
+		local targetindex, targetdist = determineClosestObject(thisindex, "TE", false)
+		if targetindex ~= 0 then
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			-- if no WR1 then target WR2
+			local targetindex, targetdist = determineClosestObject(thisindex, "WR2", false)
+			if targetindex ~= 0 then
+				obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+				obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+			else
+				error()
+			end
+		end
+	else
+		error()		-- this should never happen
 	end
 end
 
@@ -486,6 +542,7 @@ local function setInPlayWaypoints(obj, index, runnerindex, dt)
 				setInPlayTargetManOnMan(obj, runnerindex)
 			else
 				--! add more plays here
+				error()
 			end
 		end
     end
@@ -507,108 +564,37 @@ local function setAllWaypoints(dt)
 			setInPlayWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
         end
     end
+	-- print("Target for player #12 is " .. PHYS_PLAYERS[12].waypointx[1])
 end
 
-local function drawStadium()
+local function setInPlayReceiverRunning()
+	-- called when a receiver has caught the ball and their is a crazy dash for the TD
 
-    if REFRESH_DB then	-- this only happens once per game
-        arr_seasonstatus = {}
-        local fbdb = sqlite3.open(DB_FILE)
-        local strQuery = "select teams.TEAMNAME, teams.RED, teams.GREEN, teams.BLUE, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
-        for row in fbdb:nrows(strQuery) do
-            local mytable = {}
-            mytable.TEAMNAME = row.TEAMNAME
-            mytable.TEAMID = row.TEAMID
-            mytable.OFFENCESCORE = row.OFFENCESCORE
-            table.insert(arr_seasonstatus, mytable)
+	local ballcarrierx, ballcarriery = getCarrierXY()
 
-            if row.TEAMID == OFFENSIVE_TEAMID then
-                offensiveteamname = row.TEAMNAME
-                OFF_RED = row.RED
-                OFF_GREEN = row.GREEN
-                OFF_BLUE = row.BLUE
+	for i = 1, NumberOfPlayers do
+		PHYS_PLAYERS[i].waypointx = {}
+		PHYS_PLAYERS[i].waypointy = {}
 
-            end
-            if row.TEAMID == DEFENSIVE_TEAMID then
-                defensiveteamname = row.TEAMNAME
-                DEF_RED = row.RED
-                DEF_GREEN = row.GREEN
-                DEF_BLUE = row.BLUE
-            end
-        end
-        REFRESH_DB = false
-        fbdb:close()
+		if ballcarrierx ~= nil then			-- this will be nil if the ball is airborne
 
-        assert(OFF_RED ~= nil, strQuery)
-        assert(DEF_RED ~= nil, strQuery)
-
-        createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
-        GAME_STATE = enum.gamestateForming
-		setAllWaypoints(dt)
-        OFFENSIVE_TIME = 0
-    end
-
-    -- top goal
-    love.graphics.setColor(153/255, 153/255, 255/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
-
-    -- bottom goal
-    love.graphics.setColor(255/255, 153/255, 51/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight + FieldHeight) * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
-
-    -- field
-    love.graphics.setColor(69/255, 172/255, 79/255)
-    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)
-
-    -- yard lines
-    for i = 0,20 do
-        if cf.isEven(i) then
-            love.graphics.setColor(1,1,1,1)
-        else
-            love.graphics.setColor(1,1,1,0.5)
-        end
-		love.graphics.line(LeftLineX * SCALE, (TopGoalY + (i * 5))  * SCALE, RightLineX * SCALE, (TopGoalY + (i * 5))  * SCALE)
+			if i <= 11 then
+				if PHYS_PLAYERS[i].hasBall then
+					-- this is the runner - run for TD
+					PHYS_PLAYERS[i].waypointx[1] = PHYS_PLAYERS[i].body:getX()
+					PHYS_PLAYERS[i].waypointy[1] = TopPostY
+				else
+					-- not the runner - move to protect the runner
+					PHYS_PLAYERS[i].waypointx[1] = ballcarrierx
+					PHYS_PLAYERS[i].waypointy[1] = ballcarriery - 10
+				end
+			else
+				-- get defense to intercept the runner
+				PHYS_PLAYERS[i].waypointx[1] = ballcarrierx
+				PHYS_PLAYERS[i].waypointy[1] = ballcarriery - 5
+			end
+		end
 	end
-
-    -- left and right ticks
-    love.graphics.setColor(1,1,1,1)
-    for i = 1, 99 do
-        -- draw left tick mark
-        love.graphics.line((LeftLineX + 1)  * SCALE, (TopGoalY + i)  * SCALE, (LeftLineX + 2) * SCALE, (TopGoalY + i) * SCALE)
-
-        -- draw left and right hash marks (inbound lines)
-        love.graphics.line((LeftLineX + 22) * SCALE, (TopGoalY + i) * SCALE, (LeftLineX + 23) * SCALE, (TopGoalY + i) * SCALE)
-        love.graphics.line((RightLineX - 23) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 22) * SCALE, (TopGoalY + i) * SCALE)
-
-        -- draw right tick lines
-        love.graphics.line((RightLineX -2) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 1) * SCALE, (TopGoalY + i) * SCALE)
-    end
-
-    --draw sidelines
-    love.graphics.setColor(1,1,1,1)
-    love.graphics.rectangle("line", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, (GoalHeight + FieldHeight + GoalHeight) * SCALE)
-
-    -- draw stadium
-
-    -- draw scrimmage
-	love.graphics.setColor(93/255, 138/255, 169/255,1)
-	love.graphics.setLineWidth(5)
-	love.graphics.line(LeftLineX * SCALE, ScrimmageY * SCALE, RightLineX * SCALE, ScrimmageY * SCALE)
-	love.graphics.setLineWidth(1)	-- return width back to default
-
-    -- draw first down marker
-	love.graphics.setColor(255/255, 255/255, 51/255,1)
-	love.graphics.setLineWidth(5)
-	love.graphics.line(LeftLineX * SCALE, FirstDownMarkerY * SCALE, RightLineX * SCALE, FirstDownMarkerY * SCALE)
-	love.graphics.setLineWidth(1)	-- return width back to default
-
-    -- print the two teams
-    love.graphics.setColor(1,1,1,1)
-    love.graphics.print(offensiveteamname, 50, 50)       -- this needs to be the team name and not the ID
-    love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
-
-	-- print some key player stats
-	love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 100)
 end
 
 local function endtheround(score)
@@ -635,24 +621,6 @@ local function endtheround(score)
     FirstDownMarkerY = ScrimmageY - 10
 
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
-end
-
-local function setinPlayTargetThrow(obj, index)
-	-- obj is the physical player
-	-- index is a value from 1 -> 22
-
-	local objx = PHYS_PLAYERS[index].body:getX()
-	local objy = PHYS_PLAYERS[index].body:getY()
-
-	if index == 2 then		-- one of the WRs
-		local target = {}
-		-- move forward 10 metres
-		table.insert(obj.waypointx, objx)
-		table.insert(obj.waypointy, objy - 10)
-		-- move to the centre of the field
-		table.insert(obj.waypointx, CentreLineX)
-		table.insert(obj.waypointy, objy - 10)
-	end
 end
 
 local function vectorMovePlayer(obj, dt)
@@ -752,26 +720,66 @@ local function moveAllPlayers(dt)
     local fltForceAdjustment = 20	-- tweak this to get fluid motion
     local fltMaxVAdjustment = 0.25	-- tweak this to get fluid motion
 
-    if GAME_STATE ~= enum.gamestateDeadBall then
 
+    if GAME_STATE ~= enum.gamestateDeadBall then
+		-- ball is not dead
+
+		local ballcarrier		-- declared here and used way down the bottom
+
+		-- determine what to do for all 22 players
         for i = 1, NumberOfPlayers do
+			if PHYS_PLAYERS[i].hasBall then ballcarrier = i end		-- set here and used way down the bottom
+
             local objx = PHYS_PLAYERS[i].body:getX()
             local objy = PHYS_PLAYERS[i].body:getY()
-
-            -- local targetx = PHYS_PLAYERS[i].targetx
-            -- local targety = PHYS_PLAYERS[i].targety
-
 			local targetx = PHYS_PLAYERS[i].waypointx[1]
 			local targety = PHYS_PLAYERS[i].waypointy[1]
 
+			-- see if player has waypoints
 			if targetx == nil or targety == nil then
 				-- out of waypoints
-				--! do nothing for now
+
+				-- if index = QB and QB has the ball and play = throw and ball has no waypoints then ...
+				if i == 1 and ballcarrier == 1 and playcall_offense == enum.playcallThrow then	-- QB has run out of waypoints
+					if football.waypointx[1] == nil then
+						-- try to throw ball
+
+						-- pick a random player on same side that is not fallen down
+						local balltarget = nil
+						repeat
+							local rndnum = love.math.random(2, 6)	-- these are the only valid receivers
+							if PHYS_PLAYERS[rndnum].fallen then
+								rndnum = nil
+							else
+								balltarget = rndnum
+							end
+						until balltarget ~= nil		--! need to ensure this isn't and endless loop
+						football.waypointx[1] = PHYS_PLAYERS[balltarget].body:getX()
+						football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
+						PHYS_PLAYERS[1].hasBall = false
+
+						print("QB has thrown the ball")
+
+
+					else
+						error()
+					end
+				else
+					-- player has no waypoints. Probably because ball is thrown. Let code fall
+					-- down below to setInPlayReceiverRunning()
+				end
+
 				if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
 					PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
-					print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
+					-- print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
+				end
+
+				if GAME_STATE == enum.gamestateInPlay and not PHYS_PLAYERS[1].hasBall then
+					-- set waypoints to the ball carrier
+					setInPlayReceiverRunning()
 				end
 			else
+				-- this player has a target. Move towards it if not fallen
 	            if not PHYS_PLAYERS[i].fallen then
 
 	                -- get distance to target
@@ -787,6 +795,7 @@ local function moveAllPlayers(dt)
 							-- in play and reached waypoint. Remove this waypoint.
 							table.remove(PHYS_PLAYERS[i].waypointx, 1)
 							table.remove(PHYS_PLAYERS[i].waypointy, 1)
+							print("Removing waypoint for player #" .. i)
 	                    end
 	                    --! put other game states here
 	                else
@@ -797,7 +806,200 @@ local function moveAllPlayers(dt)
 	            end
 			end
         end
+
+		if GAME_STATE == enum.gamestateInPlay then
+			-- set the ball x/y
+			-- ballcarrier is set in the loop above
+			if football.waypointx[1] == nil then
+				-- no waypoints set for football. That means it is being held
+				football.x = PHYS_PLAYERS[ballcarrier].body:getX()
+				football.y = PHYS_PLAYERS[ballcarrier].body:getY()
+			end
+		end
     end
+end
+
+local function endTheDown()
+	fun.playAudio(enum.soundWhistle, false, true)
+
+	downNumber = downNumber + 1
+	deadBallTimer = 3       -- three second pause before resetting
+end
+
+local function moveFootball(dt)
+	local throwspeed = 20		-- 20 metres / second  (adjusted by dt)		--! speed should be adjusted by player ability
+
+	if football.waypointx[1] ~= nil then
+		-- there is a waypoint. Move the ball towards it.
+
+		-- print("Footballx is " .. football.x)
+		-- print("Football targetx is " .. football.waypointx[1])
+		-- print("Max dist possible is " .. throwspeed * dt)
+
+		-- understand the vector for ball to target.
+		local vectorx = football.waypointx[1] - football.x
+		local vectory = football.waypointy[1] - football.y
+
+		-- get length of this vector
+		local disttotarget = cf.getDistance(0, 0, vectorx, vectory)
+
+		-- print("Dist to target is " .. disttotarget)
+
+		-- see if whole distance can be travelled in this time step
+		if disttotarget <= (throwspeed * dt) then
+			-- whole distance is travelled during this time step
+			football.x = football.waypointx[1]
+			football.y = football.waypointy[1]
+
+			-- clear the waypoint for the ball
+			football.waypointx = {}
+			football.waypointy = {}
+
+			--! check if ball is out of bounds
+
+			-- set the new carrier
+			-- find closest player
+			local closestdistance = 1000
+			local closestplayer = 0
+
+			for i = 2,22 do	-- Loop is 2,22 because the QB is not a valid receiver
+				-- check distance between this player and the ball
+				-- ignore anyone fallen down
+				if not PHYS_PLAYERS[i].fallendown then
+					local mydistance = cf.getDistance(football.x,football.y, PHYS_PLAYERS[i].body:getX(), PHYS_PLAYERS[i].body:getY())
+					if mydistance < closestdistance then
+						-- we have a new candidate
+						closestdistance = mydistance
+						closestplayer = i
+					end
+				end
+			end
+			PHYS_PLAYERS[closestplayer].hasBall = true	--! factor in player too far away and fumble ball
+
+			if closestplayer > 11 then
+				-- turn over
+				endTheDown()
+				GAME_STATE = enum.gamestateDeadBall
+			else
+				-- offense caught the ball
+				-- reset all waypoints for everyone
+				setInPlayReceiverRunning()		-- resets all waypoints for all players
+			end
+		else
+			-- ball won't reach target this time step
+			-- determine new x/y
+			-- get the % of distance moved along vector (ratio) and then determine a new vector of that ratio
+			-- add that smaller vector to the football x/y
+			local distancemoved = throwspeed * dt		-- ball will move this much along x and y, depending on angle
+			local ratio = distancemoved / disttotarget		-- this is a percentage
+			local distancex, distancey = cf.scaleVector(vectorx, vectory, ratio)
+
+			-- add the distance travelled to football x/y
+			football.x = football.x + distancex
+			football.y = football.y + distancey
+
+			-- print("Adding this value to Y: " .. distancey)
+		end
+	else
+		-- print("Football has no target")
+	end
+
+end
+
+local function drawStadium()
+
+    if REFRESH_DB then	-- this only happens once per game
+        arr_seasonstatus = {}
+        local fbdb = sqlite3.open(DB_FILE)
+        local strQuery = "select teams.TEAMNAME, teams.RED, teams.GREEN, teams.BLUE, season.TEAMID, season.OFFENCESCORE, season.OFFENCETIME from season inner join TEAMS on teams.TEAMID = season.TEAMID"
+        for row in fbdb:nrows(strQuery) do
+            local mytable = {}
+            mytable.TEAMNAME = row.TEAMNAME
+            mytable.TEAMID = row.TEAMID
+            mytable.OFFENCESCORE = row.OFFENCESCORE
+            table.insert(arr_seasonstatus, mytable)
+
+            if row.TEAMID == OFFENSIVE_TEAMID then
+                offensiveteamname = row.TEAMNAME
+                OFF_RED = row.RED
+                OFF_GREEN = row.GREEN
+                OFF_BLUE = row.BLUE
+
+            end
+            if row.TEAMID == DEFENSIVE_TEAMID then
+                defensiveteamname = row.TEAMNAME
+				DEFENSIVE_SCORE = row.OFFENCESCORE		-- the offense score becomes the defense score when defending
+				DEFENSIVE_TIME = row.OFFENCETIME
+                DEF_RED = row.RED
+                DEF_GREEN = row.GREEN
+                DEF_BLUE = row.BLUE
+            end
+        end
+        REFRESH_DB = false
+        fbdb:close()
+
+        assert(OFF_RED ~= nil, strQuery)
+        assert(DEF_RED ~= nil, strQuery)
+
+        createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
+        GAME_STATE = enum.gamestateForming
+		setAllWaypoints(dt)
+        OFFENSIVE_TIME = 0
+    end
+
+    -- top goal
+    love.graphics.setColor(153/255, 153/255, 255/255)
+    love.graphics.rectangle("fill", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
+
+    -- bottom goal
+    love.graphics.setColor(255/255, 153/255, 51/255)
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight + FieldHeight) * SCALE, FieldWidth * SCALE, GoalHeight * SCALE)
+
+    -- field
+    love.graphics.setColor(69/255, 172/255, 79/255)
+    love.graphics.rectangle("fill", LeftLineX * SCALE, (TopPostY + GoalHeight) * SCALE, FieldWidth * SCALE, FieldHeight * SCALE)
+
+    -- yard lines
+    for i = 0,20 do
+        if cf.isEven(i) then
+            love.graphics.setColor(1,1,1,1)
+        else
+            love.graphics.setColor(1,1,1,0.5)
+        end
+		love.graphics.line(LeftLineX * SCALE, (TopGoalY + (i * 5))  * SCALE, RightLineX * SCALE, (TopGoalY + (i * 5))  * SCALE)
+	end
+
+    -- left and right ticks
+    love.graphics.setColor(1,1,1,1)
+    for i = 1, 99 do
+        -- draw left tick mark
+        love.graphics.line((LeftLineX + 1)  * SCALE, (TopGoalY + i)  * SCALE, (LeftLineX + 2) * SCALE, (TopGoalY + i) * SCALE)
+
+        -- draw left and right hash marks (inbound lines)
+        love.graphics.line((LeftLineX + 22) * SCALE, (TopGoalY + i) * SCALE, (LeftLineX + 23) * SCALE, (TopGoalY + i) * SCALE)
+        love.graphics.line((RightLineX - 23) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 22) * SCALE, (TopGoalY + i) * SCALE)
+
+        -- draw right tick lines
+        love.graphics.line((RightLineX -2) * SCALE, (TopGoalY + i) * SCALE, (RightLineX - 1) * SCALE, (TopGoalY + i) * SCALE)
+    end
+
+    --draw sidelines
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.rectangle("line", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, (GoalHeight + FieldHeight + GoalHeight) * SCALE)
+
+    --! draw stadium seats
+
+    -- draw scrimmage
+	love.graphics.setColor(93/255, 138/255, 169/255,1)
+	love.graphics.setLineWidth(5)
+	love.graphics.line(LeftLineX * SCALE, ScrimmageY * SCALE, RightLineX * SCALE, ScrimmageY * SCALE)
+	love.graphics.setLineWidth(1)	-- return width back to default
+
+    -- draw first down marker
+	love.graphics.setColor(255/255, 255/255, 51/255,1)
+	love.graphics.setLineWidth(5)
+	love.graphics.line(LeftLineX * SCALE, FirstDownMarkerY * SCALE, RightLineX * SCALE, FirstDownMarkerY * SCALE)
+	love.graphics.setLineWidth(1)	-- return width back to default
 end
 
 local function drawPlayers()
@@ -823,9 +1025,9 @@ local function drawPlayers()
         love.graphics.circle("fill", objx, objy, objradius)
 
 		-- draw ball
-		if PHYS_PLAYERS[i].hasBall then
+		if GAME_STATE == enum.gamestateInPlay then
 			love.graphics.setColor(1,0,0,1)
-			love.graphics.draw(IMAGE[enum.imageFootball], objx, objy - 15, 0, 0.25, 0.25, 0, 0)
+			love.graphics.draw(IMAGE[enum.imageFootball], football.x * SCALE, (football.y * SCALE) - 15, 0, 0.25, 0.25, 0, 0)
 		end
 
         -- draw fallen
@@ -864,8 +1066,25 @@ local function drawPlayers()
     end
 end
 
-local function beginContact(a, b, coll)
+local function drawScoreboard()
+	-- draws the team scores etc. Happens when camera is detached
+	-- print the two teams
+	love.graphics.setColor(1,1,1,1)
+	love.graphics.print(offensiveteamname, 50, 50)       -- this needs to be the team name and not the ID
+	love.graphics.print("Time used: " .. cf.round(OFFENSIVE_TIME, 2), 50, 100)
+	love.graphics.print("Down #: " .. downNumber, 50, 125)
+	love.graphics.print("Yards to go: " .. cf.round(ScrimmageY - FirstDownMarkerY, 0), 50, 150)
 
+
+	-- love.graphics.print("QB throw: " .. PHYS_PLAYERS[1].throwaccuracy, 50, 150)
+
+	-- defense score board
+	love.graphics.print(defensiveteamname, SCREEN_WIDTH - 250, 50)
+	if DEFENSIVE_SCORE ~= nil then love.graphics.print(DEFENSIVE_SCORE, SCREEN_WIDTH - 250, 100) end	-- will be nil if team not played yet
+	if DEFENSIVE_TIME ~= nil then love.graphics.print(cf.round(DEFENSIVE_TIME, 2), SCREEN_WIDTH - 250, 150) end
+end
+
+local function beginContact(a, b, coll)
     if GAME_STATE == enum.gamestateInPlay then
         local aindex = a:getUserData()
         local bindex = b:getUserData()
@@ -880,6 +1099,8 @@ local function beginContact(a, b, coll)
 			else
 	            abalance = PHYS_PLAYERS[aindex].balance
 	            bbalance = PHYS_PLAYERS[bindex].balance
+
+				print("Balance stats are " .. abalance .. " and " .. bbalance)
 
 	            if love.math.random(0, 100) > abalance then
 	                PHYS_PLAYERS[aindex].fallen = true
@@ -910,26 +1131,26 @@ local function resetFallenPlayers()
     end
 end
 
-local function resetFirstDown(y)
+local function resetFirstDown()
     -- a first down is detected
-    -- y = the y value of the new line of scrimmage
+	-- uses global variables
     FirstDownMarkerY = ScrimmageY - 10
     if FirstDownMarkerY < TopGoalY then FirstDownMarkerY = TopGoalY end
     downNumber = 1
 end
 
 local function checkForStateChange(dt)
-    -- looks for key events that will trigger a change in game state
-    if GAME_STATE == enum.gamestateForming then
+	-- looks for key events that will trigger a change in game state
 
-		print("Game state = forming")
+    if GAME_STATE == enum.gamestateForming then
+		-- print("Game state = forming")
 
         -- check if everyone is formed up
         for i = 1, NumberOfPlayers do
-			print("Player gamestate for player " .. i .. " = " .. PHYS_PLAYERS[i].gamestate)
+			-- print("Player gamestate for player " .. i .. " = " .. PHYS_PLAYERS[i].gamestate)
             if PHYS_PLAYERS[i].gamestate ~= enum.gamestateReadyForSnap then
                 -- no state change. Abort.
-				print("Player #" .. i .. " is not ready for snap yet.")
+				-- print("Player #" .. i .. " is not ready for snap yet.")
                 return
             end
         end
@@ -937,43 +1158,48 @@ local function checkForStateChange(dt)
         -- if above loop didn't abort then all players are ready for snap. Change state
         GAME_STATE = enum.gamestateInPlay
         PHYS_PLAYERS[1].hasBall = true
+		football.x = PHYS_PLAYERS[1].body:getX()
+		football.y = PHYS_PLAYERS[1].body:getY()
+		football.waypointx = {}	-- there is only nil or one waypoint but made an array for coding consistency
+		football.waypointy = {}
+
         for i = 1, NumberOfPlayers do
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
-			setAllWaypoints(dt)
-        end
+	    end
+		setAllWaypoints(dt)		-- sets all waypoints for all players
+
+		for i = 12, 22 do
+			print("Targetx for player " .. i .. " is " .. PHYS_PLAYERS[i].waypointx[1])
+
+		end
 
 		fun.playAudio(enum.soundGo, false, true)
         -- print("all sensors are now turned on")
     elseif GAME_STATE == enum.gamestateInPlay then
         -- check for a number of conditions
 
-		print("Game state = in play")
-
         for i = 1, NumberOfPlayers / 2 do
             if PHYS_PLAYERS[i].hasBall then
                 if PHYS_PLAYERS[i].fallen then
                     -- the runner is down/fallen
-					fun.playAudio(enum.soundWhistle, false, true)
-                    GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
-                    downNumber = downNumber + 1
-                    deadBallTimer = 3       -- three second pause before resetting
+					endTheDown()
                     ScrimmageY = PHYS_PLAYERS[i].body:getY()
                     if ScrimmageY <= FirstDownMarkerY then
-                        resetFirstDown(ScrimmageY)
+                        resetFirstDown()
                     end
+					GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
                 end
 
                 -- runner is outside the field
                 local objx = PHYS_PLAYERS[i].body:getX()
                 if objx < LeftLineX or objx > RightLineX then
-                    GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
-                    downNumber = downNumber + 1
-                    deadBallTimer = 3       -- three second pause before resetting
+					endTheDown()
                     ScrimmageY = PHYS_PLAYERS[i].body:getY()
                     if ScrimmageY <= FirstDownMarkerY then
-                        resetFirstDown(ScrimmageY)
+                        resetFirstDown()
                     end
+					GAME_STATE = enum.gamestateDeadBall     --! need to do things when ball is dead
                 end
 
                 -- runner is across the goal
@@ -984,11 +1210,7 @@ local function checkForStateChange(dt)
                     endtheround(6)
                 end
 
-                -- turnover on downs
-                if downNumber > 4 then
-                    GAME_STATE = enum.gamestateGameOver
-                    endtheround(0)
-                end
+
             end
 
             --! ball is dropped
@@ -1000,8 +1222,17 @@ local function checkForStateChange(dt)
             -- reset for next down
             GAME_STATE = enum.gamestateForming
             resetFallenPlayers()
+			setAllWaypoints(dt)
         end
     end
+
+	-- turnover on downs
+	if downNumber > 4 then
+		GAME_STATE = enum.gamestateGameOver
+		endtheround(0)
+	end
+
+
 end
 
 function stadium.draw()
@@ -1015,6 +1246,8 @@ function stadium.draw()
     buttons.drawButtons()
 
 	cam:detach()
+
+	drawScoreboard()
 end
 
 function stadium.update(dt)
@@ -1037,6 +1270,7 @@ function stadium.update(dt)
     if not REFRESH_DB then
         -- update gets called before draw so do NOT try to move players before they are initialised and drawn.
         moveAllPlayers(dt)
+		moveFootball(dt)
         checkForStateChange(dt)
     end
 
@@ -1083,30 +1317,3 @@ function stadium.loadButtons()
 end
 
 return stadium
-
--- local function setWaypointsThrow(obj, index)
--- 	-- sets waypoints for obj (physics object) for the throw play call
--- 	-- index = number 1 -> 11. Is needed to split the 3 WR's
--- 	-- waypoints are a string of x,y co-ordinates
--- 	-- wapoints are absolute values and not relative to any point (except the origin!)
---
--- 	local wpx, wpy
--- 	local objx = obj.body:getX()
--- 	local objy = obj.body:getY()
---
--- 	if index == 1 then		-- QB
--- 		-- move back 7 meters
--- 		table.insert(obj.waypointx, objx)
--- 		table.insert(obj.waypointy, objy + 7)
---
--- 		-- move left or right 10 meters
--- 		if love.math.random(1,2) == 1 then
--- 			-- move left
--- 			table.insert(obj.waypointx, objx - 10)
--- 			table.insert(obj.waypointy, objy + 7)
--- 		else
--- 			table.insert(obj.waypointx, objx + 10)
--- 			table.insert(obj.waypointy, objy + 7)
--- 		end
--- 	end
--- end

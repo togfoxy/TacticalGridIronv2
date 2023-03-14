@@ -130,12 +130,12 @@ function endgame.draw()
     -- print team name and score
     love.graphics.print(offensiveteamname, 100, 100)
     love.graphics.print(OFFENSIVE_SCORE, 100, 200)
+    love.graphics.print(cf.round(OFFENSIVE_TIME, 2), 100, 250)
 
     -- print team name and score
     love.graphics.print(defensiveteamname, 750, 100)
-    if OPPONENTS_SCORE ~= nil then
-        love.graphics.print(OPPONENTS_SCORE, 750, 200)
-    end
+    if OPPONENTS_SCORE ~= nil then love.graphics.print(OPPONENTS_SCORE, 750, 200) end       --! 750 needs to be screenwidth - something
+    if OPPONENTS_TIME ~= nil then love.graphics.print(cf.round(OPPONENTS_TIME, 2), 750, 250) end
 
     buttons.drawButtons()
 end
@@ -149,7 +149,7 @@ function endgame.loadButtons()
     -- button for continue
     local mybutton = {}
     local buttonsequence = 1            -- sequence on the screen
-    mybutton.x = SCREEN_WIDTH * 2/3
+    mybutton.x = SCREEN_WIDTH * 1/2
     mybutton.y = SCREEN_HEIGHT / numofsectors * buttonsequence
     mybutton.width = 125
     mybutton.height = 25

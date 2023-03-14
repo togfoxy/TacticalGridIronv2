@@ -101,6 +101,7 @@ function love.load()
     -- end
 
 	constants.load()
+	fun.loadFonts()
 	mainmenu.loadButtons()
 	credits.loadButtons()
 	seasonstatus.loadButtons()

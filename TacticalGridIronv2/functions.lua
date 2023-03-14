@@ -9,8 +9,18 @@ end
 
 function functions.loadImages()
     IMAGE[enum.imageFootball] = love.graphics.newImage("assets/images/football.png")
+    IMAGE[enum.imageBrackets] = love.graphics.newImage("assets/images/brackets.jpg")
 
 
+end
+
+function functions.loadFonts()
+    FONT[enum.fontDefault] = love.graphics.newFont("assets/fonts/Vera.ttf", 12)
+    FONT[enum.fontMedium] = love.graphics.newFont("assets/fonts/Vera.ttf", 14)
+    FONT[enum.fontLarge] = love.graphics.newFont("assets/fonts/Vera.ttf", 18)
+    FONT[enum.fontCorporate] = love.graphics.newFont("assets/fonts/CorporateGothicNbpRegular-YJJ2.ttf", 36)
+
+    love.graphics.setFont(FONT[enum.fontDefault])
 end
 
 function functions.playAudio(audionumber, isMusic, isSound)
@@ -109,7 +119,7 @@ local function createNewPlayer(fbdb, index, teamid)
     local positionletters, mass, maxpossibleV, maxV, maxF
     local throwaccuracy = 0
     local catchskill = 0
-    local balance = 0
+    local balance = love.math.random(75,85)
 
     if index == 1 then
         positionletters = "QB"
@@ -118,14 +128,27 @@ local function createNewPlayer(fbdb, index, teamid)
         maxV = love.math.random(133,148)/10		-- max velocity possible for this player (this persons limitations)
         maxF = 1495							-- maximum force (how much force to apply to make them move)
         throwaccuracy = love.math.random(90,100)	-- this distance ball lands from intended target
-    elseif index == 2 or index == 3 or index == 4 then
-        positionletters = "WR"
+    elseif index == 2 then
+        positionletters = "WR1"
         mass = (love.math.random(80,100))	-- kilograms
         maxpossibleV = 16.3					-- max velocity possible for this position
         maxV = love.math.random(148,163)/10		-- max velocity possible for this player (this persons limitations)
         maxF = 1467							-- maximum force (how much force to apply to make them move)
         catchskill = love.math.random(80,90)			-- % chance of catching ball
-        -- if catchskill is changed here then need to update coloured boxes
+    elseif index == 3 then
+        positionletters = "WR2"
+        mass = (love.math.random(80,100))	-- kilograms
+        maxpossibleV = 16.3					-- max velocity possible for this position
+        maxV = love.math.random(148,163)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1467							-- maximum force (how much force to apply to make them move)
+        catchskill = love.math.random(80,90)			-- % chance of catching ball
+    elseif index == 4 then
+        positionletters = "WR3"
+        mass = (love.math.random(80,100))	-- kilograms
+        maxpossibleV = 16.3					-- max velocity possible for this position
+        maxV = love.math.random(148,163)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1467							-- maximum force (how much force to apply to make them move)
+        catchskill = love.math.random(80,90)			-- % chance of catching ball
     elseif index == 5 then
         positionletters = "RB"
         mass = (love.math.random(86,106))	-- kilograms
@@ -173,8 +196,14 @@ local function createNewPlayer(fbdb, index, teamid)
 
     -- opposing team
 
-    elseif index == 12 or index == 13 then
-        positionletters = "DT"
+    elseif index == 12 then
+        positionletters = "DT1"
+        mass = (love.math.random(129,149))	-- kilograms
+        maxpossibleV = 14.5					-- max velocity possible for this position
+        maxV = love.math.random(130,145)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 2016							-- maximum force (how much force to apply to make them move)
+    elseif index == 13 then
+        positionletters = "DT2"
         mass = (love.math.random(129,149))	-- kilograms
         maxpossibleV = 14.5					-- max velocity possible for this position
         maxV = love.math.random(130,145)/10		-- max velocity possible for this player (this persons limitations)
@@ -197,26 +226,38 @@ local function createNewPlayer(fbdb, index, teamid)
         maxpossibleV = 15.6					-- max velocity possible for this position
         maxV = love.math.random(141,156)/10		-- max velocity possible for this player (this persons limitations)
         maxF = 1716							-- maximum force (how much force to apply to make them move)
-    elseif index == 17 or index == 18 then
-        positionletters = "OLB"
+    elseif index == 17 then
+        positionletters = "OLB1"
         mass = (love.math.random(100,120))	-- kilograms
         maxpossibleV = 15.7					-- max velocity possible for this position
         maxV = love.math.random(142,157)/10		-- max velocity possible for this player (this persons limitations)
         maxF = 1727							-- maximum force (how much force to apply to make them move)
-    elseif index == 19 or index == 20 then
-        positionletters = "CB"
+    elseif index == 18 then
+        positionletters = "OLB2"
+        mass = (love.math.random(100,120))	-- kilograms
+        maxpossibleV = 15.7					-- max velocity possible for this position
+        maxV = love.math.random(142,157)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1727							-- maximum force (how much force to apply to make them move)
+    elseif index == 19 then
+        positionletters = "CB1"
+        mass = (love.math.random(80,100))	-- kilograms
+        maxpossibleV = 16.3					-- max velocity possible for this position
+        maxV = love.math.random(148,163)/10		-- max velocity possible for this player (this persons limitations)
+        maxF = 1467							-- maximum force (how much force to apply to make them move)
+    elseif index == 20 then
+        positionletters = "CB2"
         mass = (love.math.random(80,100))	-- kilograms
         maxpossibleV = 16.3					-- max velocity possible for this position
         maxV = love.math.random(148,163)/10		-- max velocity possible for this player (this persons limitations)
         maxF = 1467							-- maximum force (how much force to apply to make them move)
     elseif index == 21 then
-        positionletters = "S"
+        positionletters = "S1"
         mass = (love.math.random(80,100))	-- kilograms
         maxpossibleV = 16.1					-- max velocity possible for this position
         maxV = love.math.random(146,161)/10		-- max velocity possible for this player (this persons limitations)
         maxF = 1449
     elseif index == 22 then
-        positionletters = "S"
+        positionletters = "S2"
         mass = (love.math.random(80,100))	-- kilograms
         maxpossibleV = 16.1					-- max velocity possible for this position
         maxV = love.math.random(146,161)/10		-- max velocity possible for this player (this persons limitations)

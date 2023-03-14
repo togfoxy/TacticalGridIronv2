@@ -79,7 +79,7 @@ function dotVectors(x1,y1,x2,y2)
 	-- http://blog.wolfire.com/2009/07/linear-algebra-for-game-developers-part-2/
 	return (x1*x2)+(y1*y2)
 end
-function ScaleVector(x,y,fctor)
+function scaleVector(x,y,fctor)
 	-- Receive a vector (0,0, -> x,y) and scale/multiply it by factor
 	-- returns a new vector (assuming origin)
 	return x * fctor, y * fctor

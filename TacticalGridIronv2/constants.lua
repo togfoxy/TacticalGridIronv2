@@ -52,6 +52,7 @@ function constants.load()
     SOUND_TOGGLE = true
 
     IMAGE = {}
+    FONT = {}
 
     enums.load()
 end
