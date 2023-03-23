@@ -9,6 +9,19 @@ local toprowy = 75
 local rowgap = 40
 local colgap = 85
 
+local function getCountSelected(thisTable)
+    -- counts how many items are selected
+    -- input: the table that has an isSelected property
+    -- output: a number
+    local retvalue = 0
+    for k, v in pairs(thisTable) do
+        if v.isSelected then
+            retvalue = retvalue + 1
+        end
+    end
+    return retvalue
+end
+
 function tradeplayers.mousereleased(rx, ry)
     -- call from love.mousereleased()
     local clickedButtonID = buttons.getButtonID(rx, ry)
@@ -31,7 +44,17 @@ function tradeplayers.mousereleased(rx, ry)
                     print("Row #" .. rownum .. " clicked")
                     for k, v in pairs(teamPlayers) do
                         if v.index == rownum then
-                            print(v.position, v.mass, v.maxv)
+                            -- print(v.position, v.mass, v.maxv)
+                            if not v.isSelected then
+                                if getCountSelected(teamPlayers) == 0 then
+                                    v.isSelected = true
+                                else
+                                    -- there is already another selected. Disallow this action
+                                    --! play error DING sound
+                                end
+                            else
+                                v.isSelected = false
+                            end
                             break
                         end
                     end
@@ -65,6 +88,7 @@ function tradeplayers.draw()
             mytable.throwaccuracy = row.THROWACCURACY
             mytable.catchskill = row.CATCHSKILL
             mytable.index = index
+            mytable.isSelected = false
             table.insert(teamPlayers, mytable)
             index = index + 1
         end
@@ -93,12 +117,24 @@ function tradeplayers.draw()
     love.graphics.print("Throw", drawx - 20, drawy)
     drawx = drawx + colgap
     love.graphics.print("Catch", drawx - 10, drawy)
+
+    love.graphics.rectangle("line", toprowx - 10, toprowy, (colgap * 9), rowgap)
+
     drawx = drawx + colgap
     drawx = toprowx
     drawy = drawy + rowgap
-
     for k,v in pairs(teamPlayers) do
         love.graphics.print(v.firstname .. " " .. v.familyname, drawx, drawy)
+
+        -- draw highlights if selected
+        if v.isSelected then
+            love.graphics.setColor(1,1,0,0.25)
+            love.graphics.rectangle("fill", drawx - 10, drawy, (colgap * 9), rowgap)
+        else
+            love.graphics.setColor(1,1,1,1)
+            love.graphics.rectangle("line", drawx - 10, drawy, (colgap * 9), rowgap)
+        end
+        love.graphics.setColor(1,1,1,1)
         drawx = drawx + colgap
         love.graphics.print("", drawx, drawy)       --!
         drawx = drawx + colgap
@@ -115,6 +151,7 @@ function tradeplayers.draw()
         love.graphics.print(v.throwaccuracy, drawx, drawy)
         drawx = drawx + colgap
         love.graphics.print(v.catchskill, drawx, drawy)
+
         drawx = toprowx
         drawy = drawy + rowgap
     end
