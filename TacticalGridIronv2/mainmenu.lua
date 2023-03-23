@@ -18,17 +18,20 @@ function mainmenu.mousereleased(rx, ry)
         fun.loadGame()  -- reads the database and loads arrays
         REFRESH_DB = true
         cf.AddScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
+
     elseif clickedButtonID == enum.buttonMainMenuLoad then
         fun.loadGame()
         REFRESH_DB = true
 
         local countofgames = db.getCountSeasonTable()
-        if countofgames < 15 then
-            cf.AddScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
-        else
-            -- go to trading screen
-            cf.AddScreen(enum.sceneTradePlayers, SCREEN_STACK)
-        end
+        --!
+    	cf.AddScreen(enum.sceneTradePlayers, SCREEN_STACK)
+        -- if countofgames < 15 then
+        --     cf.AddScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
+        -- else
+        --     -- go to trading screen
+        --     cf.AddScreen(enum.sceneTradePlayers, SCREEN_STACK)
+        -- end
     end
 end
 

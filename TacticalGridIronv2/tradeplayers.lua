@@ -3,11 +3,65 @@ tradeplayers = {}
 local teamPlayers = {}
 local freePlayers = {}
 
+-- used for drawing things. Used by draw and mouse click functions
+local toprowx = 45
+local toprowy = 75
+local rowgap = 40
+local colgap = 85
+
+local function getCountSelected(thisTable)
+    -- counts how many items are selected
+    -- input: the table that has an isSelected property
+    -- output: a number
+    local retvalue = 0
+    for k, v in pairs(thisTable) do
+        if v.isSelected then
+            retvalue = retvalue + 1
+        end
+    end
+    return retvalue
+end
+
 function tradeplayers.mousereleased(rx, ry)
     -- call from love.mousereleased()
     local clickedButtonID = buttons.getButtonID(rx, ry)
     if clickedButtonID == enum.buttonTradePlayersContinue then
         cf.SwapScreen(enum.sceneTrainPlayers, SCREEN_STACK)
+
+    else
+        -- see if one of the left columns is clicked
+        print(rx, ry)
+        if rx >= toprowx and rx <= 800 then  -- arbitrary value that seems to work
+            if ry >= toprowy and ry <= 990 then
+                -- inside left panel. Work out which row
+                local yvalue = ry - toprowy
+                print(yvalue, yvalue / rowgap, math.floor(yvalue / rowgap))
+                if yvalue <= rowgap then
+                    --! a header is clicked
+                    print("Header clicked")
+                else
+                    local rownum = math.floor(yvalue / rowgap)
+                    print("Row #" .. rownum .. " clicked")
+                    for k, v in pairs(teamPlayers) do
+                        if v.index == rownum then
+                            -- print(v.position, v.mass, v.maxv)
+                            if not v.isSelected then
+                                if getCountSelected(teamPlayers) == 0 then
+                                    v.isSelected = true
+                                else
+                                    -- there is already another selected. Disallow this action
+                                    --! play error DING sound
+                                end
+                            else
+                                v.isSelected = false
+                            end
+                            break
+                        end
+                    end
+                end
+
+            end
+        end
     end
 end
 
@@ -19,6 +73,7 @@ function tradeplayers.draw()
         strQuery = strQuery .. "players.MAXF, players.BALANCE, players.THROWACCURACY, players.CATCHSKILL from PLAYERS inner join teams "
         strQuery = strQuery .. "on teams.TEAMID = players.TEAMID where teams.PLAYERCONTROLLED = 1"
 
+        local index = 1
         local fbdb = sqlite3.open(DB_FILE)
         for row in fbdb:nrows(strQuery) do
             local mytable = {}
@@ -32,39 +87,77 @@ function tradeplayers.draw()
             mytable.balance = row.BALANCE
             mytable.throwaccuracy = row.THROWACCURACY
             mytable.catchskill = row.CATCHSKILL
+            mytable.index = index
+            mytable.isSelected = false
             table.insert(teamPlayers, mytable)
+            index = index + 1
         end
         REFRESH_DB = false
         fbdb:close()
     end
 
-    local drawx = 100
-    local drawy = 100
+    local drawx = toprowx
+    local drawy = toprowy
     love.graphics.setColor(1,1,1,1)
-    for k,v in pairs(teamPlayers) do
-        love.graphics.print(v.firstname, drawx, drawy)
-        drawy = drawy + 75
-        love.graphics.print(v.familyname, drawx, drawy)
-        drawy = drawy + 75
-        love.graphics.print(v.position, drawx, drawy)
-        drawy = drawy + 75
-        love.graphics.print(v.mass, drawx, drawy)
-        drawy = drawy + 75
-        love.graphics.print(v.maxv, drawx, drawy)
-        drawy = drawy + 75
-        love.graphics.print(v.maxf, drawx, drawy)
-        drawy = drawy + 75
-        love.graphics.print(v.balance, drawx, drawy)
-        drawy = drawy + 75
-        love.graphics.print(v.throwaccuracy, drawx, drawy)
-        drawy = drawy + 75
-        love.graphics.print(v.catchskill, drawx, drawy)
-        drawy = drawy + 75
-        drawx = drawx + 40
-    end
+    love.graphics.setFont(FONT[enum.fontCorporate])
+    love.graphics.print("Name", drawx, drawy)
+    drawx = drawx + colgap
+    love.graphics.print("", drawx, drawy)
+    drawx = drawx + colgap
+    love.graphics.print("Pos", drawx, drawy)
+    drawx = drawx + colgap
+    love.graphics.print("Weight", drawx - 20, drawy)
+    drawx = drawx + colgap
+    love.graphics.print("Speed", drawx - 10, drawy)
+    drawx = drawx + colgap
+    love.graphics.print("Str", drawx + 5, drawy)
+    drawx = drawx + colgap
+    love.graphics.print("Balance", drawx - 20, drawy)
+    drawx = drawx + colgap
+    love.graphics.print("Throw", drawx - 20, drawy)
+    drawx = drawx + colgap
+    love.graphics.print("Catch", drawx - 10, drawy)
 
-    love.graphics.setColor(1,1,1,1)
-    love.graphics.print("Under construction", 300, 300)
+    love.graphics.rectangle("line", toprowx - 10, toprowy, (colgap * 9), rowgap)
+
+    drawx = drawx + colgap
+    drawx = toprowx
+    drawy = drawy + rowgap
+    for k,v in pairs(teamPlayers) do
+        love.graphics.print(v.firstname .. " " .. v.familyname, drawx, drawy)
+
+        -- draw highlights if selected
+        if v.isSelected then
+            love.graphics.setColor(1,1,0,0.25)
+            love.graphics.rectangle("fill", drawx - 10, drawy, (colgap * 9), rowgap)
+        else
+            love.graphics.setColor(1,1,1,1)
+            love.graphics.rectangle("line", drawx - 10, drawy, (colgap * 9), rowgap)
+        end
+        love.graphics.setColor(1,1,1,1)
+        drawx = drawx + colgap
+        love.graphics.print("", drawx, drawy)       --!
+        drawx = drawx + colgap
+        love.graphics.print(v.position, drawx, drawy)
+        drawx = drawx + colgap
+        love.graphics.print(v.mass, drawx, drawy)
+        drawx = drawx + colgap
+        love.graphics.print(v.maxv, drawx, drawy)
+        drawx = drawx + colgap
+        love.graphics.print(v.maxf, drawx, drawy)
+        drawx = drawx + colgap
+        love.graphics.print(v.balance, drawx, drawy)
+        drawx = drawx + colgap
+        love.graphics.print(v.throwaccuracy, drawx, drawy)
+        drawx = drawx + colgap
+        love.graphics.print(v.catchskill, drawx, drawy)
+
+        drawx = toprowx
+        drawy = drawy + rowgap
+    end
+    love.graphics.setFont(FONT[enum.fontDefault])
+    -- love.graphics.setColor(1,1,1,1)
+    -- love.graphics.print("Under construction", 300, 300)
 
     buttons.drawButtons()
 end
