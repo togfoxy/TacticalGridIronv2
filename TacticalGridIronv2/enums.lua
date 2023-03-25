@@ -24,6 +24,7 @@ function enums.load()
     enum.buttonLeagueStatusContinue = 11
     enum.buttonTradePlayersContinue = 12
     enum.buttonTrainNextSeason = 13
+    enum.buttonTradePlayersSwap = 14
 
     enum.gamestateForming = 1
     enum.gamestateReadyForSnap = 2

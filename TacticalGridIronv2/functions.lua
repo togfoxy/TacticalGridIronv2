@@ -89,7 +89,12 @@ local function populateTeamsTable()
 
         rndteamnum = love.math.random(1, #TEAM_NAMES)
         -- write to table
-        local strQuery = "INSERT INTO TEAMS ('TEAMNAME', 'PLAYERCONTROLLED', 'RED', 'GREEN', 'BLUE') VALUES ('" .. TEAM_NAMES[rndteamnum] .. "', 0, " .. red ..", " .. green ..", " .. blue .. ");"
+        local strQuery
+        if TEAM_NAMES[rndteamnum] == "Geckos" then
+            strQuery = "INSERT INTO TEAMS ('TEAMNAME', 'PLAYERCONTROLLED', 'RED', 'GREEN', 'BLUE') VALUES ('" .. TEAM_NAMES[rndteamnum] .. "', 1, " .. red ..", " .. green ..", " .. blue .. ");"
+        else
+            strQuery = "INSERT INTO TEAMS ('TEAMNAME', 'PLAYERCONTROLLED', 'RED', 'GREEN', 'BLUE') VALUES ('" .. TEAM_NAMES[rndteamnum] .. "', 0, " .. red ..", " .. green ..", " .. blue .. ");"
+        end
         local dberror = fbdb:exec(strQuery)
         if dberror ~= 0 then
             print(strQuery)
@@ -104,14 +109,23 @@ end
 
 local function populateGlobalsTable()
     local fbdb = sqlite3.open(DB_FILE)
-    local strQuery = "Insert into GLOBALS ('CURRENTSEASON') values (1)"
+
+    -- need to get player team ID and insert it here
+    local playerTeamID
+    local strQuery = "SELECT * FROM TEAMS WHERE PLAYERCONTROLLED = 1"
+    for row in fbdb:nrows(strQuery) do      -- should only execute once
+        playerTeamID = row.TEAMID
+    end
+    local strQuery = "Insert into GLOBALS ('CURRENTSEASON', 'PLAYERTEAMID') values (1, " .. playerTeamID .. ")"
     local dberror = fbdb:exec(strQuery)
     fbdb:close()
 end
 
-local function createNewPlayer(fbdb, index, teamid)
-    -- given index (1 -> 11) write a new row into the players table
+function functions.createNewPlayer(fbdb, index, teamid)
+    -- given index (1 -> 22) write a new row into the players table
     -- fbdb = the database passed into this subprocedure
+    -- input: index equates to the position e.g. index = 1 = QB
+    -- input: teamID = team number
 
     local firstname = "Joe"
     local familyname = "Blow"       --!
@@ -266,7 +280,11 @@ local function createNewPlayer(fbdb, index, teamid)
 
     -- local fbdb = sqlite3.open(DB_FILE)
     local strQuery = "Insert into PLAYERS ('TEAMID', 'FIRSTNAME', 'FAMILYNAME', 'POSITION', 'MASS', 'MAXPOSSIBLEV', 'MAXV', 'MAXF', 'BALANCE', 'THROWACCURACY', 'CATCHSKILL') "
-    strQuery = strQuery .. "values ('" .. teamid .. "', '" .. firstname .."', '" .. familyname .. "', '" .. positionletters .. "', '" .. mass .. "', '"
+    if teamid ~= nil then
+        strQuery = strQuery .. "values ('" .. teamid .. "', '" .. firstname .."', '" .. familyname .. "', '" .. positionletters .. "', '" .. mass .. "', '"
+    else
+        strQuery = strQuery .. "values (null, '" .. firstname .."', '" .. familyname .. "', '" .. positionletters .. "', '" .. mass .. "', '"
+    end
     strQuery = strQuery .. maxpossibleV .. "', '" .. maxV .. "', '" .. maxF .. "', '" .. balance .. "', '" .. throwaccuracy .. "', '" .. catchskill .. "')"
     local dberror = fbdb:exec(strQuery)
     assert(dberror == 0, dberror)
@@ -280,9 +298,19 @@ local function populatePlayersTable()
     for row in fbdb:nrows(strQuery) do
         -- eleven players
         for j = 1, 22 do
-            createNewPlayer(fbdb, j, row.TEAMID)
+            if row.TEAMNAME == "Geckos" then
+                fun.createNewPlayer(fbdb, j, row.TEAMID, true)
+            else
+                fun.createNewPlayer(fbdb, j, row.TEAMID, false)
+            end
         end
     end
+
+    -- now add 22 players that have no team. This will be used during the trading phase
+    for j = 1, 22 do
+        fun.createNewPlayer(fbdb, j, nil)
+    end
+
     fbdb:close()
 end
 
@@ -328,12 +356,13 @@ function functions.createNewGame()
 
     deleteAllTables()
 
-    -- populate global table
-    populateGlobalsTable()
     CURRENT_SEASON = 1
 
     -- populate teams table
     populateTeamsTable()
+
+    -- populate global table
+    populateGlobalsTable()
 
     -- populate player table
     populatePlayersTable()
