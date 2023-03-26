@@ -47,6 +47,10 @@ function enums.load()
     enum.fontLarge = 3
     enum.fontCorporate = 4
 
+    enum.keyLeft = 1
+    enum.keyRight = 2
+    enum.keyUp = 3
+    enum.keyDown = 4
 
 end
 return enums

@@ -48,11 +48,12 @@ local function swapPlayers()
 
     -- add the free agents into the players team
     -- get the players teamid first
-    local playerTeamID
-    local strQuery = "Select * from GLOBALS"
-    for row in fbdb:nrows(strQuery) do      -- should only execute once
-        playerTeamID = row.PLAYERTEAMID
-    end
+    local playerTeamID = fun.getPlayerTeamID()
+    -- local playerTeamID       --! delete this block if the above line of code works
+    -- local strQuery = "Select * from GLOBALS"
+    -- for row in fbdb:nrows(strQuery) do      -- should only execute once
+    --     playerTeamID = row.PLAYERTEAMID
+    -- end
 
     -- now can add the players team to each free agent
     -- loop through all the selected positions and find the same in the free agent list
@@ -87,10 +88,7 @@ function tradeplayers.mousereleased(rx, ry)
     elseif clickedButtonID == enum.buttonTradePlayersSwap then
         -- swap players then move to next screen
         swapPlayers()
-
-        -- cf.SwapScreen(enum.sceneTrainPlayers, SCREEN_STACK)
-
-
+        cf.SwapScreen(enum.sceneTrainPlayers, SCREEN_STACK)
     else
         -- see if one of the left columns is clicked
         -- print(rx, ry)

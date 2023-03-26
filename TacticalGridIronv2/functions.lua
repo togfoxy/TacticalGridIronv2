@@ -367,13 +367,26 @@ function functions.createNewGame()
     -- populate player table
     populatePlayersTable()
 
-    -- assign players to teams
-
     -- populate season table
     db.populateSeasonTable()
 
     -- after populating the database, load them into tables
     fun.loadGame()
+
+end
+
+function functions.getPlayerTeamID()
+    -- read the GLOBALS table to understand which team is player controlled
+    -- output: the team id stored in GLOBALS table
+
+    local playerTeamID
+    local strQuery = "Select * from GLOBALS"
+    local fbdb = sqlite3.open(DB_FILE)
+    for row in fbdb:nrows(strQuery) do      -- should only execute once
+        playerTeamID = row.PLAYERTEAMID
+    end
+    fbdb:close()
+    return playerTeamID
 
 end
 

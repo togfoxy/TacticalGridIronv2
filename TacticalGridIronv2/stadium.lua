@@ -6,9 +6,12 @@ local playcall_offense = 3 --!enum.playcallThrow
 local playcall_defense = 2 --!enum.playcallManOnMan
 local downNumber = 1
 local football = {}			-- contains the x/y of the football
+local playerTeamID			-- the team ID controlled by the player
+local pauseOn = false		-- can be invoked by player to stop time
+
+
 football.waypointx = {}
 football.waypointy = {}
-
 
 local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
 local DEFENSIVE_TIME, DEFENSIVE_SCORE
@@ -715,11 +718,13 @@ local function vectorMovePlayer(obj, dt)
 	-- end
 end
 
-local function moveAllPlayers(dt)
+local function moveAllPlayers(kp, dt)
+	-- input: kp is keypressed. Will be nil for bots. Integer. See enum.key
+
 	--! check to see if all these variables are used/called
+
     local fltForceAdjustment = 20	-- tweak this to get fluid motion
     local fltMaxVAdjustment = 0.25	-- tweak this to get fluid motion
-
 
     if GAME_STATE ~= enum.gamestateDeadBall then
 		-- ball is not dead
@@ -728,6 +733,7 @@ local function moveAllPlayers(dt)
 
 		-- determine what to do for all 22 players
         for i = 1, NumberOfPlayers do
+
 			if PHYS_PLAYERS[i].hasBall then ballcarrier = i end		-- set here and used way down the bottom
 
             local objx = PHYS_PLAYERS[i].body:getX()
@@ -736,74 +742,81 @@ local function moveAllPlayers(dt)
 			local targety = PHYS_PLAYERS[i].waypointy[1]
 
 			-- see if player has waypoints
-			if targetx == nil or targety == nil then
-				-- out of waypoints
+			if playerTeamID == OFFENSIVE_TEAMID and i == 1 then		-- qb for the player controlled team
+				-- check if qb has the ball
 
-				-- if index = QB and QB has the ball and play = throw and ball has no waypoints then ...
-				if i == 1 and ballcarrier == 1 and playcall_offense == enum.playcallThrow then	-- QB has run out of waypoints
-					if football.waypointx[1] == nil then
-						-- try to throw ball
-
-						-- pick a random player on same side that is not fallen down
-						local balltarget = nil
-						repeat
-							local rndnum = love.math.random(2, 6)	-- these are the only valid receivers
-							if PHYS_PLAYERS[rndnum].fallen then
-								rndnum = nil
-							else
-								balltarget = rndnum
-							end
-						until balltarget ~= nil		--! need to ensure this isn't and endless loop
-						football.waypointx[1] = PHYS_PLAYERS[balltarget].body:getX()
-						football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
-						PHYS_PLAYERS[1].hasBall = false
-
-						print("QB has thrown the ball")
+				error("Got no idea what is to happen here")
 
 
+
+
+
+			else
+				if targetx == nil or targety == nil then
+					-- out of waypoints
+
+					-- if index = QB and QB has the ball and play = throw and ball has no waypoints then ...
+					if i == 1 and ballcarrier == 1 and playcall_offense == enum.playcallThrow then	-- QB has run out of waypoints
+						if football.waypointx[1] == nil then
+							-- try to throw ball
+
+							-- pick a random player on same side that is not fallen down
+							local balltarget = nil
+							repeat
+								local rndnum = love.math.random(2, 6)	-- these are the only valid receivers
+								if PHYS_PLAYERS[rndnum].fallen then
+									rndnum = nil
+								else
+									balltarget = rndnum
+								end
+							until balltarget ~= nil		--! need to ensure this isn't and endless loop
+							football.waypointx[1] = PHYS_PLAYERS[balltarget].body:getX()
+							football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
+							PHYS_PLAYERS[1].hasBall = false
+						else
+							error()
+						end
 					else
-						error()
+						-- player has no waypoints. Probably because ball is thrown. Let code fall
+						-- down below to setInPlayReceiverRunning()
+					end
+
+					if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
+						PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
+						-- print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
+					end
+
+					if GAME_STATE == enum.gamestateInPlay and not PHYS_PLAYERS[1].hasBall then
+						-- set waypoints to the ball carrier
+						setInPlayReceiverRunning()
 					end
 				else
-					-- player has no waypoints. Probably because ball is thrown. Let code fall
-					-- down below to setInPlayReceiverRunning()
+					-- this player has a target. Move towards it if not fallen
+		            if not PHYS_PLAYERS[i].fallen then
+
+		                -- get distance to target
+		                local disttotarget = cf.getDistance(objx, objy, targetx, targety)		-- actually waypoints
+
+		                -- see if arrived
+		                if disttotarget <=  0.1 then
+		                    -- arrived
+
+		                    if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
+		                        PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
+							elseif PHYS_PLAYERS[i].gamestate == enum.gamestateInPlay then
+								-- in play and reached waypoint. Remove this waypoint.
+								table.remove(PHYS_PLAYERS[i].waypointx, 1)
+								table.remove(PHYS_PLAYERS[i].waypointy, 1)
+								print("Removing waypoint for player #" .. i)
+		                    end
+		                    --! put other game states here
+		                else
+		                    -- player not arrived
+							vectorMovePlayer(PHYS_PLAYERS[i], dt)
+		                end
+		            else
+		            end
 				end
-
-				if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
-					PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
-					-- print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
-				end
-
-				if GAME_STATE == enum.gamestateInPlay and not PHYS_PLAYERS[1].hasBall then
-					-- set waypoints to the ball carrier
-					setInPlayReceiverRunning()
-				end
-			else
-				-- this player has a target. Move towards it if not fallen
-	            if not PHYS_PLAYERS[i].fallen then
-
-	                -- get distance to target
-	                local disttotarget = cf.getDistance(objx, objy, targetx, targety)		-- actually waypoints
-
-	                -- see if arrived
-	                if disttotarget <=  0.1 then
-	                    -- arrived
-
-	                    if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
-	                        PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
-						elseif PHYS_PLAYERS[i].gamestate == enum.gamestateInPlay then
-							-- in play and reached waypoint. Remove this waypoint.
-							table.remove(PHYS_PLAYERS[i].waypointx, 1)
-							table.remove(PHYS_PLAYERS[i].waypointy, 1)
-							print("Removing waypoint for player #" .. i)
-	                    end
-	                    --! put other game states here
-	                else
-	                    -- player not arrived
-						vectorMovePlayer(PHYS_PLAYERS[i], dt)
-	                end
-	            else
-	            end
 			end
         end
 
@@ -937,6 +950,8 @@ local function drawStadium()
         end
         REFRESH_DB = false
         fbdb:close()
+
+		playerTeamID = fun.getPlayerTeamID()
 
         assert(OFF_RED ~= nil, strQuery)
         assert(DEF_RED ~= nil, strQuery)
@@ -1231,8 +1246,24 @@ local function checkForStateChange(dt)
 		GAME_STATE = enum.gamestateGameOver
 		endtheround(0)
 	end
+end
 
+local function getkeyPressed()
+	-- returns the key being pressed by the player
+	-- only returns legit keys and ignores non-legit
+	-- returns nil if no valid keys are pressed
 
+	if love.keyboard.isDown("kp8") then
+		return enum.keyUp
+	elseif love.keyboard.isDown("kp2") then
+		return enum.keyDown
+	elseif love.keyboard.isDown("kp4") then
+		return enum.keyLeft
+	elseif love.keyboard.isDown("kp6") then
+		return enu.keyRight
+	else
+		return nil
+	end
 end
 
 function stadium.draw()
@@ -1263,15 +1294,31 @@ function stadium.update(dt)
 		GAME_STATE = enum.gamestateForming
     end
 
-    if GAME_STATE == enum.gamestateInPlay then
+    if GAME_STATE == enum.gamestateInPlay then		--! this probably needs to be moved to if statement below
         OFFENSIVE_TIME = OFFENSIVE_TIME + dt
     end
 
     if not REFRESH_DB then
         -- update gets called before draw so do NOT try to move players before they are initialised and drawn.
-        moveAllPlayers(dt)
-		moveFootball(dt)
-        checkForStateChange(dt)
+
+		if playerTeamID ~= OFFENSIVE_TEAMID then
+	        moveAllPlayers(nil, dt)		-- nil is the keypressed. Irrelevant for bots
+			moveFootball(dt)
+	        checkForStateChange(dt)
+		else
+			if GAME_STATE == enum.gamestateForming or GAME_STATE == enum.gamestateReadyForSnap then
+				moveAllPlayers(nil, dt)		-- nil is the keypressed. Irrelevant for bots
+				moveFootball(dt)
+				checkForStateChange(dt)
+			else
+				if not pauseOn then
+					local keypressed = getkeyPressed()
+					if keypressed ~= nil then
+						moveAllPlayers(0, dt)	-- 0 means the player is pressing nothing
+					end
+				end
+			end
+		end
     end
 
     world:update(dt) --this puts the world into motion

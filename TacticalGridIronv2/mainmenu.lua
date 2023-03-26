@@ -24,14 +24,12 @@ function mainmenu.mousereleased(rx, ry)
         REFRESH_DB = true
 
         local countofgames = db.getCountSeasonTable()
-        --!
-    	cf.AddScreen(enum.sceneTradePlayers, SCREEN_STACK)
-        -- if countofgames < 15 then
-        --     cf.AddScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
-        -- else
-        --     -- go to trading screen
-        --     cf.AddScreen(enum.sceneTradePlayers, SCREEN_STACK)
-        -- end
+        if countofgames < 15 then
+            cf.AddScreen(enum.sceneDisplaySeasonStatus, SCREEN_STACK)
+        else
+            -- go to trading screen
+            cf.AddScreen(enum.sceneTradePlayers, SCREEN_STACK)
+        end
     end
 end
 
