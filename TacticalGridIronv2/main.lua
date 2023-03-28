@@ -67,7 +67,7 @@ function love.mousereleased(x, y, button, isTouch)
 	elseif currentscene == enum.sceneDisplaySeasonStatus then
 		seasonstatus.mousereleased(rx, ry)
 	elseif currentscene == enum.sceneStadium then
-		stadium.mousereleased(rx, ry)
+		stadium.mousereleased(rx, ry, x, y)		-- need to send through the res adjusted x/y and the 'real' x/y
 	elseif currentscene == enum.sceneEndGame then
 		endgame.mousereleased(rx, ry)
 	elseif currentscene == enum.sceneDisplayLeagueStatus then

@@ -115,12 +115,32 @@ function stadium.wheelmoved(x, y)
 	print("Zoom factor = " .. ZOOMFACTOR)
 end
 
-function stadium.mousereleased(rx, ry)
-    -- call from love.mousereleased()
+function stadium.mousereleased(rx, ry, x, y)
+    -- called from love.mousereleased()
+	-- input: x/y adjusted by res
+	-- input: raw and unadjusted x/y used by cam
     local clickedButtonID = buttons.getButtonID(rx, ry)
     if clickedButtonID == enum.buttonStadiumQuit then
         love.event.quit()
     end
+
+	if OFFENSIVE_TEAMID == playerTeamID and GAME_STATE == enum.gamestateInPlay then
+		-- player has clicked the mouse while ball is in play. Throw the ball if the QB has it.
+		if PHYS_PLAYERS[1].hasBall then
+			-- adjust the raw mouse x/y to cam x/y
+			local mousex, mousey = cam:toWorld(x, y)	-- converts screen x/y to world x/y
+
+			-- now need to unscale it so it converts to physical world
+			mousex = mousex / SCALE
+			mousey = mousey / SCALE
+
+			football.waypointx[1] = mousex
+			football.waypointy[1] = mousey
+			PHYS_PLAYERS[1].waypointx[1] = nil
+			PHYS_PLAYERS[1].waypointy[1] = nil
+			PHYS_PLAYERS[1].hasBall = false
+		end
+	end
 end
 
 local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
