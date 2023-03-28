@@ -39,35 +39,6 @@ local ScrimmageY = BottomGoalY - 25
 local FirstDownMarkerY = ScrimmageY - 10		-- yards
 
 function stadium.keypressed( key, scancode, isrepeat )
-	if GAME_STATE == enum.gamestateReadyForSnap then
-		if scancode == "a" then
-			GAME_STATE = enum.gamestateInPlay
-
-		elseif scancode == "s" then
-			GAME_STATE = enum.gamestateInPlay
-
-		elseif scancode == "d" then
-			GAME_STATE = enum.gamestateInPlay
-
-		elseif scancode == "w" then
-			GAME_STATE = enum.gamestateInPlay
-		end
-	end
-
-	if GAME_STATE == enum.gamestateInPlay then
-		if scancode == "a" then
-			PHYS_PLAYERS[1].targetx = PHYS_PLAYERS[1].targetx - 1
-
-		elseif scancode == "s" then
-			PHYS_PLAYERS[1].targety = PHYS_PLAYERS[1].targety + 1
-
-		elseif scancode == "d" then
-			PHYS_PLAYERS[1].targetx = PHYS_PLAYERS[1].targetx + 1
-
-		elseif scancode == "w" then
-			PHYS_PLAYERS[1].targety = PHYS_PLAYERS[1].targety - 1
-		end
-	end
 
 	local translatefactor = 5 * (ZOOMFACTOR * 2)		-- screen moves faster when zoomed in
 
@@ -115,12 +86,34 @@ function stadium.wheelmoved(x, y)
 	print("Zoom factor = " .. ZOOMFACTOR)
 end
 
-function stadium.mousereleased(rx, ry)
-    -- call from love.mousereleased()
+function stadium.mousereleased(rx, ry, x, y)
+    -- called from love.mousereleased()
+	-- input: x/y adjusted by res
+	-- input: raw and unadjusted x/y used by cam
     local clickedButtonID = buttons.getButtonID(rx, ry)
     if clickedButtonID == enum.buttonStadiumQuit then
         love.event.quit()
     end
+
+	if OFFENSIVE_TEAMID == playerTeamID and GAME_STATE == enum.gamestateInPlay then
+		-- player has clicked the mouse while ball is in play. Throw the ball if the QB has it.
+		if PHYS_PLAYERS[1].hasBall then
+			-- adjust the raw mouse x/y to cam x/y
+			local mousex, mousey = cam:toWorld(x, y)	-- converts screen x/y to world x/y
+
+			-- now need to unscale it so it converts to physical world
+			mousex = mousex / SCALE
+			mousey = mousey / SCALE
+
+			football.waypointx[1] = mousex
+			football.waypointy[1] = mousey
+			PHYS_PLAYERS[1].waypointx[1] = nil
+			PHYS_PLAYERS[1].waypointy[1] = nil
+			PHYS_PLAYERS[1].hasBall = false
+
+			GAME_STATE = enum.gamestateAirborne
+		end
+	end
 end
 
 local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
@@ -478,8 +471,12 @@ local function setInPlayWapointsThrow(obj, index)
 	obj.waypointy = {}
 	-- player 1 = QB
     if index == 1 then
-		table.insert(obj.waypointx, CentreLineX)	-- centre line
-		table.insert(obj.waypointy, ScrimmageY + 11)
+		if OFFENSIVE_TEAMID == playerTeamID then
+			-- do nothing
+		else
+			table.insert(obj.waypointx, CentreLineX)	-- centre line
+			table.insert(obj.waypointy, ScrimmageY + 11)
+		end
 	elseif index == 2 then		-- WR (left closest to centre)
 		table.insert(obj.waypointx, CentreLineX - 14)		-- left 'wing'
 		table.insert(obj.waypointy, ScrimmageY - 12)
@@ -565,6 +562,9 @@ local function setAllWaypoints(dt)
             end
         elseif GAME_STATE == enum.gamestateInPlay then
 			setInPlayWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
+		elseif GAME_STATE == enum.gamestateAirborne then
+			--! set all targets to the ball destination
+			--! there is already a sub. see if it fits here
         end
     end
 	-- print("Target for player #12 is " .. PHYS_PLAYERS[12].waypointx[1])
@@ -647,7 +647,7 @@ local function vectorMovePlayer(obj, dt)
 	local vectorytotarget = targety - objy
 
 	-- if the game is in play, then make sure obj doesn't stop short of target
-	if GAME_STATE == enum.gamestateInPlay then
+	if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne then
 		vectorxtotarget = vectorxtotarget * 10
 		vectorytotarget = vectorytotarget * 10
 	end
@@ -764,6 +764,8 @@ local function moveAllPlayers(dt)
 							football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
 							PHYS_PLAYERS[1].hasBall = false
 
+							GAME_STATE = enum.gamestateAirborne
+
 							print("QB has thrown the ball")
 						else
 							-- this is a non-bot team. Do nothing
@@ -802,7 +804,7 @@ local function moveAllPlayers(dt)
 							-- in play and reached waypoint. Remove this waypoint.
 							table.remove(PHYS_PLAYERS[i].waypointx, 1)
 							table.remove(PHYS_PLAYERS[i].waypointy, 1)
-							print("Removing waypoint for player #" .. i)
+							-- print("Removing waypoint for player #" .. i)
 	                    end
 	                    --! put other game states here
 	                else
@@ -825,6 +827,7 @@ local function moveAllPlayers(dt)
 		end
     end
 end
+
 local function endTheDown()
 	fun.playAudio(enum.soundWhistle, false, true)
 
@@ -854,6 +857,9 @@ local function moveFootball(dt)
 		-- see if whole distance can be travelled in this time step
 		if disttotarget <= (throwspeed * dt) then
 			-- whole distance is travelled during this time step
+
+			GAME_STATE = enum.gamestateInPlay		-- move from airborne to in-play regardless of throw outcome
+
 			football.x = football.waypointx[1]
 			football.y = football.waypointy[1]
 
@@ -909,7 +915,6 @@ local function moveFootball(dt)
 	else
 		-- print("Football has no target")
 	end
-
 end
 
 local function drawStadium()
@@ -1033,7 +1038,7 @@ local function drawPlayers()
         love.graphics.circle("fill", objx, objy, objradius)
 
 		-- draw ball
-		if GAME_STATE == enum.gamestateInPlay then
+		if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne then
 			love.graphics.setColor(1,0,0,1)
 			love.graphics.draw(IMAGE[enum.imageFootball], football.x * SCALE, (football.y * SCALE) - 15, 0, 0.25, 0.25, 0, 0)
 		end
@@ -1066,11 +1071,13 @@ local function drawPlayers()
     end
 
     -- draw the QB target
-    if PHYS_PLAYERS[1].targetx ~= nil then
-        local drawx = PHYS_PLAYERS[1].targetx * SCALE
-        local drawy = PHYS_PLAYERS[1].targety * SCALE
-        love.graphics.setColor(1,1,0,1) -- yellow
-        love.graphics.circle("line", drawx, drawy, 0.75 * SCALE)
+    if (PHYS_PLAYERS[1].waypointx[1] ~= nil) and (OFFENSIVE_TEAMID == playerTeamID) then
+		if PHYS_PLAYERS[1].waypointx ~= nil and PHYS_PLAYERS[1].hasBall then
+	        local drawx = PHYS_PLAYERS[1].waypointx[1] * SCALE
+	        local drawy = PHYS_PLAYERS[1].waypointy[1] * SCALE
+	        love.graphics.setColor(1,1,0,1) -- yellow
+	        love.graphics.circle("line", drawx, drawy, 0.75 * SCALE)
+		end
     end
 end
 
@@ -1093,7 +1100,7 @@ local function drawScoreboard()
 end
 
 local function beginContact(a, b, coll)
-    if GAME_STATE == enum.gamestateInPlay then
+    if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne then
         local aindex = a:getUserData()
         local bindex = b:getUserData()
 
@@ -1217,11 +1224,7 @@ local function checkForStateChange(dt)
                     GAME_STATE = enum.gamestateGameOver
                     endtheround(6)
                 end
-
-
             end
-
-            --! ball is dropped
         end
 
     elseif GAME_STATE == enum.gamestateDeadBall then
@@ -1274,6 +1277,21 @@ function stadium.draw()
 	drawScoreboard()
 end
 
+local function doUpdateLoop(dt)
+
+	if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne then
+		OFFENSIVE_TIME = OFFENSIVE_TIME + dt
+	end
+
+	moveAllPlayers(dt)
+	moveFootball(dt)
+	checkForStateChange(dt)
+
+	world:update(dt) --this puts the world into motion
+    world:setCallbacks(beginContact, endContact, preSolve, postSolve)
+
+end
+
 function stadium.update(dt)
     -- called from love.update()
 
@@ -1285,57 +1303,64 @@ function stadium.update(dt)
 		playcall_defense = 2
 
 		GAME_STATE = enum.gamestateForming
-    end
-
-    if GAME_STATE == enum.gamestateInPlay then
-        OFFENSIVE_TIME = OFFENSIVE_TIME + dt
-    end
-
-    if not REFRESH_DB then
+	else
         -- update gets called before draw so do NOT try to move players before they are initialised and drawn.
 
-		-- if team = user team and key press then set target for QB1
-		if OFFENSIVE_TEAMID == playerTeamID then		-- playerTeamID is set on drawStadium() i.e. on load.
-			if GAME_STATE == enum.gamestateInPlay then
-				local keypressed = getkeyPressed()		-- returns an enum
-				if keypressed ~= nil then
-					-- a key has been pressed. Current target is no longer relevant
-					PHYS_PLAYERS[1].waypointx[1] = nil
-					PHYS_PLAYERS[1].waypointy[1] = nil
+		-- if team = user team and key press then set target for QB
+		if OFFENSIVE_TEAMID == playerTeamID and GAME_STATE == enum.gamestateInPlay then		-- playerTeamID is set on drawStadium() i.e. on load.
+			local keypressed = getkeyPressed()		-- returns an enum
+			if keypressed ~= nil then
+				-- a key has been pressed. Update current target
+				local objx = PHYS_PLAYERS[1].body:getX()
+	            local objy = PHYS_PLAYERS[1].body:getY()
 
-					local objx = PHYS_PLAYERS[1].body:getX()
-		            local objy = PHYS_PLAYERS[1].body:getY()
+				if PHYS_PLAYERS[1].waypointx[1] == nil then
+					PHYS_PLAYERS[1].waypointx[1] = objx
+					PHYS_PLAYERS[1].waypointy[1] = objy
+				end
 
-					local adjamount = 25		-- for convenience and tuning
-					if keypressed == enum.keyDown then
-						PHYS_PLAYERS[1].waypointx[1] = objx
-						PHYS_PLAYERS[1].waypointy[1] = objy + adjamount
-					elseif keypressed == enum.keyLeft then
-						PHYS_PLAYERS[1].waypointx[1] = objx - adjamount
-						PHYS_PLAYERS[1].waypointy[1] = objy
-					elseif keypressed == enum.keyRight then
-						PHYS_PLAYERS[1].waypointx[1] = objx + adjamount
-						PHYS_PLAYERS[1].waypointy[1] = objy
-					elseif keypressed == enum.keyUp then
-						PHYS_PLAYERS[1].waypointx[1] = objx
-						PHYS_PLAYERS[1].waypointy[1] = objy - adjamount
-					end
+				local adjamount = 30 * dt		-- for convenience and tuning
+				if keypressed == enum.keyDown then
+					PHYS_PLAYERS[1].waypointy[1] = PHYS_PLAYERS[1].waypointy[1] + adjamount
+				elseif keypressed == enum.keyLeft then
+					PHYS_PLAYERS[1].waypointx[1] = PHYS_PLAYERS[1].waypointx[1] - adjamount
+				elseif keypressed == enum.keyRight then
+					PHYS_PLAYERS[1].waypointx[1] = PHYS_PLAYERS[1].waypointx[1] + adjamount
+				elseif keypressed == enum.keyUp then
+					PHYS_PLAYERS[1].waypointy[1] = PHYS_PLAYERS[1].waypointy[1] - adjamount
 				end
 			end
+
+			if PHYS_PLAYERS[1].hasBall then
+				-- see if QB is near waypoint
+				if PHYS_PLAYERS[1].waypointx[1] ~= nil then
+					local objx = PHYS_PLAYERS[1].body:getX()
+					local objy = PHYS_PLAYERS[1].body:getY()
+					local wpx = PHYS_PLAYERS[1].waypointx[1]
+					local wpy = PHYS_PLAYERS[1].waypointy[1]
+
+					-- get distance from QB to QB waypoint
+					local disttotarget = cf.getDistance(objx, objy, wpx, wpy)
+					if disttotarget >= 0.2 then
+						doUpdateLoop(dt)
+					else
+						-- QB is on the target with the ball. Pause the sim so user can think
+						-- do nothing (no update loop)
+					end
+				else
+					-- QB has no waypoint. do nothing until there is one
+				end
+			else
+				doUpdateLoop(dt)
+			end
+		else
+			doUpdateLoop(dt)
 		end
 
-        moveAllPlayers(dt)
-		moveFootball(dt)
-        checkForStateChange(dt)
+		cam:setZoom(ZOOMFACTOR)
+		cam:setPos(TRANSLATEX,	TRANSLATEY)
     end
-
-    world:update(dt) --this puts the world into motion
-    world:setCallbacks(beginContact, endContact, preSolve, postSolve)
-
-	cam:setZoom(ZOOMFACTOR)
-	cam:setPos(TRANSLATEX,	TRANSLATEY)
 end
-
 
 function stadium.loadButtons()
     -- call this from love.load()
