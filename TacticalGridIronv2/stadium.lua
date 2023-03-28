@@ -1071,9 +1071,9 @@ local function drawPlayers()
     end
 
     -- draw the QB target
-    if PHYS_PLAYERS[1].targetx ~= nil then
-        local drawx = PHYS_PLAYERS[1].targetx * SCALE
-        local drawy = PHYS_PLAYERS[1].targety * SCALE
+    if PHYS_PLAYERS[1].waypointx[1] ~= nil then
+        local drawx = PHYS_PLAYERS[1].waypointx[1] * SCALE
+        local drawy = PHYS_PLAYERS[1].waypointy[1] * SCALE
         love.graphics.setColor(1,1,0,1) -- yellow
         love.graphics.circle("line", drawx, drawy, 0.75 * SCALE)
     end
@@ -1300,26 +1300,24 @@ function stadium.update(dt)
 			if GAME_STATE == enum.gamestateInPlay then
 				local keypressed = getkeyPressed()		-- returns an enum
 				if keypressed ~= nil then
-					-- a key has been pressed. Current target is no longer relevant
-					PHYS_PLAYERS[1].waypointx[1] = nil
-					PHYS_PLAYERS[1].waypointy[1] = nil
-
+					-- a key has been pressed. Update current target
 					local objx = PHYS_PLAYERS[1].body:getX()
 		            local objy = PHYS_PLAYERS[1].body:getY()
 
-					local adjamount = 25		-- for convenience and tuning
+					if PHYS_PLAYERS[1].waypointx[1] == nil then
+						PHYS_PLAYERS[1].waypointx[1] = objx
+						PHYS_PLAYERS[1].waypointy[1] = objy
+					end
+
+					local adjamount = 30 * dt		-- for convenience and tuning
 					if keypressed == enum.keyDown then
-						PHYS_PLAYERS[1].waypointx[1] = objx
-						PHYS_PLAYERS[1].waypointy[1] = objy + adjamount
+						PHYS_PLAYERS[1].waypointy[1] = PHYS_PLAYERS[1].waypointy[1] + adjamount
 					elseif keypressed == enum.keyLeft then
-						PHYS_PLAYERS[1].waypointx[1] = objx - adjamount
-						PHYS_PLAYERS[1].waypointy[1] = objy
+						PHYS_PLAYERS[1].waypointx[1] = PHYS_PLAYERS[1].waypointx[1] - adjamount
 					elseif keypressed == enum.keyRight then
-						PHYS_PLAYERS[1].waypointx[1] = objx + adjamount
-						PHYS_PLAYERS[1].waypointy[1] = objy
+						PHYS_PLAYERS[1].waypointx[1] = PHYS_PLAYERS[1].waypointx[1] + adjamount
 					elseif keypressed == enum.keyUp then
-						PHYS_PLAYERS[1].waypointx[1] = objx
-						PHYS_PLAYERS[1].waypointy[1] = objy - adjamount
+						PHYS_PLAYERS[1].waypointy[1] = PHYS_PLAYERS[1].waypointy[1] - adjamount
 					end
 				end
 			end
