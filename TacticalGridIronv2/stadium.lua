@@ -6,9 +6,12 @@ local playcall_offense = 3 --!enum.playcallThrow
 local playcall_defense = 2 --!enum.playcallManOnMan
 local downNumber = 1
 local football = {}			-- contains the x/y of the football
+local playerTeamID			-- the team ID controlled by the player
+local pauseOn = false		-- can be invoked by player to stop time
+
+
 football.waypointx = {}
 football.waypointy = {}
-
 
 local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
 local DEFENSIVE_TIME, DEFENSIVE_SCORE
@@ -744,23 +747,27 @@ local function moveAllPlayers(dt)
 					if football.waypointx[1] == nil then
 						-- try to throw ball
 
-						-- pick a random player on same side that is not fallen down
-						local balltarget = nil
-						repeat
-							local rndnum = love.math.random(2, 6)	-- these are the only valid receivers
-							if PHYS_PLAYERS[rndnum].fallen then
-								rndnum = nil
-							else
-								balltarget = rndnum
-							end
-						until balltarget ~= nil		--! need to ensure this isn't and endless loop
-						football.waypointx[1] = PHYS_PLAYERS[balltarget].body:getX()
-						football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
-						PHYS_PLAYERS[1].hasBall = false
+						if OFFENSIVE_TEAMID ~= playerTeamID then
+							-- this is a bot QB that has run out of WP. Try to throw the ball
 
-						print("QB has thrown the ball")
+							-- pick a random player on same side that is not fallen down
+							local balltarget = nil
+							repeat
+								local rndnum = love.math.random(2, 6)	-- these are the only valid receivers
+								if PHYS_PLAYERS[rndnum].fallen then
+									rndnum = nil
+								else
+									balltarget = rndnum
+								end
+							until balltarget ~= nil		--! need to ensure this isn't and endless loop
+							football.waypointx[1] = PHYS_PLAYERS[balltarget].body:getX()
+							football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
+							PHYS_PLAYERS[1].hasBall = false
 
-
+							print("QB has thrown the ball")
+						else
+							-- this is a non-bot team. Do nothing
+						end
 					else
 						error()
 					end
@@ -818,7 +825,6 @@ local function moveAllPlayers(dt)
 		end
     end
 end
-
 local function endTheDown()
 	fun.playAudio(enum.soundWhistle, false, true)
 
@@ -937,6 +943,8 @@ local function drawStadium()
         end
         REFRESH_DB = false
         fbdb:close()
+
+		playerTeamID = fun.getPlayerTeamID()
 
         assert(OFF_RED ~= nil, strQuery)
         assert(DEF_RED ~= nil, strQuery)
@@ -1231,8 +1239,24 @@ local function checkForStateChange(dt)
 		GAME_STATE = enum.gamestateGameOver
 		endtheround(0)
 	end
+end
 
+local function getkeyPressed()
+	-- returns the key being pressed by the player
+	-- only returns legit keys and ignores non-legit
+	-- returns nil if no valid keys are pressed
 
+	if love.keyboard.isDown("kp8") then
+		return enum.keyUp
+	elseif love.keyboard.isDown("kp2") then
+		return enum.keyDown
+	elseif love.keyboard.isDown("kp4") then
+		return enum.keyLeft
+	elseif love.keyboard.isDown("kp6") then
+		return enum.keyRight
+	else
+		return nil
+	end
 end
 
 function stadium.draw()
@@ -1269,6 +1293,37 @@ function stadium.update(dt)
 
     if not REFRESH_DB then
         -- update gets called before draw so do NOT try to move players before they are initialised and drawn.
+
+		-- if team = user team and key press then set target for QB1
+		if OFFENSIVE_TEAMID == playerTeamID then		-- playerTeamID is set on drawStadium() i.e. on load.
+			if GAME_STATE == enum.gamestateInPlay then
+				local keypressed = getkeyPressed()		-- returns an enum
+				if keypressed ~= nil then
+					-- a key has been pressed. Current target is no longer relevant
+					PHYS_PLAYERS[1].waypointx[1] = nil
+					PHYS_PLAYERS[1].waypointy[1] = nil
+
+					local objx = PHYS_PLAYERS[1].body:getX()
+		            local objy = PHYS_PLAYERS[1].body:getY()
+
+					local adjamount = 25		-- for convenience and tuning
+					if keypressed == enum.keyDown then
+						PHYS_PLAYERS[1].waypointx[1] = objx
+						PHYS_PLAYERS[1].waypointy[1] = objy + adjamount
+					elseif keypressed == enum.keyLeft then
+						PHYS_PLAYERS[1].waypointx[1] = objx - adjamount
+						PHYS_PLAYERS[1].waypointy[1] = objy
+					elseif keypressed == enum.keyRight then
+						PHYS_PLAYERS[1].waypointx[1] = objx + adjamount
+						PHYS_PLAYERS[1].waypointy[1] = objy
+					elseif keypressed == enum.keyUp then
+						PHYS_PLAYERS[1].waypointx[1] = objx
+						PHYS_PLAYERS[1].waypointy[1] = objy - adjamount
+					end
+				end
+			end
+		end
+
         moveAllPlayers(dt)
 		moveFootball(dt)
         checkForStateChange(dt)
@@ -1280,6 +1335,7 @@ function stadium.update(dt)
 	cam:setZoom(ZOOMFACTOR)
 	cam:setPos(TRANSLATEX,	TRANSLATEY)
 end
+
 
 function stadium.loadButtons()
     -- call this from love.load()
