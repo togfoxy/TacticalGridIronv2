@@ -858,8 +858,6 @@ local function moveFootball(dt)
 		if disttotarget <= (throwspeed * dt) then
 			-- whole distance is travelled during this time step
 
-			GAME_STATE = enum.gamestateInPlay		-- move from airborne to in-play regardless of throw outcome
-
 			football.x = football.waypointx[1]
 			football.y = football.waypointy[1]
 
@@ -887,6 +885,7 @@ local function moveFootball(dt)
 				end
 			end
 			PHYS_PLAYERS[closestplayer].hasBall = true	--! factor in player too far away and fumble ball
+			GAME_STATE = enum.gamestateRunning		-- move from airborne to running regardless of throw outcome
 
 			if closestplayer > 11 then
 				-- turn over
@@ -1341,7 +1340,7 @@ function stadium.update(dt)
 
 					-- get distance from QB to QB waypoint
 					local disttotarget = cf.getDistance(objx, objy, wpx, wpy)
-					if disttotarget >= 0.2 then
+					if disttotarget >= 0.3 then
 						doUpdateLoop(dt)
 					else
 						-- QB is on the target with the ball. Pause the sim so user can think
