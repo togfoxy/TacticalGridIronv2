@@ -186,7 +186,7 @@ local function createPhysicsPlayers()
         if i <= (NumberOfPlayers / 2) then      -- attacker
             rndy = love.math.random(HalfwayY, BottomGoalY)
         else
-            rndy = love.math.random(TopGoalY + 30, HalfwayY)
+            rndy = love.math.random(TopGoalY + 40, HalfwayY + 10)
         end
 
         PHYS_PLAYERS[i] = {}
@@ -389,86 +389,43 @@ local function setInPlayTargetManOnMan(obj, carrierindex)
 	end
 end
 
-local function setFormingWaypoints(obj, index)
-    -- receives a single object and sets it's target
+local function setInPlayReceiverRunning()
+	-- called when a receiver has caught the ball and their is a crazy dash for the TD
 
-	-- clear old waypoints
-	obj.waypointx = {}
-	obj.waypointy = {}
-	-- player 1 = QB
-    if index == 1 then
-		table.insert(obj.waypointx, CentreLineX)	-- centre line
-		table.insert(obj.waypointy, ScrimmageY + 8)
-	elseif index == 2 then		-- WR (left closest to centre)
-		table.insert(obj.waypointx, CentreLineX - 14)		-- left 'wing'
-		table.insert(obj.waypointy, ScrimmageY + 2)			-- just behind scrimmage
-	elseif index == 3 then				-- WR (right)
-		table.insert(obj.waypointx, CentreLineX + 18)
-		table.insert(obj.waypointy, ScrimmageY + 2)
-	elseif index == 4 then		-- WR (left on outside)
-		table.insert(obj.waypointx, CentreLineX - 18)	 -- left 'wing')
-		table.insert(obj.waypointy, ScrimmageY + 2)		-- just behind scrimmage
-	elseif index == 5 then 		-- RB
-		table.insert(obj.waypointx, CentreLineX)
-		table.insert(obj.waypointy, ScrimmageY + 14)
-	elseif index == 6 then		-- TE (right side)
-		table.insert(obj.waypointx, CentreLineX + 13)
-		table.insert(obj.waypointy, ScrimmageY + 3)
-	elseif index == 7 then
-		table.insert(obj.waypointx, CentreLineX)
-		table.insert(obj.waypointy, ScrimmageY)
-	elseif index == 8 then		-- left guard
-		table.insert(obj.waypointx, CentreLineX - 4)
-		table.insert(obj.waypointy, ScrimmageY + 2)
-	elseif index == 9 then		-- right guard
-		table.insert(obj.waypointx, CentreLineX + 4)
-		table.insert(obj.waypointy, ScrimmageY + 2)
-	elseif index == 10 then		-- left tackle
-		table.insert(obj.waypointx, CentreLineX - 7)
-		table.insert(obj.waypointy, ScrimmageY + 3)
-	elseif index == 11 then		-- right tackle
-		table.insert(obj.waypointx, CentreLineX + 7)
-		table.insert(obj.waypointy, ScrimmageY + 3)
-	elseif index == 12 then		-- left tackle (left side of screen)
-		table.insert(obj.waypointx, CentreLineX - 2)
-		table.insert(obj.waypointy, ScrimmageY - 2)
-	elseif index == 13 then		-- right tackle
-		table.insert(obj.waypointx, CentreLineX + 2)
-		table.insert(obj.waypointy, ScrimmageY - 2)
-	elseif index == 14 then		-- left end
-		table.insert(obj.waypointx, CentreLineX - 6)
-		table.insert(obj.waypointy, ScrimmageY - 2)
-	elseif index == 15 then		-- right end
-		table.insert(obj.waypointx, CentreLineX + 6)
-		table.insert(obj.waypointy, ScrimmageY - 2)
-	elseif index == 16 then		-- inside LB
-		table.insert(obj.waypointx, CentreLineX)
-		table.insert(obj.waypointy, ScrimmageY - 11)
-	elseif index == 17 then		-- left outside LB
-		table.insert(obj.waypointx, CentreLineX - 15)
-		table.insert(obj.waypointy, ScrimmageY - 10)
-	elseif index == 18 then		-- left guard
-		table.insert(obj.waypointx, CentreLineX + 15)
-		table.insert(obj.waypointy, ScrimmageY - 10)
-	elseif index == 19 then		-- left CB
-		table.insert(obj.waypointx, CentreLineX - 18)
-		table.insert(obj.waypointy, ScrimmageY - 18)
-	elseif index == 20 then		-- left guard
-		table.insert(obj.waypointx, CentreLineX + 18)
-		table.insert(obj.waypointy, ScrimmageY - 18)
-	elseif index == 21 then		-- left safety
-		table.insert(obj.waypointx, CentreLineX - 4)
-		table.insert(obj.waypointy, ScrimmageY - 17)
-	elseif index == 22 then		-- right safety
-		table.insert(obj.waypointx, CentreLineX + 4)
-		table.insert(obj.waypointy, ScrimmageY - 17)
-    end
+	local ballcarrierx, ballcarriery = getCarrierXY()
+
+	for i = 1, NumberOfPlayers do
+		PHYS_PLAYERS[i].waypointx = {}
+		PHYS_PLAYERS[i].waypointy = {}
+
+		if ballcarrierx ~= nil then			-- this will be nil if the ball is airborne
+
+			if i <= 11 then
+				if PHYS_PLAYERS[i].hasBall then
+					-- this is the runner - run for TD
+					PHYS_PLAYERS[i].waypointx[1] = PHYS_PLAYERS[i].body:getX()
+					PHYS_PLAYERS[i].waypointy[1] = TopPostY
+				else
+					-- not the runner - move to protect the runner
+					PHYS_PLAYERS[i].waypointx[1] = ballcarrierx
+					PHYS_PLAYERS[i].waypointy[1] = ballcarriery - 10
+				end
+			else
+				-- get defense to intercept the runner
+				PHYS_PLAYERS[i].waypointx[1] = ballcarrierx
+				PHYS_PLAYERS[i].waypointy[1] = ballcarriery - 5
+			end
+		end
+	end
 end
 
 local function setInPlayWapointsThrow(obj, index)
+    -- used by offense team when QB is throwing
+    -- should only be called once when ball is put into play (snapped)
 	-- clear old waypoints
 	obj.waypointx = {}
 	obj.waypointy = {}
+
 	-- player 1 = QB
     if index == 1 then
 		if OFFENSIVE_TEAMID == playerTeamID then
@@ -511,92 +468,6 @@ local function setInPlayWapointsThrow(obj, index)
 	elseif index == 11 then		-- right tackle
 		table.insert(obj.waypointx, CentreLineX + 7)
 		table.insert(obj.waypointy, ScrimmageY - 2)
-	end
-end
-
-local function setInPlayWaypoints(obj, index, runnerindex, dt)
-    -- determine the target for the single obj
-    -- runnerindex might be nil on some calls but is okay because it's only used by players 12+
-	-- obj = the physical obj
-	-- index = index
-	-- runner index = the carrier with the ball
-
-    if obj.targettimer ~= nil then obj.targettimer = obj.targettimer - dt end
-
-    if obj.targettimer == nil or obj.targettimer <= 0 then
-        -- set new target
-        obj.targettimer = 0     -- only change targets every x seconds
-
-		if index <= 11 then
-			-- process offense team
-			if playcall_offense == enum.playcallRun then
-				setInPlayTargetRun(obj, index)		-- sets target for a single index
-			elseif playcall_offense == enum.playcallThrow then
-				setInPlayWapointsThrow(obj, index)
-			else
-				--! add more plays here
-			end
-		else
-			-- process defense team
-			if playcall_defense == enum.playcallManOnMan then
-				setInPlayTargetManOnMan(obj, runnerindex)
-			else
-				--! add more plays here
-				error()
-			end
-		end
-    end
-end
-
-local function setAllWaypoints(dt)
-    -- ensure every player has a destination to go to
-	-- is called as required - usually after a change in state
-
-    local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
-    for i = 1, NumberOfPlayers do
-        if PHYS_PLAYERS[i].hasBall then runnerindex = i end
-
-        if GAME_STATE == enum.gamestateForming then
-            if PHYS_PLAYERS[i].targetx == nil then
-				setFormingWaypoints(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
-            end
-        elseif GAME_STATE == enum.gamestateInPlay then
-			setInPlayWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
-		elseif GAME_STATE == enum.gamestateAirborne then
-			--! set all targets to the ball destination
-			--! there is already a sub. see if it fits here
-        end
-    end
-	-- print("Target for player #12 is " .. PHYS_PLAYERS[12].waypointx[1])
-end
-
-local function setInPlayReceiverRunning()
-	-- called when a receiver has caught the ball and their is a crazy dash for the TD
-
-	local ballcarrierx, ballcarriery = getCarrierXY()
-
-	for i = 1, NumberOfPlayers do
-		PHYS_PLAYERS[i].waypointx = {}
-		PHYS_PLAYERS[i].waypointy = {}
-
-		if ballcarrierx ~= nil then			-- this will be nil if the ball is airborne
-
-			if i <= 11 then
-				if PHYS_PLAYERS[i].hasBall then
-					-- this is the runner - run for TD
-					PHYS_PLAYERS[i].waypointx[1] = PHYS_PLAYERS[i].body:getX()
-					PHYS_PLAYERS[i].waypointy[1] = TopPostY
-				else
-					-- not the runner - move to protect the runner
-					PHYS_PLAYERS[i].waypointx[1] = ballcarrierx
-					PHYS_PLAYERS[i].waypointy[1] = ballcarriery - 10
-				end
-			else
-				-- get defense to intercept the runner
-				PHYS_PLAYERS[i].waypointx[1] = ballcarrierx
-				PHYS_PLAYERS[i].waypointy[1] = ballcarriery - 5
-			end
-		end
 	end
 end
 
@@ -740,53 +611,53 @@ local function moveAllPlayers(dt)
 
 			-- see if player has waypoints
 			if targetx == nil or targety == nil then
-				-- out of waypoints
-
-				-- if index = QB and QB has the ball and play = throw and ball has no waypoints then ...
-				if i == 1 and ballcarrier == 1 and playcall_offense == enum.playcallThrow then	-- QB has run out of waypoints
-					if football.waypointx[1] == nil then
-						-- try to throw ball
-
-						if OFFENSIVE_TEAMID ~= playerTeamID then
-							-- this is a bot QB that has run out of WP. Try to throw the ball
-
-							-- pick a random player on same side that is not fallen down
-							local balltarget = nil
-							repeat
-								local rndnum = love.math.random(2, 6)	-- these are the only valid receivers
-								if PHYS_PLAYERS[rndnum].fallen then
-									rndnum = nil
-								else
-									balltarget = rndnum
-								end
-							until balltarget ~= nil		--! need to ensure this isn't and endless loop
-							football.waypointx[1] = PHYS_PLAYERS[balltarget].body:getX()
-							football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
-							PHYS_PLAYERS[1].hasBall = false
-
-							GAME_STATE = enum.gamestateAirborne
-
-							print("QB has thrown the ball")
-						else
-							-- this is a non-bot team. Do nothing
-						end
-					else
-						error()
-					end
-				else
-					-- player has no waypoints. Probably because ball is thrown. Let code fall
-					-- down below to setInPlayReceiverRunning()
-				end
-
-				if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
-					PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
-					-- print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
-				end
-
-				if GAME_STATE == enum.gamestateInPlay and not PHYS_PLAYERS[1].hasBall then
-					-- set waypoints to the ball carrier
-					setInPlayReceiverRunning()
-				end
+				-- -- out of waypoints
+				--
+				-- -- if index = QB and QB has the ball and play = throw and ball has no waypoints then ...
+				-- if i == 1 and ballcarrier == 1 and playcall_offense == enum.playcallThrow then	-- QB has run out of waypoints
+				-- 	if football.waypointx[1] == nil then
+				-- 		-- try to throw ball
+				--
+				-- 		if OFFENSIVE_TEAMID ~= playerTeamID then
+				-- 			-- this is a bot QB that has run out of WP. Try to throw the ball
+				--
+				-- 			-- pick a random player on same side that is not fallen down
+				-- 			local balltarget = nil
+				-- 			repeat
+				-- 				local rndnum = love.math.random(2, 6)	-- these are the only valid receivers
+				-- 				if PHYS_PLAYERS[rndnum].fallen then
+				-- 					rndnum = nil
+				-- 				else
+				-- 					balltarget = rndnum
+				-- 				end
+				-- 			until balltarget ~= nil		--! need to ensure this isn't and endless loop
+				-- 			football.waypointx[1] = PHYS_PLAYERS[balltarget].body:getX()
+				-- 			football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
+				-- 			PHYS_PLAYERS[1].hasBall = false
+				--
+				-- 			GAME_STATE = enum.gamestateAirborne
+				--
+				-- 			print("QB has thrown the ball")
+				-- 		else
+				-- 			-- this is a non-bot team. Do nothing
+				-- 		end
+				-- 	else
+				-- 		error()
+				-- 	end
+				-- else
+				-- 	-- player has no waypoints. Probably because ball is thrown. Let code fall
+				-- 	-- down below to setInPlayReceiverRunning()
+				-- end
+				--
+				-- if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
+				-- 	PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
+				-- 	-- print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
+				-- end
+				--
+				-- if GAME_STATE == enum.gamestateInPlay and not PHYS_PLAYERS[1].hasBall then
+				-- 	-- set waypoints to the ball carrier
+				-- 	setInPlayReceiverRunning()
+				-- end
 			else
 				-- this player has a target. Move towards it if not fallen
 	            if not PHYS_PLAYERS[i].fallen then
@@ -816,14 +687,12 @@ local function moveAllPlayers(dt)
 			end
         end
 
-		if GAME_STATE == enum.gamestateInPlay then
-			-- set the ball x/y
+		-- update the football x/y so it aligns to the player holding it
+		if GAME_STATE == enum.gamestateInPlay and football.waypointx[1] == nil then
+			-- no waypoints set for football. That means it is being held
 			-- ballcarrier is set in the loop above
-			if football.waypointx[1] == nil then
-				-- no waypoints set for football. That means it is being held
-				football.x = PHYS_PLAYERS[ballcarrier].body:getX()
-				football.y = PHYS_PLAYERS[ballcarrier].body:getY()
-			end
+			football.x = PHYS_PLAYERS[ballcarrier].body:getX()
+			football.y = PHYS_PLAYERS[ballcarrier].body:getY()
 		end
     end
 end
@@ -955,7 +824,7 @@ local function drawStadium()
 
         createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
         GAME_STATE = enum.gamestateForming
-		setAllWaypoints(dt)
+		waypoints.setAllWaypoints(NumberOfPlayers, playcall_offense, playcall_defense, dt)		--! remove this call here if possible
         OFFENSIVE_TIME = 0
     end
 
@@ -1153,6 +1022,8 @@ local function resetFirstDown()
     downNumber = 1
 end
 
+
+
 local function checkForStateChange(dt)
 	-- looks for key events that will trigger a change in game state
 
@@ -1180,16 +1051,14 @@ local function checkForStateChange(dt)
         for i = 1, NumberOfPlayers do
             PHYS_PLAYERS[i].fixture:setSensor(false)
             PHYS_PLAYERS[i].gamestate = enum.gamestateInPlay
+
+			if i <= 11 then
+				setInPlayWapointsThrow(PHYS_PLAYERS[i], i)		-- set offensive routes just once when ball is snapped
+			end
 	    end
-		setAllWaypoints(dt)		-- sets all waypoints for all players
-
-		for i = 12, 22 do
-			print("Targetx for player " .. i .. " is " .. PHYS_PLAYERS[i].waypointx[1])
-
-		end
 
 		fun.playAudio(enum.soundGo, false, true)
-        -- print("all sensors are now turned on")
+
     elseif GAME_STATE == enum.gamestateInPlay then
         -- check for a number of conditions
 
@@ -1232,7 +1101,8 @@ local function checkForStateChange(dt)
             -- reset for next down
             GAME_STATE = enum.gamestateForming
             resetFallenPlayers()
-			setAllWaypoints(dt)
+			--! check if this call here is necessary
+			waypoints.setAllWaypoints(NumberOfPlayers, playcall_offense, playcall_defense, dt)
         end
     end
 
@@ -1282,6 +1152,7 @@ local function doUpdateLoop(dt)
 		OFFENSIVE_TIME = OFFENSIVE_TIME + dt
 	end
 
+	waypoints.setAllWaypoints(NumberOfPlayers, playcall_offense, playcall_defense, dt)
 	moveAllPlayers(dt)
 	moveFootball(dt)
 	checkForStateChange(dt)

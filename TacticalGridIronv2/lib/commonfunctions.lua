@@ -101,6 +101,11 @@ function addVectorToPoint(x,y,headingdegrees,distance)
 	return (x + xdelta), (y + ydelta)		-- 0 = NORTH!
 end
 
+function getInverseSqrtDistance(x1, y1, x2, y2)
+	-- forgotten what this does
+	return 1/math.sqrt(((x2-x1)^2)+((y2-y1)^2))
+end
+
 function getGUID()
 	local random = math.random
     local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'

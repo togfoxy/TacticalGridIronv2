@@ -28,6 +28,7 @@ require 'leaguestatus'
 require 'tradeplayers'
 require 'trainplayers'
 ps = require 'playerstats'
+require 'waypoints'				-- a seperate module that contains all the logic for waypoints
 
 require 'database'
 fun = require 'functions'
