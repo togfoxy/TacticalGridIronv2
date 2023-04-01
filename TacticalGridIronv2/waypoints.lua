@@ -154,32 +154,41 @@ local function setWRWaypoints(obj, index, runnerindex, dt)      --! check that a
                 obj.waypointy[1] = ScrimmageY - 5
             else
                 -- determine closest enemy and move away from it
-                local enemyindex, _ = determineClosestObject(index, "", false)
-                if enemyindex > 1 then
+                local enemyindex, enemydistance = determineClosestObject(index, "", false)
+				print("Dist to enemy is: " .. enemydistance)
+                if enemyindex > 1 and enemydistance < 7 then
                     local enemyx1 = PHYS_PLAYERS[enemyindex].body:getX()
                     local enemyy1 = PHYS_PLAYERS[enemyindex].body:getY()
-                    local enemyx2
-                    local enemyy2
-                    if PHYS_PLAYERS[enemyindex].waypointx[1] == nil then
-                        enemyx2 = enemyx1       -- enemy is still and has no vector
-                        enemyy2 = enemyy1
-                    else
-                        -- enemy vector = waypoint1 - current x/y
-                        enemyx2 = PHYS_PLAYERS[enemyindex].waypointx[1] - enemyx1
-                        enemyy2 = PHYS_PLAYERS[enemyindex].waypointy[1] - enemyy1
-                    end
 
-                    -- get avoidance vector and make that the wp
-                    -- player has no wp so player vector is 0, 0
-                    obj.waypointx[1], obj.waypointy[1] = cf.subtractVectors(0, 0, enemyx2, enemyy2)
+					local Scale1 = cf.getInverseSqrtDistance(objx, objy, enemyx1, enemyy1)
 
-                    -- ensure new avoidance wp is in bounds
-                    if obj.waypointx[1] < LeftLineX then obj.waypointx[1] = LeftLineX + 5 end
-                    if obj.waypointx[1] > RightLineX then obj.waypointx[1] = RightLineX - 5 end
-                    if obj.waypointy[1] > objy then obj.waypointx[1] = objy - 2 end
-                    if obj.waypointy[1] < TopPostY then obj.waypointx[1] = TopPostY end
+					-- Normalise the scales
+					local TotalScale = Scale1
+					Scale1 = Scale1/TotalScale
+
+					-- apply avoidance vector for closest player
+					-- scale the vector before applying it
+					local X1scaled,Y1scaled = cf.scaleVector(enemyx1, enemyy1, Scale1)
+
+					-- apply this avoidance vector to the current target
+					local finalvectorX,finalvectorY = cf.subtractVectors(objx, objy, X1scaled, Y1scaled)
+
+					-- set target to that vector
+					obj.waypointx[1] = objx + finalvectorX
+					obj.waypointy[1] = objy + finalvectorY
+
+					-- debugging
+					if index == 3 then
+						print("WR xy is: " .. cf.round(objx), cf.round(objy))
+						print("Enemy xy is: " .. cf.round(enemyx1), cf.round(enemyy1))
+						print("WR new vector is: " .. finalvectorX, finalvectorY)
+						print("Units new wp is: " .. obj.waypointx[1], obj.waypointy[1])
+						print("*********")
+					end
+
                 else
-                    error("208: enemy not found")
+					-- no enemy found or no enemy close. Do nothing.
+
                 end
             end
         else
@@ -387,11 +396,11 @@ local function setWaypoints(obj, index, runnerindex, dt)
 
     elseif index == 19 then
 
-    elseif index == 19 then
+    elseif index == 20 then
 
-    elseif index == 19 then
+    elseif index == 21 then
 
-    elseif index == 19 then
+    elseif index == 22 then
 
     end
 end
@@ -409,18 +418,29 @@ function waypoints.setAllWaypoints(numofplayers, fb, pc_offense, pc_defense, dt)
 
     local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
     for i = 1, NumberOfPlayers do
-        if PHYS_PLAYERS[i].hasBall then runnerindex = i end
+		if not PHYS_PLAYERS[i].fallen then
 
-        if GAME_STATE == enum.gamestateForming and PHYS_PLAYERS[i].targetx == nil then
-			setFormingWaypoints(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
-        elseif GAME_STATE == enum.gamestateInPlay then		-- QB still has the ball
-			setWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
-		elseif GAME_STATE == enum.gamestateAirborne then
-			--! set all targets to the ball destination
-			--! there is already a sub. see if it fits here
-        elseif GAME_STATE == enum.gamestateRunning then
-            --!
-        end
+	        if PHYS_PLAYERS[i].hasBall then runnerindex = i end
+
+	        if GAME_STATE == enum.gamestateForming and PHYS_PLAYERS[i].targetx == nil then
+				setFormingWaypoints(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
+	        elseif GAME_STATE == enum.gamestateInPlay then		-- QB still has the ball
+				setWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
+			elseif GAME_STATE == enum.gamestateAirborne then
+				--! set all targets to the ball destination
+				--! there is already a sub. see if it fits here
+	        elseif GAME_STATE == enum.gamestateRunning then
+	            --!
+	        end
+
+			--! need to cycle through every non-fallen unit and ensure wp is inside the field
+
+
+		else
+			-- unit fallen so do nothing
+			PHYS_PLAYERS[i].waypointx = {}
+			PHYS_PLAYERS[i].waypointy = {}
+		end
     end
 	-- print("Target for player #12 is " .. PHYS_PLAYERS[12].waypointx[1])
 end

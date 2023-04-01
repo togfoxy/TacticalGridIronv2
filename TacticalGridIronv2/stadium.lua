@@ -611,73 +611,25 @@ local function moveAllPlayers(dt)
 
 			-- see if player has waypoints
 			if targetx == nil or targety == nil then
-				-- -- out of waypoints
-				--
-				-- -- if index = QB and QB has the ball and play = throw and ball has no waypoints then ...
-				-- if i == 1 and ballcarrier == 1 and playcall_offense == enum.playcallThrow then	-- QB has run out of waypoints
-				-- 	if football.waypointx[1] == nil then
-				-- 		-- try to throw ball
-				--
-				-- 		if OFFENSIVE_TEAMID ~= playerTeamID then
-				-- 			-- this is a bot QB that has run out of WP. Try to throw the ball
-				--
-				-- 			-- pick a random player on same side that is not fallen down
-				-- 			local balltarget = nil
-				-- 			repeat
-				-- 				local rndnum = love.math.random(2, 6)	-- these are the only valid receivers
-				-- 				if PHYS_PLAYERS[rndnum].fallen then
-				-- 					rndnum = nil
-				-- 				else
-				-- 					balltarget = rndnum
-				-- 				end
-				-- 			until balltarget ~= nil		--! need to ensure this isn't and endless loop
-				-- 			football.waypointx[1] = PHYS_PLAYERS[balltarget].body:getX()
-				-- 			football.waypointy[1] = PHYS_PLAYERS[balltarget].body:getY()
-				-- 			PHYS_PLAYERS[1].hasBall = false
-				--
-				-- 			GAME_STATE = enum.gamestateAirborne
-				--
-				-- 			print("QB has thrown the ball")
-				-- 		else
-				-- 			-- this is a non-bot team. Do nothing
-				-- 		end
-				-- 	else
-				-- 		error()
-				-- 	end
-				-- else
-				-- 	-- player has no waypoints. Probably because ball is thrown. Let code fall
-				-- 	-- down below to setInPlayReceiverRunning()
-				-- end
-				--
-				-- if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
-				-- 	PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
-				-- 	-- print("Setting player " .. i .. " to ready for snap. TargetX = " .. tostring(targetx))
-				-- end
-				--
-				-- if GAME_STATE == enum.gamestateInPlay and not PHYS_PLAYERS[1].hasBall then
-				-- 	-- set waypoints to the ball carrier
-				-- 	setInPlayReceiverRunning()
-				-- end
+				-- do nothing as there are no waypoints
 			else
 				-- this player has a target. Move towards it if not fallen
 	            if not PHYS_PLAYERS[i].fallen then
 
-	                -- get distance to target
-	                local disttotarget = cf.getDistance(objx, objy, targetx, targety)		-- actually waypoints
+	                -- get distance to waypoint
+	                local disttotarget = cf.getDistance(objx, objy, targetx, targety)
 
 	                -- see if arrived
-	                if disttotarget <=  0.1 then
+	                if disttotarget <=  0.3 then
 	                    -- arrived
-
 	                    if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
 	                        PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
-						elseif PHYS_PLAYERS[i].gamestate == enum.gamestateInPlay then
-							-- in play and reached waypoint. Remove this waypoint.
-							table.remove(PHYS_PLAYERS[i].waypointx, 1)
-							table.remove(PHYS_PLAYERS[i].waypointy, 1)
-							-- print("Removing waypoint for player #" .. i)
-	                    end
-	                    --! put other game states here
+						end
+
+						-- Remove this waypoint.
+						table.remove(PHYS_PLAYERS[i].waypointx, 1)
+						table.remove(PHYS_PLAYERS[i].waypointy, 1)
+
 	                else
 	                    -- player not arrived
 						vectorMovePlayer(PHYS_PLAYERS[i], dt)
@@ -688,20 +640,13 @@ local function moveAllPlayers(dt)
         end
 
 		-- update the football x/y so it aligns to the player holding it
-		if GAME_STATE == enum.gamestateInPlay and football.waypointx[1] == nil then
+		if (GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateRunning) and football.waypointx[1] == nil then
 			-- no waypoints set for football. That means it is being held
 			-- ballcarrier is set in the loop above
 			football.x = PHYS_PLAYERS[ballcarrier].body:getX()
 			football.y = PHYS_PLAYERS[ballcarrier].body:getY()
 		end
     end
-end
-
-local function endTheDown()
-	fun.playAudio(enum.soundWhistle, false, true)
-
-	downNumber = downNumber + 1
-	deadBallTimer = 3       -- three second pause before resetting
 end
 
 local function moveFootball(dt)
@@ -783,6 +728,13 @@ local function moveFootball(dt)
 	else
 		-- print("Football has no target")
 	end
+end
+
+local function endTheDown()
+	fun.playAudio(enum.soundWhistle, false, true)
+
+	downNumber = downNumber + 1
+	deadBallTimer = 3       -- three second pause before resetting
 end
 
 local function drawStadium()
@@ -896,17 +848,23 @@ local function drawPlayers()
         objradius = objradius * SCALE
 
         -- draw player
+		local alpha
+		if PHYS_PLAYERS[i].fallen then
+			alpha = 0.5
+		else
+			alpha = 1
+		end
         if i <= (NumberOfPlayers / 2) then
             -- offense
-            love.graphics.setColor(OFF_RED/255, OFF_GREEN/255, OFF_BLUE/255, 1)
+            love.graphics.setColor(OFF_RED/255, OFF_GREEN/255, OFF_BLUE/255, alpha)
         else
             -- defense
-            love.graphics.setColor(DEF_RED/255, DEF_GREEN/255, DEF_BLUE/255, 1)
+            love.graphics.setColor(DEF_RED/255, DEF_GREEN/255, DEF_BLUE/255, alpha)
         end
         love.graphics.circle("fill", objx, objy, objradius)
 
 		-- draw ball
-		if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne then
+		if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne or GAME_STATE == enum.gamestateRunning then
 			love.graphics.setColor(1,0,0,1)
 			love.graphics.draw(IMAGE[enum.imageFootball], football.x * SCALE, (football.y * SCALE) - 15, 0, 0.25, 0.25, 0, 0)
 		end
@@ -936,6 +894,15 @@ local function drawPlayers()
 		-- 	love.graphics.print(playervely, drawx, drawy + 7)
 		-- end
 
+		-- debugging
+		if i == 3 then
+			-- draw the waypoint
+			if PHYS_PLAYERS[i].waypointx[1] ~= nil then
+				local x2 = PHYS_PLAYERS[i].waypointx[1] * SCALE
+				local y2 = PHYS_PLAYERS[i].waypointy[1] * SCALE
+				love.graphics.line(objx, objy, x2, y2)
+			end
+		end
     end
 
     -- draw the QB target
@@ -988,11 +955,16 @@ local function beginContact(a, b, coll)
 	            if love.math.random(0, 100) > abalance then
 	                PHYS_PLAYERS[aindex].fallen = true
 	                PHYS_PLAYERS[aindex].fixture:setSensor(true)
+					PHYS_PLAYERS[aindex].waypointx = {}
+					PHYS_PLAYERS[aindex].waypointy = {}
 	            end
 
 	            if love.math.random(0, 100) > bbalance then
 	                PHYS_PLAYERS[bindex].fallen = true
 	                PHYS_PLAYERS[bindex].fixture:setSensor(true)
+					PHYS_PLAYERS[bindex].waypointx = {}
+					PHYS_PLAYERS[bindex].waypointy = {}
+
 	            end
 			end
         else
@@ -1021,8 +993,6 @@ local function resetFirstDown()
     if FirstDownMarkerY < TopGoalY then FirstDownMarkerY = TopGoalY end
     downNumber = 1
 end
-
-
 
 local function checkForStateChange(dt)
 	-- looks for key events that will trigger a change in game state
