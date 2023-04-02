@@ -520,8 +520,7 @@ local function drawStadium()
 
         createPhysicsPlayers(OFFENSIVE_TEAMID, DEFENSIVE_TEAMID)      --! need to destroy these things when leaving the scene
         GAME_STATE = enum.gamestateForming
-		waypoints.setAllWaypoints(NumberOfPlayers, playcall_offense, playcall_defense, dt)		--! remove this call here if possible
-        OFFENSIVE_TIME = 0
+		OFFENSIVE_TIME = 0
     end
 
     -- top goal
@@ -816,7 +815,7 @@ local function checkForStateChange(dt)
             GAME_STATE = enum.gamestateForming
             resetFallenPlayers()
 			--! check if this call here is necessary
-			waypoints.setAllWaypoints(NumberOfPlayers, playcall_offense, playcall_defense, dt)
+			waypoints.setAllWaypoints(NumberOfPlayers, playerTeamID, playcall_offense, playcall_defense, dt)		--! remove this line if not needed
         end
     end
 
@@ -866,7 +865,7 @@ local function doUpdateLoop(dt)
 		OFFENSIVE_TIME = OFFENSIVE_TIME + dt
 	end
 
-	waypoints.setAllWaypoints(NumberOfPlayers, playcall_offense, playcall_defense, dt)
+	waypoints.setAllWaypoints(NumberOfPlayers, playerTeamID, playcall_offense, playcall_defense, dt)
 	moveAllPlayers(dt)
 	moveFootball(dt)
 	checkForStateChange(dt)
@@ -902,7 +901,9 @@ function stadium.update(dt)
 					PHYS_PLAYERS[1].waypointy[1] = objy
 				end
 
-				local adjamount = 30 * dt		-- for convenience and tuning
+				print("QB WP1 was " .. PHYS_PLAYERS[1].waypointx[1], PHYS_PLAYERS[1].waypointy[1] )
+
+				local adjamount = 60 * dt		-- for convenience and tuning
 				if keypressed == enum.keyDown then
 					PHYS_PLAYERS[1].waypointy[1] = PHYS_PLAYERS[1].waypointy[1] + adjamount
 				elseif keypressed == enum.keyLeft then
@@ -912,6 +913,7 @@ function stadium.update(dt)
 				elseif keypressed == enum.keyUp then
 					PHYS_PLAYERS[1].waypointy[1] = PHYS_PLAYERS[1].waypointy[1] - adjamount
 				end
+				print("QB WP1 is now " .. PHYS_PLAYERS[1].waypointx[1], PHYS_PLAYERS[1].waypointy[1] )
 			end
 
 			if PHYS_PLAYERS[1].hasBall then

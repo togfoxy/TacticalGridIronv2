@@ -88,7 +88,6 @@ function love.wheelmoved(x, y)
 
 end
 
-
 function love.load()
 
 	res.init({width = 1920, height = 1080, mode = 3})

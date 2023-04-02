@@ -101,6 +101,7 @@ function waypoints.setInPlayWapointsThrow(obj, index)
 
 	-- player 1 = QB
     if index == 1 then
+		print(OFFENSIVE_TEAMID, playerTeamID)
 		if OFFENSIVE_TEAMID == playerTeamID then
 			-- do nothing
 		else
@@ -290,6 +291,7 @@ local function setRBWaypoints(obj, index, runnerindex, dt)      --! check that a
 				obj.waypointy[1] = enemyy1
 			else
 				--! no enemy left?!?!  Probably do nothing
+				print("RB doing nothing")
 			end
 		end
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
@@ -467,13 +469,14 @@ local function setWaypoints(obj, index, runnerindex, dt)
     end
 end
 
-function waypoints.setAllWaypoints(numofplayers, fb, pc_offense, pc_defense, dt)
+function waypoints.setAllWaypoints(numofplayers, ptid, fb, pc_offense, pc_defense, dt)
     -- ensure every player has a destination to go to
 	-- is called as required - usually after a change in state
 
-    -- GAME_STATE and PHYS_PLAYERS are globals
+    -- GAME_STATE, OFFENSIVE_TEAMID and PHYS_PLAYERS are globals
 
     NumberOfPlayers = numofplayers
+	playerTeamID = ptid
     playcall_offense = pc_offense
     playcall_offense = pc_defense
     football = fb
