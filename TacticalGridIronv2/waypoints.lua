@@ -16,53 +16,6 @@ local playcall_defense
 
 local NumberOfPlayers
 
-local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
-	-- receives the player index in question and the target type string (eg "WR") and finds the closest enemy player of that type
-	-- enemytype can be an empty string ("") which will search for ANY type
-	-- bolCheckOwnTeam = false means scan only the enemy
-	-- will not target fallen players
-	-- returns two values:
-		-- returns (zero, 1000) if none found
-	    -- returns (index, dist) if an object is found. Index is (1 -> 22)
-
-	local myclosestdist = 1000
-	local myclosesttarget = 0
-
-	local currentplayerX = PHYS_PLAYERS[playernum].body:getX()
-	local currentplayerY = PHYS_PLAYERS[playernum].body:getY()
-
-	-- set up loop to scan opposing team or the whole team
-	if bolCheckOwnTeam then
-		a = 1
-		b = NumberOfPlayers
-	else
-		if playernum > (NumberOfPlayers / 2) then
-			a = 1
-			b = NumberOfPlayers / 2
-		else
-			a = (NumberOfPlayers / 2) + 1
-			b = NumberOfPlayers
-		end
-	end
-	for i = a,b do
-		if not PHYS_PLAYERS[i].fallen then
-			if PHYS_PLAYERS[i].positionletters == enemytype or enemytype == "" then
-				-- determine distance
-				local thisdistance = cf.getDistance(currentplayerX, currentplayerY, PHYS_PLAYERS[i].body:getX(), PHYS_PLAYERS[i].body:getY())
-
-				if thisdistance < myclosestdist then
-					-- found a closer target. Make that one the focuse
-					myclosesttarget = i
-					myclosestdist = thisdistance
-					--print("Just set closest target for player " .. playernum .. " to " .. i)
-				end
-			end
-		end
-	end		-- for loop
-
-	return myclosesttarget, myclosestdist
-end
-
 local function setFormingWaypoints(obj, index)
     -- receives a single object and sets it's target
 
@@ -137,6 +90,105 @@ local function setFormingWaypoints(obj, index)
 		table.insert(obj.waypointx, CentreLineX + 4)
 		table.insert(obj.waypointy, ScrimmageY - 17)
     end
+end
+
+function waypoints.setInPlayWapointsThrow(obj, index)
+    -- used by offense team when QB is throwing
+    -- should only be called once when ball is put into play (snapped)
+	-- clear old waypoints
+	obj.waypointx = {}
+	obj.waypointy = {}
+
+	-- player 1 = QB
+    if index == 1 then
+		if OFFENSIVE_TEAMID == playerTeamID then
+			-- do nothing
+		else
+			table.insert(obj.waypointx, CentreLineX)	-- centre line
+			table.insert(obj.waypointy, ScrimmageY + 11)
+		end
+	elseif index == 2 then		-- WR (left closest to centre)
+		table.insert(obj.waypointx, CentreLineX - 14)		-- left 'wing'
+		table.insert(obj.waypointy, ScrimmageY - 12)
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY - 12)
+	elseif index == 3 then				-- WR (right)
+		table.insert(obj.waypointx, CentreLineX + 18)
+		table.insert(obj.waypointy, ScrimmageY - 17)
+	elseif index == 4 then		-- WR (left on outside)
+		table.insert(obj.waypointx, CentreLineX - 18)	 -- left 'wing')
+		table.insert(obj.waypointy, ScrimmageY - 17)		-- just behind scrimmage
+	elseif index == 5 then 		-- RB
+		table.insert(obj.waypointx, CentreLineX - 5)
+		table.insert(obj.waypointy, ScrimmageY + 10)
+	elseif index == 6 then		-- TE (right side)
+		table.insert(obj.waypointx, CentreLineX + 13)
+		table.insert(obj.waypointy, ScrimmageY - 8)
+		table.insert(obj.waypointx, CentreLineX + 5)
+		table.insert(obj.waypointy, ScrimmageY - 18)
+	elseif index == 7 then		-- centre
+		table.insert(obj.waypointx, CentreLineX)
+		table.insert(obj.waypointy, ScrimmageY - 5)
+	elseif index == 8 then		-- left guard
+		table.insert(obj.waypointx, CentreLineX - 4)
+		table.insert(obj.waypointy, ScrimmageY - 3)
+	elseif index == 9 then		-- right guard
+		table.insert(obj.waypointx, CentreLineX + 4)
+		table.insert(obj.waypointy, ScrimmageY - 3)
+	elseif index == 10 then		-- left tackle
+		table.insert(obj.waypointx, CentreLineX - 7)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	elseif index == 11 then		-- right tackle
+		table.insert(obj.waypointx, CentreLineX + 7)
+		table.insert(obj.waypointy, ScrimmageY - 2)
+	end
+end
+
+local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
+	-- receives the player index in question and the target type string (eg "WR") and finds the closest enemy player of that type
+	-- enemytype can be an empty string ("") which will search for ANY type
+	-- bolCheckOwnTeam = false means scan only the enemy
+	-- will not target fallen players
+	-- returns two values:
+		-- returns (zero, 1000) if none found
+	    -- returns (index, dist) if an object is found. Index is (1 -> 22)
+
+	local myclosestdist = 1000
+	local myclosesttarget = 0
+
+	local currentplayerX = PHYS_PLAYERS[playernum].body:getX()
+	local currentplayerY = PHYS_PLAYERS[playernum].body:getY()
+
+	-- set up loop to scan opposing team or the whole team
+	if bolCheckOwnTeam then
+		a = 1
+		b = NumberOfPlayers
+	else
+		if playernum > (NumberOfPlayers / 2) then
+			a = 1
+			b = NumberOfPlayers / 2
+		else
+			a = (NumberOfPlayers / 2) + 1
+			b = NumberOfPlayers
+		end
+	end
+	for i = a,b do
+		if not PHYS_PLAYERS[i].fallen then
+			if PHYS_PLAYERS[i].positionletters == enemytype or enemytype == "" then
+				-- determine distance
+				local thisdistance = cf.getDistance(currentplayerX, currentplayerY, PHYS_PLAYERS[i].body:getX(), PHYS_PLAYERS[i].body:getY())
+
+				if thisdistance < myclosestdist then
+					-- found a closer target. Make that one the focuse
+					myclosesttarget = i
+					myclosestdist = thisdistance
+					--print("Just set closest target for player " .. playernum .. " to " .. i)
+				end
+			end
+		end
+	end		-- for loop
+
+	return myclosesttarget, myclosestdist
 end
 
 local function setWRWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
