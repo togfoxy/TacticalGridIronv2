@@ -15,6 +15,9 @@ local playcall_offense      -- set by stadium.lua in a super clumsy way
 local playcall_defense
 
 local NumberOfPlayers
+-- local football = {}
+-- football.waypointx = {}
+-- football.waypointy = {}
 
 local function setFormingWaypoints(obj, index)
     -- receives a single object and sets it's target
@@ -192,8 +195,38 @@ local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
 	return myclosesttarget, myclosestdist
 end
 
-local function setWRWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
 
+local function setWPtoFootballWP(obj, index, runnerindex)
+	-- move to the expected football destination
+	obj.waypointx = {}
+	obj.waypointy = {}
+	obj.waypointx[1] = football.waypointx[1]
+	obj.waypointy[1] = football.waypointy[1]
+end
+
+local function setWPtoProtectRunner(obj, index, runnerindex)
+	if runnerindex == index then
+		-- this object has the ball - run for goal!!
+		obj.waypointx = {}
+		obj.waypointy = {}
+		obj.waypointx[1] = obj.body:getX()
+		obj.waypointy[1] = TopPostY
+	else
+		-- target the enemy closest to the runner
+		assert(runnerindex > 0)
+		local enemyindex, _ = determineClosestObject(runnerindex, "", false)
+		if enemyindex > 1 then  -- check if enemy found
+			obj.waypointx = {}
+			obj.waypointy = {}
+			obj.waypointx[1] = PHYS_PLAYERS[enemyindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[enemyindex].body:getY()
+		else
+			error("212: enemy not found")
+		end
+	end
+end
+
+local function setWRWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
         if obj.waypointx[1] == nil then
             -- waypoints exhausted. Decide what to do next
@@ -247,30 +280,9 @@ local function setWRWaypoints(obj, index, runnerindex, dt)      --! check that a
             -- continue to execute waypoints (i.e. do nothing)
         end
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
-        obj.waypointx = {}
-        obj.waypointy = {}
-        obj.waypointx[1] = football.waypointx[1]
-        obj.waypointy[1] = football.waypointy[1]
+		setWPtoFootballWP(obj, index, runnerindex)
     elseif GAME_STATE == enum.gamestateRunning then     -- ball has been caught (maybe) and runner is running
-        if runnerindex == index then
-            -- this object has the ball - run for goal!!
-            obj.waypointx = {}
-            obj.waypointy = {}
-            obj.waypointx[1] = obj.body:getX()
-            obj.waypointy[1] = TopPostY
-        else
-            -- target the enemy closest to the runner
-            assert(runnerindex > 0)
-            local enemyindex, _ = determineClosestObject(runnerindex, "", false)
-            if enemyindex > 1 then  -- check if enemy found
-                obj.waypointx = {}
-                obj.waypointy = {}
-                obj.waypointx[1] = PHYS_PLAYERS[enemyindex].body:getX()
-                obj.waypointy[1] = PHYS_PLAYERS[enemyindex].body:getY()
-            else
-                error("237: enemy not found")
-            end
-        end
+		setWPtoProtectRunner(obj, index, runnerindex)	-- runs to goal if runner or moves to protect runner
     elseif GAME_STATE == enum.gamestateForming then
         --! migrate other function into here at some point
 
@@ -280,10 +292,10 @@ local function setWRWaypoints(obj, index, runnerindex, dt)      --! check that a
 end
 
 local function setRBWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
-    if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
+    if GAME_STATE == enum.gamestateInPlay then      		-- QB still has the ball
 		if obj.waypointx[1] == nil then
 			-- set wp to the closest enemy
-            local enemyindex, _ = determineClosestObject(index, "", false)
+            local enemyindex, _ = determineClosestObject(1, "", false)		-- 1 = QB
 			if enemyindex > 1 then
 				local enemyx1 = PHYS_PLAYERS[enemyindex].body:getX()
 				local enemyy1 = PHYS_PLAYERS[enemyindex].body:getY()
@@ -295,10 +307,13 @@ local function setRBWaypoints(obj, index, runnerindex, dt)      --! check that a
 			end
 		end
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
+		-- move to the expected football destination
+		setWPtoFootballWP(obj, index, runnerindex)
 
+		print("RB waypoints: " .. obj.waypointx[1], obj.waypointy[1])
 
     elseif GAME_STATE == enum.gamestateRunning then     -- ball has been caught (maybe) and runner is running
-
+		setWPtoProtectRunner(obj, index, runnerindex)	-- runs to goal if runner or moves to protect runner
     elseif GAME_STATE == enum.gamestateForming then
         --! migrate other function into here at some point
 
@@ -428,10 +443,10 @@ local function setWaypoints(obj, index, runnerindex, dt)
 
     if index == 1 then
 
-    elseif index == 2 or index == 3 or index == 4 then
+    elseif index == 2 or index == 3 or index == 4 then		-- WR
         setWRWaypoints(obj, index, runnerindex, dt)
-    elseif index == 5 then
-
+    elseif index == 5 then	-- RB
+		setRBWaypoints(obj, index, runnerindex, dt)
     elseif index == 6 then
 
     elseif index == 7 then
@@ -479,7 +494,6 @@ function waypoints.setAllWaypoints(numofplayers, ptid, fb, pc_offense, pc_defens
 	playerTeamID = ptid
     playcall_offense = pc_offense
     playcall_offense = pc_defense
-    football = fb
 
     local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
     for i = 1, NumberOfPlayers do
@@ -494,13 +508,12 @@ function waypoints.setAllWaypoints(numofplayers, ptid, fb, pc_offense, pc_defens
 			elseif GAME_STATE == enum.gamestateAirborne then
 				--! set all targets to the ball destination
 				--! there is already a sub. see if it fits here
+				setWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
 	        elseif GAME_STATE == enum.gamestateRunning then
 	            --!
 	        end
 
 			--! need to cycle through every non-fallen unit and ensure wp is inside the field
-
-
 		else
 			-- unit fallen so do nothing
 			PHYS_PLAYERS[i].waypointx = {}

@@ -5,11 +5,12 @@ local arr_seasonstatus, offensiveteamname, defensiveteamname, deadBallTimer
 local playcall_offense = 3 --!enum.playcallThrow
 local playcall_defense = 2 --!enum.playcallManOnMan
 local downNumber = 1
-local football = {}			-- contains the x/y of the football
+
 local playerTeamID			-- the team ID controlled by the player
 local pauseOn = false		-- can be invoked by player to stop time
 
-
+-- globals
+football = {}			-- contains the x/y of the football
 football.waypointx = {}
 football.waypointy = {}
 
@@ -213,6 +214,13 @@ local function createPhysicsPlayers()
 
 
     end
+end
+
+local function endTheDown()
+	fun.playAudio(enum.soundWhistle, false, true)
+
+	downNumber = downNumber + 1
+	deadBallTimer = 3       -- three second pause before resetting
 end
 
 local function endtheround(score)
@@ -472,13 +480,6 @@ local function moveFootball(dt)
 	else
 		-- print("Football has no target")
 	end
-end
-
-local function endTheDown()
-	fun.playAudio(enum.soundWhistle, false, true)
-
-	downNumber = downNumber + 1
-	deadBallTimer = 3       -- three second pause before resetting
 end
 
 local function drawStadium()
@@ -901,9 +902,9 @@ function stadium.update(dt)
 					PHYS_PLAYERS[1].waypointy[1] = objy
 				end
 
-				print("QB WP1 was " .. PHYS_PLAYERS[1].waypointx[1], PHYS_PLAYERS[1].waypointy[1] )
+				-- print("QB WP1 was " .. PHYS_PLAYERS[1].waypointx[1], PHYS_PLAYERS[1].waypointy[1] )
 
-				local adjamount = 60 * dt		-- for convenience and tuning
+				local adjamount = 60 * dt		-- for convenience and tuning. Less than 60 doesn't work for some reason
 				if keypressed == enum.keyDown then
 					PHYS_PLAYERS[1].waypointy[1] = PHYS_PLAYERS[1].waypointy[1] + adjamount
 				elseif keypressed == enum.keyLeft then
@@ -913,7 +914,7 @@ function stadium.update(dt)
 				elseif keypressed == enum.keyUp then
 					PHYS_PLAYERS[1].waypointy[1] = PHYS_PLAYERS[1].waypointy[1] - adjamount
 				end
-				print("QB WP1 is now " .. PHYS_PLAYERS[1].waypointx[1], PHYS_PLAYERS[1].waypointy[1] )
+				-- print("QB WP1 is now " .. PHYS_PLAYERS[1].waypointx[1], PHYS_PLAYERS[1].waypointy[1] )
 			end
 
 			if PHYS_PLAYERS[1].hasBall then
