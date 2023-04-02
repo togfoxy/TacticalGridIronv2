@@ -32,6 +32,7 @@ function enums.load()
     enum.gamestateDeadBall = 4
     enum.gamestateGameOver = 5
     enum.gamestateAirborne = 6
+    enum.gamestateRunning = 7
 
     enum.playcallRun = 1
     enum.playcallManOnMan = 2
