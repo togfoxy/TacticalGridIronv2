@@ -184,7 +184,7 @@ local function createPhysicsPlayers()
     for i = 1, NumberOfPlayers do
         rndx = love.math.random(LeftLineX, RightLineX)
         if i <= (NumberOfPlayers / 2) then      -- attacker
-            rndy = love.math.random(HalfwayY, BottomGoalY)
+            rndy = love.math.random(FirstDownMarkerY, BottomGoalY)
         else
             rndy = love.math.random(TopGoalY + 40, HalfwayY + 10)
         end
@@ -214,8 +214,6 @@ local function createPhysicsPlayers()
 
     end
 end
-
-
 
 local function endtheround(score)
     -- end the game
@@ -875,7 +873,6 @@ local function doUpdateLoop(dt)
 
 	world:update(dt) --this puts the world into motion
     world:setCallbacks(beginContact, endContact, preSolve, postSolve)
-
 end
 
 function stadium.update(dt)

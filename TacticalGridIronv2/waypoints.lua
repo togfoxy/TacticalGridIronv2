@@ -207,7 +207,6 @@ local function setWRWaypoints(obj, index, runnerindex, dt)      --! check that a
             else
                 -- determine closest enemy and move away from it
                 local enemyindex, enemydistance = determineClosestObject(index, "", false)
-				print("Dist to enemy is: " .. enemydistance)
                 if enemyindex > 1 and enemydistance < 7 then
                     local enemyx1 = PHYS_PLAYERS[enemyindex].body:getX()
                     local enemyy1 = PHYS_PLAYERS[enemyindex].body:getY()
@@ -281,7 +280,18 @@ end
 
 local function setRBWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
-
+		if obj.waypointx[1] == nil then
+			-- set wp to the closest enemy
+            local enemyindex, _ = determineClosestObject(index, "", false)
+			if enemyindex > 1 then
+				local enemyx1 = PHYS_PLAYERS[enemyindex].body:getX()
+				local enemyy1 = PHYS_PLAYERS[enemyindex].body:getY()
+				obj.waypointx[1] = enemyx1
+				obj.waypointy[1] = enemyy1
+			else
+				--! no enemy left?!?!  Probably do nothing
+			end
+		end
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
 
 
