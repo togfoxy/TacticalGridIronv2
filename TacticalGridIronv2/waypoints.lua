@@ -363,14 +363,15 @@ local function setOffenseRowWaypoints(obj, index, runnerindex, dt)      --! chec
 			--! all of this next bit doesn't work so well
 			-- formula for X placement: x coord = zone offset * (i-1) + zonesize
 			-- this means space the players 'zonesize' apart, but then place them in the middle of that zone (offset)
-			local zoneSize = 20
-			zoneSize = zoneSize / numofactiveunits	-- zoneSize yards of front row shared between all active front row players
-			local zoneSizeOffset = zoneSize / 2		-- this positions the player in the middle of the zone
+			local zoneSize = 20						-- total 'frontage' that neesd protecting (metres)
+			zoneSize = zoneSize / numofactiveunits	-- zoneSize yards of front row shared between all active front row players (e.g. 20 / 5)
+			local zoneSizeOffset = zoneSize / 2		-- this positions the player in the middle of the zone ( e.g. 4 / 2)
 
-
-			local startOfFront = CentreLineX - (zoneSize/2)		-- front zone is x yards wide so start half the distance from the centre
+			-- zone is x yards wide so start half the distance from where the QB is
+			local startOfFront = PHYS_PLAYERS[1].body:getX() - (zoneSize/2)		-- e.g. centreline - (20 / 2)
 
 			-- cycle through the five units and assign a zone/x value
+			local zoneNumber = 1		-- track the next zone
 			for i = 1,5 do
 				local pnum						-- index, except index is already used as input parameter
 				if i == 1 then pnum = 10 end	-- sadly, we can't cycle through 7 -> 11. It needs to be left side then centre then right side
@@ -382,10 +383,9 @@ local function setOffenseRowWaypoints(obj, index, runnerindex, dt)      --! chec
 				PHYS_PLAYERS[pnum].waypointx = {}
 				PHYS_PLAYERS[pnum].waypointy = {}
 
-				local zoneNumber = 1		-- track the next zone
-				if not PHYS_PLAYERS[pnum].fallen then
-					PHYS_PLAYERS[pnum].waypointx[1] = (startOfFront + zoneSizeOffset + (zoneSize * (zoneNumber - 1 )))
-					PHYS_PLAYERS[pnum].waypointy[1] = PHYS_PLAYERS[1].body:getY() - (10)		-- move in front of QB and block
+				if not PHYS_PLAYERS[pnum].fallen then		--! probably a redundant line
+					PHYS_PLAYERS[pnum].waypointx[1] = cf.round((startOfFront + zoneSizeOffset + (zoneSize * (zoneNumber - 1 ))))
+					PHYS_PLAYERS[pnum].waypointy[1] = cf.round(PHYS_PLAYERS[1].body:getY() - (10))		-- move in front of QB and block
 					zoneNumber = zoneNumber + 1
 				end
 			end

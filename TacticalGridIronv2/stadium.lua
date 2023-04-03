@@ -197,7 +197,7 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].shape = love.physics.newCircleShape(0.75)        -- circle radius
         PHYS_PLAYERS[i].fixture = love.physics.newFixture(PHYS_PLAYERS[i].body, PHYS_PLAYERS[i].shape, 1)   -- Attach fixture to body and give it a density of 1.
         PHYS_PLAYERS[i].fixture:setRestitution(0.25)        -- bounce/rebound
-		PHYS_PLAYERS[i].body:setLinearDamping(0.5)
+		-- PHYS_PLAYERS[i].body:setLinearDamping(0.1)
         PHYS_PLAYERS[i].fixture:setSensor(true)	    -- start without collisions
         PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to its own index
 
