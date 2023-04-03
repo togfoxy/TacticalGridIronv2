@@ -368,7 +368,7 @@ local function setOffenseRowWaypoints(obj, index, runnerindex, dt)      --! chec
 			local zoneSizeOffset = zoneSize / 2		-- this positions the player in the middle of the zone ( e.g. 4 / 2)
 
 			-- zone is x yards wide so start half the distance from where the QB is
-			local startOfFront = PHYS_PLAYERS[1].body:getX() - (zoneSize/2)		-- e.g. centreline - (20 / 2)
+			local startOfFront = PHYS_PLAYERS[1].body:getX() - (zoneSize/2)		-- e.g. QB X value - (20 / 2)
 
 			-- cycle through the five units and assign a zone/x value
 			local zoneNumber = 1		-- track the next zone

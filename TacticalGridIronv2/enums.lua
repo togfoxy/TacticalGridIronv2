@@ -53,6 +53,7 @@ function enums.load()
     enum.keyRight = 2
     enum.keyUp = 3
     enum.keyDown = 4
+    enum.keySpace = 5
 
 end
 return enums
