@@ -197,6 +197,7 @@ local function createPhysicsPlayers()
         PHYS_PLAYERS[i].shape = love.physics.newCircleShape(0.75)        -- circle radius
         PHYS_PLAYERS[i].fixture = love.physics.newFixture(PHYS_PLAYERS[i].body, PHYS_PLAYERS[i].shape, 1)   -- Attach fixture to body and give it a density of 1.
         PHYS_PLAYERS[i].fixture:setRestitution(0.25)        -- bounce/rebound
+		PHYS_PLAYERS[i].body:setLinearDamping(0.5)
         PHYS_PLAYERS[i].fixture:setSensor(true)	    -- start without collisions
         PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to its own index
 
@@ -452,6 +453,8 @@ local function moveFootball(dt)
 			end
 			PHYS_PLAYERS[closestplayer].hasBall = true	--! factor in player too far away and fumble ball
 			GAME_STATE = enum.gamestateRunning		-- move from airborne to running regardless of throw outcome
+
+			print("Gamestate is now: " .. GAME_STATE)
 
 			if closestplayer > 11 then
 				-- turn over
@@ -862,7 +865,7 @@ end
 
 local function doUpdateLoop(dt)
 
-	if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne then
+	if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne or GAME_STATE == enum.running then
 		OFFENSIVE_TIME = OFFENSIVE_TIME + dt
 	end
 
