@@ -107,8 +107,9 @@ function stadium.mousereleased(rx, ry, x, y)
 			mousex = mousex / SCALE
 			mousey = mousey / SCALE
 
-			football.waypointx[1] = mousex
+			football.waypointx[1] = mousex		--! add a random element based on throw skill of QB
 			football.waypointy[1] = mousey
+
 			PHYS_PLAYERS[1].waypointx[1] = nil
 			PHYS_PLAYERS[1].waypointy[1] = nil
 			PHYS_PLAYERS[1].hasBall = false
@@ -573,10 +574,11 @@ local function drawStadium()
     love.graphics.setColor(1,1,1,1)
     love.graphics.rectangle("line", LeftLineX * SCALE, TopPostY * SCALE, FieldWidth * SCALE, (GoalHeight + FieldHeight + GoalHeight) * SCALE)
 
-    --! draw stadium seats
-	local drawx = 675
-	local drawy = 55
+    -- draw stadium seats
+	local drawx = (LeftLineX - 16) * SCALE
+	local drawy = (TopGoalY - 6) * SCALE
 	local stadiumheight = 115
+
 	love.graphics.setColor(1,1,1,1)
 	for i = 1, 6 do
 		love.graphics.draw(IMAGE[enum.imageStadium], drawx, drawy + (i * stadiumheight), 0, 0.25, 0.25)
@@ -765,7 +767,6 @@ local function checkForStateChange(dt)
 			-- print("Player gamestate for player " .. i .. " = " .. PHYS_PLAYERS[i].gamestate)
             if PHYS_PLAYERS[i].gamestate ~= enum.gamestateReadyForSnap then
                 -- no state change. Abort.
-				-- print("Player #" .. i .. " is not ready for snap yet.")
                 return
             end
         end

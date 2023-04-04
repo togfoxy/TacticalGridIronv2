@@ -5,6 +5,7 @@ local TopPostY = 5	-- how many metres to leave at the top of the screen?
 local FieldHeight = 100     -- from goal to goal
 local TopGoalY = TopPostY + GoalHeight
 local BottomGoalY = TopGoalY + FieldHeight
+local BottomPostY = BottomGoalY + GoalHeight
 local FieldWidth = 49	-- how wide (yards/metres) is the field? 48.8 mtrs wide
 local LeftLineX = 100
 local RightLineX = LeftLineX + FieldWidth
@@ -153,6 +154,7 @@ local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
 	-- enemytype can be an empty string ("") which will search for ANY type
 	-- bolCheckOwnTeam = false means scan only the enemy
 	-- will not target fallen players
+	-- enemytype is not case sensitive (but best to use upper case)
 	-- returns two values:
 		-- returns (zero, 1000) if none found
 	    -- returns (index, dist) if an object is found. Index is (1 -> 22)
@@ -178,7 +180,7 @@ local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
 	end
 	for i = a,b do
 		if not PHYS_PLAYERS[i].fallen then
-			if PHYS_PLAYERS[i].positionletters == enemytype or enemytype == "" then		--! should make this case insensitive
+			if string.upper(PHYS_PLAYERS[i].positionletters) == string.upper(enemytype) or enemytype == "" then
 				-- determine distance
 				local thisdistance = cf.getDistance(currentplayerX, currentplayerY, PHYS_PLAYERS[i].body:getX(), PHYS_PLAYERS[i].body:getY())
 
@@ -195,7 +197,7 @@ local function determineClosestObject(playernum, enemytype, bolCheckOwnTeam)
 	return myclosesttarget, myclosestdist
 end
 
-local function setWPtoFootballWP(obj, index, runnerindex)
+local function setWPtoFootballWP(obj)
 	-- move to the expected football destination
 	obj.waypointx = {}
 	obj.waypointy = {}
@@ -233,7 +235,7 @@ local function setWPtoTackleRunner(obj, index, runnerindex)
 	obj.waypointy[1] = PHYS_PLAYERS[runnerindex].body:getY() - 10
 end
 
-local function setWRWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
+local function setWRWaypoints(obj, index, runnerindex)
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
         if obj.waypointx[1] == nil then
             -- waypoints exhausted. Decide what to do next
@@ -287,9 +289,8 @@ local function setWRWaypoints(obj, index, runnerindex, dt)      --! check that a
             -- continue to execute waypoints (i.e. do nothing)
         end
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
-		setWPtoFootballWP(obj, index, runnerindex)
+		setWPtoFootballWP(obj)
     elseif GAME_STATE == enum.gamestateRunning then     -- ball has been caught (maybe) and runner is running
-
 		setWPtoProtectRunner(obj, index, runnerindex)	-- runs to goal if runner or moves to protect runner
     elseif GAME_STATE == enum.gamestateForming then
         --! migrate other function into here at some point
@@ -299,7 +300,7 @@ local function setWRWaypoints(obj, index, runnerindex, dt)      --! check that a
     end
 end
 
-local function setRBWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
+local function setRBWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      		-- QB still has the ball
 		if obj.waypointx[1] == nil then
 			-- set wp to the  enemy closest to QB
@@ -312,8 +313,7 @@ local function setRBWaypoints(obj, index, runnerindex, dt)      --! check that a
 				obj.waypointx[1] = enemyx1
 				obj.waypointy[1] = enemyy1
 			else
-				--! no enemy left?!?!  Probably do nothing
-				print("RB doing nothing")
+				-- no enemy left?!?!  Probably do nothing
 			end
 		end
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
@@ -329,7 +329,7 @@ local function setRBWaypoints(obj, index, runnerindex, dt)      --! check that a
     end
 end
 
-local function setTEWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
+local function setTEWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
 		if obj.waypointx[1] == nil then
 			-- move to the centre of the field and in front of scrimmage
@@ -350,7 +350,7 @@ local function setTEWaypoints(obj, index, runnerindex, dt)      --! check that a
     end
 end
 
-local function setOffenseRowWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
+local function setOffenseRowWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
 		if obj.waypointx[1] == nil then
 			-- determine how many offensive linemen are active (not fallen)
@@ -382,11 +382,9 @@ local function setOffenseRowWaypoints(obj, index, runnerindex, dt)      --! chec
 				PHYS_PLAYERS[pnum].waypointx = {}
 				PHYS_PLAYERS[pnum].waypointy = {}
 
-				if not PHYS_PLAYERS[pnum].fallen then		--! probably a redundant line
-					PHYS_PLAYERS[pnum].waypointx[1] = cf.round((startOfFront + zoneSizeOffset + (zoneSize * (zoneNumber - 1 ))))
-					PHYS_PLAYERS[pnum].waypointy[1] = cf.round(PHYS_PLAYERS[1].body:getY() - (10))		-- move in front of QB and block
-					zoneNumber = zoneNumber + 1
-				end
+				PHYS_PLAYERS[pnum].waypointx[1] = cf.round((startOfFront + zoneSizeOffset + (zoneSize * (zoneNumber - 1 ))))
+				PHYS_PLAYERS[pnum].waypointy[1] = cf.round(PHYS_PLAYERS[1].body:getY() - (10))		-- move in front of QB and block
+				zoneNumber = zoneNumber + 1
 			end
 		end
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
@@ -401,7 +399,7 @@ local function setOffenseRowWaypoints(obj, index, runnerindex, dt)      --! chec
     end
 end
 
-local function setDefenceRowWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
+local function setDefenceRowWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
 
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
@@ -417,7 +415,7 @@ local function setDefenceRowWaypoints(obj, index, runnerindex, dt)      --! chec
     end
 end
 
-local function setILBWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
+local function setILBWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
 
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
@@ -433,7 +431,7 @@ local function setILBWaypoints(obj, index, runnerindex, dt)      --! check that 
     end
 end
 
-local function setOLBWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
+local function setOLBWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
 
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
@@ -449,7 +447,7 @@ local function setOLBWaypoints(obj, index, runnerindex, dt)      --! check that 
     end
 end
 
-local function setCBWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
+local function setCBWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
 		-- note: this happens every dt and not just when the wp is exhausted
 		-- get closest WR/TE
@@ -514,7 +512,7 @@ local function setCBWaypoints(obj, index, runnerindex, dt)      --! check that a
     end
 end
 
-local function setSSWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
+local function setSSWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
 
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
@@ -530,7 +528,7 @@ local function setSSWaypoints(obj, index, runnerindex, dt)      --! check that a
     end
 end
 
-local function setWaypoints(obj, index, runnerindex, dt)
+local function setWaypoints(obj, index, runnerindex)
     -- determine the target for the single obj
     -- runnerindex might be nil on some calls but is okay because it's only used by players 12+
 	-- obj = the physical obj
@@ -540,21 +538,21 @@ local function setWaypoints(obj, index, runnerindex, dt)
     if index == 1 then
 
     elseif index == 2 or index == 3 or index == 4 then		-- WR
-        setWRWaypoints(obj, index, runnerindex, dt)
+        setWRWaypoints(obj, index, runnerindex)
     elseif index == 5 then	-- RB
-		setRBWaypoints(obj, index, runnerindex, dt)
+		setRBWaypoints(obj, index, runnerindex)
     elseif index == 6 then	-- TE
-		setTEWaypoints(obj, index, runnerindex, dt)
+		setTEWaypoints(obj, index, runnerindex)
     elseif index == 7 then	-- Centre
-		setOffenseRowWaypoints(obj, index, runnerindex, dt)
+		setOffenseRowWaypoints(obj, index, runnerindex)
     elseif index == 8 then
-		setOffenseRowWaypoints(obj, index, runnerindex, dt)
+		setOffenseRowWaypoints(obj, index, runnerindex)
     elseif index == 9 then
-		setOffenseRowWaypoints(obj, index, runnerindex, dt)
+		setOffenseRowWaypoints(obj, index, runnerindex)
 	elseif index == 10 then
-		setOffenseRowWaypoints(obj, index, runnerindex, dt)
+		setOffenseRowWaypoints(obj, index, runnerindex)
     elseif index == 11 then
-		setOffenseRowWaypoints(obj, index, runnerindex, dt)
+		setOffenseRowWaypoints(obj, index, runnerindex)
     elseif index == 12 then
 
     elseif index == 13 then
@@ -570,9 +568,9 @@ local function setWaypoints(obj, index, runnerindex, dt)
     elseif index == 18 then
 
     elseif index == 19 then
-		setCBWaypoints(obj, index, runnerindex, dt)
+		setCBWaypoints(obj, index, runnerindex)
     elseif index == 20 then
-		setCBWaypoints(obj, index, runnerindex, dt)
+		setCBWaypoints(obj, index, runnerindex)
     elseif index == 21 then
 
     elseif index == 22 then
@@ -601,23 +599,30 @@ function waypoints.setAllWaypoints(numofplayers, ptid, fb, pc_offense, pc_defens
     for i = 1, NumberOfPlayers do
 		if not PHYS_PLAYERS[i].fallen then
 	        if GAME_STATE == enum.gamestateForming and PHYS_PLAYERS[i].targetx == nil then
-				setFormingWaypoints(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
+				setFormingWaypoints(PHYS_PLAYERS[i], i)
 	        elseif GAME_STATE == enum.gamestateInPlay then		-- QB still has the ball
-				setWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
+				setWaypoints(PHYS_PLAYERS[i], i, runnerindex)		-- a generic sub that calls many other subs
 			elseif GAME_STATE == enum.gamestateAirborne then
-				setWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
+				setWaypoints(PHYS_PLAYERS[i], i, runnerindex)		-- a generic sub that calls many other subs
 	        elseif GAME_STATE == enum.gamestateRunning then
-	            setWaypoints(PHYS_PLAYERS[i], i, runnerindex, dt)		-- a generic sub that calls many other subs
+	            setWaypoints(PHYS_PLAYERS[i], i, runnerindex)		-- a generic sub that calls many other subs
 	        end
 
-			--! need to cycle through every non-fallen unit and ensure wp is inside the field
+			-- cycle through every non-fallen unit and ensure wp is inside the field
+			for j = 1, NumberOfPlayers do
+				if PHYS_PLAYERS[j].waypointx[1] ~= nil then
+					if PHYS_PLAYERS[j].waypointx[1] < LeftLineX then PHYS_PLAYERS[j].waypointx[1] = LeftLineX + 2 end
+					if PHYS_PLAYERS[j].waypointx[1] > RightLineX then PHYS_PLAYERS[j].waypointx[1] = RightLineX - 2 end
+					if PHYS_PLAYERS[j].waypointy[1] < TopPostY then PHYS_PLAYERS[j].waypointy[1] = TopPostY + 2 end
+					if PHYS_PLAYERS[j].waypointy[1] > BottomPostY then PHYS_PLAYERS[j].waypointy[1] = BottomPostY - 2 end
+				end
+			end
 		else
 			-- unit fallen so do nothing
 			PHYS_PLAYERS[i].waypointx = {}
 			PHYS_PLAYERS[i].waypointy = {}
 		end
     end
-	-- print("Target for player #12 is " .. PHYS_PLAYERS[12].waypointx[1])
 end
 
 return waypoints
