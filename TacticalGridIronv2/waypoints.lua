@@ -83,7 +83,7 @@ local function setFormingWaypoints(obj, index)
 	elseif index == 19 then		-- left CB
 		table.insert(obj.waypointx, CentreLineX - 18)
 		table.insert(obj.waypointy, ScrimmageY - 18)
-	elseif index == 20 then		-- left guard
+	elseif index == 20 then		-- right CB
 		table.insert(obj.waypointx, CentreLineX + 18)
 		table.insert(obj.waypointy, ScrimmageY - 18)
 	elseif index == 21 then		-- left safety
@@ -452,59 +452,59 @@ end
 
 local function setCBWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
-		if obj.waypointx[1] == nil then
-			-- get closest WR/TE
-			local WRindex, WRdist = determineClosestObject(index, "WR", false)
-			local TEindex, TEdist = determineClosestObject(index, "TE", false)
+		-- note: this happens every dt and not just when the wp is exhausted
+		-- get closest WR/TE
+		local WRindex, WRdist = determineClosestObject(index, "WR", false)
+		local TEindex, TEdist = determineClosestObject(index, "TE", false)
 
-			local targetindex		-- this isn't actually target. It's a friendly. I used a confusing name
-			if WRindex > 0 or TEindex > 0 then
-				if WRdist < TEdist then				-- dist = 1000 if unit not found
-					targetindex = WRindex
+		local targetindex		-- this isn't actually target. It's a friendly. I used a confusing name
+		if WRindex > 0 or TEindex > 0 then
+			if WRdist < TEdist then				-- dist = 1000 if unit not found
+				targetindex = WRindex
+			else
+				targetindex = TEindex
+			end
+
+			obj.waypointx = {}
+			obj.waypointy = {}
+			obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
+			obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+		else
+			-- can't find a TE or WR. Look for a friently SS
+			local s1index, s1dist = determineClosestObject(index, "S1", true)
+			local s2index, s2dist = determineClosestObject(index, "S2", true)
+
+			if s1index > 0 or s2index > 0 then
+				-- found a friendly SS. Which one is closest?
+				if s1dist < s2dist then		-- s1 is closer
+					targetindex = s1index
 				else
-					targetindex = TEindex
+					targetindex = s2index
 				end
+
+				-- set x/y
+				local targety = PHYS_PLAYERS[targetindex].body:getY()
+				local qbx = PHYS_PLAYERS[1].body:getX()
+				local qby = PHYS_PLAYERS[1].body:getY()
 
 				obj.waypointx = {}
 				obj.waypointy = {}
-				obj.waypointx[1] = PHYS_PLAYERS[targetindex].body:getX()
-				obj.waypointy[1] = PHYS_PLAYERS[targetindex].body:getY()
+				obj.waypointx[1] = qbx
+				obj.waypointy[1] = qby - ((qby - targety) / 2)		-- halfway between QB and friendly SS
+
+				print("alpha:" .. qbx, qpy, targety, obj.waypointy[1])
 			else
-				-- can't find a TE or WR. Look for a friently SS
-				local s1index, s1dist = determineClosestObject(index, "S1", true)
-				local s2index, s2dist = determineClosestObject(index, "S2", true)
-
-				if s1index > 0 or s2index > 0 then
-					-- found a friendly SS. Which one is closest?
-					if s1dist < s2dist then		-- s1 is closer
-						targetindex = s1index
-					else
-						targetindex = s2index
-					end
-
-					-- set x/y
-					local targety = PHYS_PLAYERS[targetindex].body:getY()
-					local qbx = PHYS_PLAYERS[1].body:getX()
-					local qby = PHYS_PLAYERS[1].body:getY()
-
-					obj.waypointx = {}
-					obj.waypointy = {}
-					obj.waypointx[1] = qbx
-					obj.waypointy[1] = qby - ((qby - targety) / 2)		-- halfway between QB and friendly SS
-
-					print("alpha:" .. qbx, qpy, targety, obj.waypointy[1])
-				else
-					-- can't find a WR or a TE or an SS. Position between QB and goal
-					local qbx = PHYS_PLAYERS[1].body:getX()
-					local qby = PHYS_PLAYERS[1].body:getY()
-					obj.waypointx = {}
-					obj.waypointy = {}
-					obj.waypointx[1] = CentreLineX
-					obj.waypointy[1] = qby - ((qby - TopGoalY) / 2)		-- halfway between QB and goal
-					print("beta:" .. qbyx, qpy, targety, obj.waypointy[1])
-				end
+				-- can't find a WR or a TE or an SS. Position between QB and goal
+				local qbx = PHYS_PLAYERS[1].body:getX()
+				local qby = PHYS_PLAYERS[1].body:getY()
+				obj.waypointx = {}
+				obj.waypointy = {}
+				obj.waypointx[1] = CentreLineX
+				obj.waypointy[1] = qby - ((qby - TopGoalY) / 2)		-- halfway between QB and goal
+				print("beta:" .. qbyx, qpy, targety, obj.waypointy[1])
 			end
 		end
+
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
 		setWPtoFootballWP(obj, index, runnerindex)
     elseif GAME_STATE == enum.gamestateRunning then     -- ball has been caught (maybe) and runner is running
@@ -595,11 +595,14 @@ function waypoints.setAllWaypoints(numofplayers, ptid, fb, pc_offense, pc_defens
     playcall_offense = pc_defense
 
     local runnerindex = nil     -- this is determined when the first 11 players are iterated over and then used by the next 11 players
+	for i = 1, NumberOfPlayers do
+		if not PHYS_PLAYERS[i].fallen then
+			if PHYS_PLAYERS[i].hasBall then runnerindex = i end
+		end
+	end
+
     for i = 1, NumberOfPlayers do
 		if not PHYS_PLAYERS[i].fallen then
-
-	        if PHYS_PLAYERS[i].hasBall then runnerindex = i end
-
 	        if GAME_STATE == enum.gamestateForming and PHYS_PLAYERS[i].targetx == nil then
 				setFormingWaypoints(PHYS_PLAYERS[i], i)       --! ensure to clear target when game mode shifts
 	        elseif GAME_STATE == enum.gamestateInPlay then		-- QB still has the ball

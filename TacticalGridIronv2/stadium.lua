@@ -643,7 +643,7 @@ local function drawPlayers()
 		-- end
 
 		-- debugging
-		if i == 5 then
+		if i == 19 or i == 20 then
 			-- draw the waypoint
 			if PHYS_PLAYERS[i].waypointx[1] ~= nil then
 				local x2 = PHYS_PLAYERS[i].waypointx[1] * SCALE
