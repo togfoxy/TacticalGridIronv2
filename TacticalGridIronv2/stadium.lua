@@ -936,6 +936,12 @@ function stadium.update(dt)
 					else
 						-- QB is on the target with the ball. Pause the sim so user can think
 						-- do nothing (no update loop)
+						-- QB has no waypoint. Check if space is pushed
+						if keypressed == enum.keySpace then
+							doUpdateLoop(dt)
+						else
+							-- no wp and no space. Do nothing. Pause the sim
+						end
 					end
 				else
 					-- QB has no waypoint. Check if space is pushed
