@@ -5,11 +5,12 @@ local arr_seasonstatus, offensiveteamname, defensiveteamname, deadBallTimer
 local playcall_offense = 3 --!enum.playcallThrow
 local playcall_defense = 2 --!enum.playcallManOnMan
 local downNumber = 1
-local football = {}			-- contains the x/y of the football
+
 local playerTeamID			-- the team ID controlled by the player
 local pauseOn = false		-- can be invoked by player to stop time
 
-
+-- globals
+football = {}			-- contains the x/y of the football
 football.waypointx = {}
 football.waypointy = {}
 
@@ -191,10 +192,10 @@ local function createPhysicsPlayers()
 
         PHYS_PLAYERS[i] = {}
         PHYS_PLAYERS[i].body = love.physics.newBody(world, rndx, rndy, "dynamic") --place the body in the the world and make it dynamic
-        PHYS_PLAYERS[i].body:setLinearDamping(0.7)      -- this applies braking force and removes inertia
         PHYS_PLAYERS[i].body:setMass(love.math.random(80,100))	 -- kilograms
         PHYS_PLAYERS[i].shape = love.physics.newCircleShape(0.75)        -- circle radius
         PHYS_PLAYERS[i].fixture = love.physics.newFixture(PHYS_PLAYERS[i].body, PHYS_PLAYERS[i].shape, 1)   -- Attach fixture to body and give it a density of 1.
+		PHYS_PLAYERS[i].body:setLinearDamping(0.9)      -- this applies braking force and removes inertia
         PHYS_PLAYERS[i].fixture:setRestitution(0.25)        -- bounce/rebound
         PHYS_PLAYERS[i].fixture:setSensor(true)	    -- start without collisions
         PHYS_PLAYERS[i].fixture:setUserData(i)      -- a handle to its own index
@@ -213,6 +214,13 @@ local function createPhysicsPlayers()
 
 
     end
+end
+
+local function endTheDown()
+	fun.playAudio(enum.soundWhistle, false, true)
+
+	downNumber = downNumber + 1
+	deadBallTimer = 3       -- three second pause before resetting
 end
 
 local function endtheround(score)
@@ -262,7 +270,7 @@ local function vectorMovePlayer(obj, dt)
 	local vectorytotarget = targety - objy
 
 	-- if the game is in play, then make sure obj doesn't stop short of target
-	if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne then
+	if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne or GAME_STATE == enum.running then
 		vectorxtotarget = vectorxtotarget * 10
 		vectorytotarget = vectorytotarget * 10
 	end
@@ -275,8 +283,10 @@ local function vectorMovePlayer(obj, dt)
 	-- F = m * a
 	-- Fx = m * Xa
 	-- Fy = m * Ya
-	local intendedxforce = obj.body:getMass() * acelxvector
-	local intendedyforce = obj.body:getMass() * acelyvector
+	-- local intendedxforce = obj.body:getMass() * acelxvector
+	-- local intendedyforce = obj.body:getMass() * acelyvector
+	local intendedxforce = acelxvector * 100		--! this formula doesn't look right
+	local intendedyforce = acelyvector * 100
 
 	-- if target is in front of player and at maxV then discontinue the application of force (intendedforce = 0)
 	-- can't cut aceleration because that is the braking force and we don't want to disallow that
@@ -353,7 +363,7 @@ local function moveAllPlayers(dt)
 			local targetx = PHYS_PLAYERS[i].waypointx[1]
 			local targety = PHYS_PLAYERS[i].waypointy[1]
 
-			-- see if player has waypoints
+			-- see if unit has waypoints
 			if targetx == nil or targety == nil then
 				-- do nothing as there are no waypoints
 			else
@@ -445,6 +455,8 @@ local function moveFootball(dt)
 			PHYS_PLAYERS[closestplayer].hasBall = true	--! factor in player too far away and fumble ball
 			GAME_STATE = enum.gamestateRunning		-- move from airborne to running regardless of throw outcome
 
+			print("Gamestate is now: " .. GAME_STATE)
+
 			if closestplayer > 11 then
 				-- turn over
 				endTheDown()
@@ -472,13 +484,6 @@ local function moveFootball(dt)
 	else
 		-- print("Football has no target")
 	end
-end
-
-local function endTheDown()
-	fun.playAudio(enum.soundWhistle, false, true)
-
-	downNumber = downNumber + 1
-	deadBallTimer = 3       -- three second pause before resetting
 end
 
 local function drawStadium()
@@ -638,7 +643,7 @@ local function drawPlayers()
 		-- end
 
 		-- debugging
-		if i == 5 then
+		if i == 19 or i == 20 then
 			-- draw the waypoint
 			if PHYS_PLAYERS[i].waypointx[1] ~= nil then
 				local x2 = PHYS_PLAYERS[i].waypointx[1] * SCALE
@@ -839,6 +844,8 @@ local function getkeyPressed()
 		return enum.keyLeft
 	elseif love.keyboard.isDown("kp6") then
 		return enum.keyRight
+	elseif love.keyboard.isDown("space") then
+		return enum.keySpace
 	else
 		return nil
 	end
@@ -861,7 +868,7 @@ end
 
 local function doUpdateLoop(dt)
 
-	if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne then
+	if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne or GAME_STATE == enum.running then
 		OFFENSIVE_TIME = OFFENSIVE_TIME + dt
 	end
 
@@ -901,9 +908,7 @@ function stadium.update(dt)
 					PHYS_PLAYERS[1].waypointy[1] = objy
 				end
 
-				print("QB WP1 was " .. PHYS_PLAYERS[1].waypointx[1], PHYS_PLAYERS[1].waypointy[1] )
-
-				local adjamount = 60 * dt		-- for convenience and tuning
+				local adjamount = 60 * dt		-- for convenience and tuning. Less than 60 doesn't work for some reason
 				if keypressed == enum.keyDown then
 					PHYS_PLAYERS[1].waypointy[1] = PHYS_PLAYERS[1].waypointy[1] + adjamount
 				elseif keypressed == enum.keyLeft then
@@ -913,7 +918,7 @@ function stadium.update(dt)
 				elseif keypressed == enum.keyUp then
 					PHYS_PLAYERS[1].waypointy[1] = PHYS_PLAYERS[1].waypointy[1] - adjamount
 				end
-				print("QB WP1 is now " .. PHYS_PLAYERS[1].waypointx[1], PHYS_PLAYERS[1].waypointy[1] )
+				-- print("QB WP1 is now " .. PHYS_PLAYERS[1].waypointx[1], PHYS_PLAYERS[1].waypointy[1] )
 			end
 
 			if PHYS_PLAYERS[1].hasBall then
@@ -933,7 +938,12 @@ function stadium.update(dt)
 						-- do nothing (no update loop)
 					end
 				else
-					-- QB has no waypoint. do nothing until there is one
+					-- QB has no waypoint. Check if space is pushed
+					if keypressed == enum.keySpace then
+						doUpdateLoop(dt)
+					else
+						-- no wp and no space. Do nothing. Pause the sim
+					end
 				end
 			else
 				doUpdateLoop(dt)
