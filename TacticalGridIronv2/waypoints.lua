@@ -234,7 +234,6 @@ local function setWPtoTackleRunner(obj, index, runnerindex)
 end
 
 local function setWRWaypoints(obj, index, runnerindex, dt)      --! check that all these params are needed
-	print("Index/runner/gamestate:" .. index, runnerindex, GAME_STATE)
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
         if obj.waypointx[1] == nil then
             -- waypoints exhausted. Decide what to do next
@@ -491,8 +490,6 @@ local function setCBWaypoints(obj, index, runnerindex, dt)      --! check that a
 				obj.waypointy = {}
 				obj.waypointx[1] = qbx
 				obj.waypointy[1] = qby - ((qby - targety) / 2)		-- halfway between QB and friendly SS
-
-				print("alpha:" .. qbx, qpy, targety, obj.waypointy[1])
 			else
 				-- can't find a WR or a TE or an SS. Position between QB and goal
 				local qbx = PHYS_PLAYERS[1].body:getX()

@@ -10,7 +10,7 @@ end
 function functions.loadImages()
     IMAGE[enum.imageFootball] = love.graphics.newImage("assets/images/football.png")
     IMAGE[enum.imageBrackets] = love.graphics.newImage("assets/images/brackets.jpg")
-
+    IMAGE[enum.imageStadium] = love.graphics.newImage("assets/images/stadium.jpg")
 
 end
 
