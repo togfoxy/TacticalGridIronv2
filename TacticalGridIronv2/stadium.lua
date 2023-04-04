@@ -374,7 +374,7 @@ local function moveAllPlayers(dt)
 	                local disttotarget = cf.getDistance(objx, objy, targetx, targety)
 
 	                -- see if arrived
-	                if disttotarget <= 1 then
+	                if disttotarget <= 0.75 then
 	                    -- arrived
 	                    if PHYS_PLAYERS[i].gamestate == enum.gamestateForming then
 	                        PHYS_PLAYERS[i].gamestate = enum.gamestateReadyForSnap
@@ -384,6 +384,9 @@ local function moveAllPlayers(dt)
 						table.remove(PHYS_PLAYERS[i].waypointx, 1)
 						table.remove(PHYS_PLAYERS[i].waypointy, 1)
 
+						-- apply brakes
+						local velx, vely = PHYS_PLAYERS[i].body:getLinearVelocity()
+						PHYS_PLAYERS[i].body:setLinearVelocity(velx / 2, vely / 2)
 	                else
 	                    -- player not arrived
 						vectorMovePlayer(PHYS_PLAYERS[i], dt)
