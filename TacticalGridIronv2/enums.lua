@@ -43,6 +43,7 @@ function enums.load()
 
     enum.imageFootball = 1
     enum.imageBrackets = 2
+    enum.imageStadium = 3
 
     enum.fontDefault = 1
     enum.fontMedium = 2
