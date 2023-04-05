@@ -1,6 +1,5 @@
 stadium = {}
 
-local NumberOfPlayers = 22	-- total. 11 + 11
 local arr_seasonstatus, offensiveteamname, defensiveteamname, deadBallTimer
 local playcall_offense = 3 -- enum.playcallThrow
 local playcall_defense = 2 -- enum.playcallManOnMan
@@ -16,6 +15,7 @@ football.waypointy = {}
 
 local OFF_RED, OFF_GREEN, OFF_BLUE, DEF_RED, DEF_GREEN, DEF_BLUE
 local DEFENSIVE_TIME, DEFENSIVE_SCORE
+local DOWN_TIME = 0		-- how long has this down lasted
 
 -- field dimensions
 local FieldWidth = 49	-- how wide (yards/metres) is the field? 48.8 mtrs wide
@@ -221,6 +221,7 @@ local function endTheDown()
 	fun.playAudio(enum.soundWhistle, false, true)
 
 	downNumber = downNumber + 1
+	DOWN_TIME = 0
 	deadBallTimer = 3       -- three second pause before resetting
 end
 
@@ -237,17 +238,8 @@ local function endtheround(score)
 
     -- move to the next scene
     REFRESH_DB = true
-
-    -- need to reset all sorts of player status here
-	-- destroy the physical objects
-	for i = 1, NumberOfPlayers do
-        PHYS_PLAYERS[i].body:destroy()
-    end
-	PHYS_PLAYERS = {}
+    -- need to reset status here. Some are done in the endgame scene
     GAME_STATE = nil
-    downNumber = 1
-    ScrimmageY = BottomGoalY - 25
-    FirstDownMarkerY = ScrimmageY - 10
 
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
@@ -428,7 +420,7 @@ local function moveFootball(dt)
 
 		-- see if whole distance can be travelled in this time step
 		if disttotarget <= (throwspeed * dt) then
-			-- whole distance is travelled during this time step
+			-- ball has arrived because whole distance is travelled during this time step
 
 			football.x = football.waypointx[1]
 			football.y = football.waypointy[1]
@@ -462,7 +454,10 @@ local function moveFootball(dt)
 				endTheDown()
 				GAME_STATE = enum.gamestateDeadBall
 			end
-
+			if PHYS_PLAYERS[closestplayer].fallendown then
+				endTheDown()
+				GAME_STATE = enum.gamestateDeadBall
+			end
 			if closestplayer > 11 then
 				-- turn over		--! possible intercept?
 				endTheDown()
@@ -653,7 +648,7 @@ local function drawPlayers()
 		-- end
 
 		-- debugging
-		if i == 12 or i == 13 then
+		if i == 0 or i == 0 then
 			-- draw the waypoint
 			if PHYS_PLAYERS[i].waypointx[1] ~= nil then
 				local x2 = PHYS_PLAYERS[i].waypointx[1] * SCALE
@@ -693,11 +688,9 @@ local function drawScoreboard()
 end
 
 local function beginContact(a, b, coll)
-    if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne then
+    if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne or GAME_STATE == enum.gamestateRunning then
         local aindex = a:getUserData()
         local bindex = b:getUserData()
-
-		-- print(PHYS_PLAYERS[aindex].fixture:isSensor(), PHYS_PLAYERS[bindex].fixture:isSensor())
 
 		if (aindex <= (NumberOfPlayers / 2) and bindex >= (NumberOfPlayers / 2 + 1)) or (aindex >= (NumberOfPlayers / 2 +1) and bindex <= NumberOfPlayers / 2) then
             -- contact with the enemy
@@ -896,14 +889,14 @@ local function doUpdateLoop(dt)
 
 	if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne or GAME_STATE == enum.gamestateRunning then
 		OFFENSIVE_TIME = OFFENSIVE_TIME + dt
+		DOWN_TIME = DOWN_TIME + dt
 	end
 
-	waypoints.setAllWaypoints(NumberOfPlayers, playerTeamID, playcall_offense, playcall_defense, dt)
+	waypoints.setAllWaypoints(NumberOfPlayers, playerTeamID, playcall_offense, playcall_defense, ScrimmageY, DOWN_TIME, dt)
 	moveAllPlayers(dt)
 	moveFootball(dt)
 	checkForStateChange(dt)
 	checkForOutOfBounds(dt)
-
 
 	world:update(dt) --this puts the world into motion
     world:setCallbacks(beginContact, endContact, preSolve, postSolve)
