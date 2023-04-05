@@ -22,6 +22,8 @@ local NumberOfPlayers
 
 local function setFormingWaypoints(obj, index)
     -- receives a single object and sets it's target
+	-- used when forming up before snap.
+	-- check setInPlayWapointsThrow() for wp after snap
 
 	-- clear old waypoints
 	obj.waypointx = {}
@@ -49,16 +51,16 @@ local function setFormingWaypoints(obj, index)
 		table.insert(obj.waypointx, CentreLineX)
 		table.insert(obj.waypointy, ScrimmageY)
 	elseif index == 8 then		-- left guard
-		table.insert(obj.waypointx, CentreLineX - 4)
+		table.insert(obj.waypointx, CentreLineX - 2)
 		table.insert(obj.waypointy, ScrimmageY + 2)
 	elseif index == 9 then		-- right guard
-		table.insert(obj.waypointx, CentreLineX + 4)
+		table.insert(obj.waypointx, CentreLineX + 2)
 		table.insert(obj.waypointy, ScrimmageY + 2)
 	elseif index == 10 then		-- left tackle
-		table.insert(obj.waypointx, CentreLineX - 7)
+		table.insert(obj.waypointx, CentreLineX - 4)
 		table.insert(obj.waypointy, ScrimmageY + 3)
 	elseif index == 11 then		-- right tackle
-		table.insert(obj.waypointx, CentreLineX + 7)
+		table.insert(obj.waypointx, CentreLineX + 4)
 		table.insert(obj.waypointy, ScrimmageY + 3)
 	elseif index == 12 then		-- left tackle (left side of screen)
 		table.insert(obj.waypointx, CentreLineX - 2)
@@ -135,16 +137,16 @@ function waypoints.setInPlayWapointsThrow(obj, index)
 		table.insert(obj.waypointx, CentreLineX)
 		table.insert(obj.waypointy, ScrimmageY - 5)
 	elseif index == 8 then		-- left guard
-		table.insert(obj.waypointx, CentreLineX - 4)
+		table.insert(obj.waypointx, CentreLineX - 2)
 		table.insert(obj.waypointy, ScrimmageY - 3)
 	elseif index == 9 then		-- right guard
-		table.insert(obj.waypointx, CentreLineX + 4)
+		table.insert(obj.waypointx, CentreLineX + 2)
 		table.insert(obj.waypointy, ScrimmageY - 3)
 	elseif index == 10 then		-- left tackle
-		table.insert(obj.waypointx, CentreLineX - 7)
+		table.insert(obj.waypointx, CentreLineX - 4)
 		table.insert(obj.waypointy, ScrimmageY - 2)
 	elseif index == 11 then		-- right tackle
-		table.insert(obj.waypointx, CentreLineX + 7)
+		table.insert(obj.waypointx, CentreLineX + 4)
 		table.insert(obj.waypointy, ScrimmageY - 2)
 	end
 end
@@ -227,12 +229,14 @@ local function setWPtoProtectRunner(obj, index, runnerindex)	-- including if uni
 	end
 end
 
-local function setWPtoTackleRunner(obj, index, runnerindex)
+local function setWPtoTackleUnit(obj, index, targetunit, yoffset)
 	-- set wp in front of runner so that unit intercepts runner
+	-- the yoffset is how far IN FRONT of the target the wp needs to be. e.g. 10 = 10 yards in front of target (closer to the top)
 	obj.waypointx = {}
 	obj.waypointy = {}
-	obj.waypointx[1] = PHYS_PLAYERS[runnerindex].body:getX()
-	obj.waypointy[1] = PHYS_PLAYERS[runnerindex].body:getY() - 10
+	obj.waypointx[1] = PHYS_PLAYERS[targetunit].body:getX()
+
+	obj.waypointy[1] = PHYS_PLAYERS[targetunit].body:getY() - yoffset
 end
 
 local function setWRWaypoints(obj, index, runnerindex)
@@ -370,7 +374,7 @@ local function setOffenseRowWaypoints(obj, index, runnerindex)      --! check th
 			local startOfFront = PHYS_PLAYERS[1].body:getX() - (zoneSize/2)		-- e.g. QB X value - (20 / 2)
 
 			-- cycle through the five units and assign a zone/x value
-			local zoneNumber = 1		-- track the next zone
+			local zoneNumber = 0		-- track the next zone
 			for i = 1,5 do
 				local pnum						-- index, except index is already used as input parameter
 				if i == 1 then pnum = 10 end	-- sadly, we can't cycle through 7 -> 11. It needs to be left side then centre then right side
@@ -401,12 +405,12 @@ end
 
 local function setDefenceRowWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
-
+		-- mad rush the QB
+		setWPtoTackleUnit(obj, index, 1, 0)		-- use '1' for QB instead of runnerindex (which might be nil)
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
-
-
+		setWPtoFootballWP(obj, index, runnerindex)
     elseif GAME_STATE == enum.gamestateRunning then     -- ball has been caught (maybe) and runner is running
-
+		setWPtoTackleUnit(obj, index, runnerindex, 10)
     elseif GAME_STATE == enum.gamestateForming then
         --! migrate other function into here at some point
 
@@ -417,12 +421,18 @@ end
 
 local function setILBWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
-
+		local RBindex, _ = determineClosestObject(index, "RB", false)
+		if RBindex > 0 then
+			-- target the RB
+			setWPtoTackleUnit(obj, index, RBindex, 10)
+		else
+			-- RB not found. Target QB
+			setWPtoTackleUnit(obj, index, 1, 0)
+		end
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
-
-
+		setWPtoFootballWP(obj, index, runnerindex)
     elseif GAME_STATE == enum.gamestateRunning then     -- ball has been caught (maybe) and runner is running
-
+		setWPtoTackleUnit(obj, index, runnerindex, 10)
     elseif GAME_STATE == enum.gamestateForming then
         --! migrate other function into here at some point
 
@@ -433,12 +443,44 @@ end
 
 local function setOLBWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
-
+		if index == 17 then		-- left most OLB1
+			-- target closest WR
+			local WRindex, WRdist = determineClosestObject(index, "WR", false)
+			if WRindex > 0 then
+				setWPtoTackleUnit(obj, index, WRindex, 5)
+			else
+				-- no WR found. Target closest enemy)
+				local targetindex = determineClosestObject(index, "", false)
+				if targetindex > 0 then
+					setWPtoTackleUnit(obj, index, targetindex, 5)
+				else
+					-- no enmy found. do nothing
+				end
+			end
+		else	-- right most OLB2
+			-- target the TE
+			local TEindex, _ = determineClosestObject(index, "TE", false)
+			if TEindex > 0 then
+				setWPtoTackleUnit(obj, index, TEindex, 5)
+			else
+				-- no TE found. Target closest WR)
+				local WRindex, WRdist = determineClosestObject(index, "WR", false)
+				if WRindex > 0 then
+					setWPtoTackleUnit(obj, index, WRindex, 5)
+				else
+					local targetindex = determineClosestObject(index, "", false)
+					if targetindex > 0 then
+						setWPtoTackleUnit(obj, index, targetindex, 5)
+					else
+						-- no enmy found. do nothing
+					end
+				end
+			end
+		end
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
-
-
+		setWPtoFootballWP(obj, index, runnerindex)
     elseif GAME_STATE == enum.gamestateRunning then     -- ball has been caught (maybe) and runner is running
-
+		setWPtoTackleUnit(obj, index, runnerindex, 10)
     elseif GAME_STATE == enum.gamestateForming then
         --! migrate other function into here at some point
 
@@ -499,11 +541,10 @@ local function setCBWaypoints(obj, index, runnerindex)      --! check that all t
 				print("beta:" .. qbyx, qpy, targety, obj.waypointy[1])
 			end
 		end
-
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
 		setWPtoFootballWP(obj, index, runnerindex)
     elseif GAME_STATE == enum.gamestateRunning then     -- ball has been caught (maybe) and runner is running
-		setWPtoTackleRunner(obj, index, runnerindex)
+		setWPtoTackleUnit(obj, index, runnerindex, 10)
     elseif GAME_STATE == enum.gamestateForming then
         --! migrate other function into here at some point
 
@@ -514,12 +555,31 @@ end
 
 local function setSSWaypoints(obj, index, runnerindex)      --! check that all these params are needed
     if GAME_STATE == enum.gamestateInPlay then      -- QB still has the ball
-
+		-- target WR
+		local WRindex, WRdist = determineClosestObject(index, "WR", false)
+		if WRindex > 0 then
+			setWPtoTackleUnit(obj, index, WRindex, 5)
+		else
+			-- target the TE
+			local TEindex, _ = determineClosestObject(index, "TE", false)
+			if TEindex > 0 then
+				setWPtoTackleUnit(obj, index, TEindex, 5)
+				local targetindex = determineClosestObject(index, "", false)
+				if targetindex > 0 then
+					setWPtoTackleUnit(obj, index, targetindex, 5)
+				else
+					-- no enemy found. do nothing
+				end
+			end
+		end
     elseif GAME_STATE == enum.gamestateAirborne then    -- ball is in-flight
+		-- target space between ball target and goal
+		obj.waypointx[1] = football.waypointx[1]
 
-
+		local y = ((football.waypointy[1] - TopGoalY) / 2) + TopGoalY
+		obj.waypointy[1] = y
     elseif GAME_STATE == enum.gamestateRunning then     -- ball has been caught (maybe) and runner is running
-
+		setWPtoTackleUnit(obj, index, runnerindex, 10)
     elseif GAME_STATE == enum.gamestateForming then
         --! migrate other function into here at some point
 
@@ -554,27 +614,27 @@ local function setWaypoints(obj, index, runnerindex)
     elseif index == 11 then
 		setOffenseRowWaypoints(obj, index, runnerindex)
     elseif index == 12 then
-
+		setDefenceRowWaypoints(obj, index, runnerindex)
     elseif index == 13 then
-
+		setDefenceRowWaypoints(obj, index, runnerindex)
     elseif index == 14 then
-
+		setDefenceRowWaypoints(obj, index, runnerindex)
     elseif index == 15 then
-
+		setDefenceRowWaypoints(obj, index, runnerindex)
     elseif index == 16 then
-
+		setILBWaypoints(obj, index, runnerindex)
     elseif index == 17 then
-
+		setOLBWaypoints(obj, index, runnerindex)
     elseif index == 18 then
-
+		setOLBWaypoints(obj, index, runnerindex)
     elseif index == 19 then
 		setCBWaypoints(obj, index, runnerindex)
     elseif index == 20 then
 		setCBWaypoints(obj, index, runnerindex)
     elseif index == 21 then
-
+		setSSWaypoints(obj, index, runnerindex)
     elseif index == 22 then
-
+		setSSWaypoints(obj, index, runnerindex)
     end
 end
 

@@ -239,19 +239,15 @@ local function endtheround(score)
     REFRESH_DB = true
 
     -- need to reset all sorts of player status here
-    for i = 1, NumberOfPlayers do
+	-- destroy the physical objects
+	for i = 1, NumberOfPlayers do
         PHYS_PLAYERS[i].body:destroy()
     end
+	PHYS_PLAYERS = {}
     GAME_STATE = nil
     downNumber = 1
     ScrimmageY = BottomGoalY - 25
     FirstDownMarkerY = ScrimmageY - 10
-
-	-- destroy the physical objects
-	for i = 1, NumberOfPlayers do
-		PHYS_PLAYERS[i].body:destroy()
-	end
-	PHYS_PLAYERS = {}
 
     cf.SwapScreen(enum.sceneEndGame, SCREEN_STACK)
 end
@@ -657,7 +653,7 @@ local function drawPlayers()
 		-- end
 
 		-- debugging
-		if i == 19 or i == 20 then
+		if i == 12 or i == 13 then
 			-- draw the waypoint
 			if PHYS_PLAYERS[i].waypointx[1] ~= nil then
 				local x2 = PHYS_PLAYERS[i].waypointx[1] * SCALE
@@ -759,7 +755,7 @@ end
 local function checkForStateChange(dt)
 	-- looks for key events that will trigger a change in game state
 
-    if GAME_STATE == enum.gamestateForming then
+	if GAME_STATE == enum.gamestateForming then
 		-- print("Game state = forming")
 
         -- check if everyone is formed up
@@ -790,7 +786,7 @@ local function checkForStateChange(dt)
 
 		fun.playAudio(enum.soundGo, false, true)
 
-    elseif GAME_STATE == enum.gamestateInPlay then
+    elseif GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateRunning then
         -- check for a number of conditions
 
         for i = 1, NumberOfPlayers / 2 do
@@ -898,7 +894,7 @@ end
 
 local function doUpdateLoop(dt)
 
-	if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne or GAME_STATE == enum.running then
+	if GAME_STATE == enum.gamestateInPlay or GAME_STATE == enum.gamestateAirborne or GAME_STATE == enum.gamestateRunning then
 		OFFENSIVE_TIME = OFFENSIVE_TIME + dt
 	end
 
