@@ -24,9 +24,10 @@ function constants.load()
     else
         DB_PATH = DB_PATH .. "/TacticalGridIronv2/savedata/"
     end
-    DB_FILE = DB_PATH .. "databasenew.db"
+    DB_FILE = DB_PATH .. "database.db"
 
     NUM_OF_TEAMS = 8
+    NumberOfPlayers = 22	-- total. 11 + 11
 
     SCALE = 8   -- for graphics/drawing
 
@@ -44,6 +45,9 @@ function constants.load()
 
     PHYS_PLAYERS = {}       -- array of objects that are players
     PLAYERS = {}            -- every player for every team
+    football = {}			-- contains the x/y of the football
+    football.waypointx = {}
+    football.waypointy = {}
 
     GAME_STATE = nil
 

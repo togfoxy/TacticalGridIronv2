@@ -96,6 +96,18 @@ end
 function endgame.draw()
 
     if REFRESH_DB then
+
+        -- need to firstly destroy some globals that still linger from teh STADIUM scene
+    	-- destroy the physical objects
+    	for i = 1, NumberOfPlayers do
+            PHYS_PLAYERS[i].body:destroy()
+        end
+    	PHYS_PLAYERS = {}
+    	print("Player array destroyed")
+        GAME_STATE = nil
+
+        -- do normal 'load' activities
+
         local fbdb = sqlite3.open(DB_FILE)
         local strQuery = "select * from TEAMS"
 
